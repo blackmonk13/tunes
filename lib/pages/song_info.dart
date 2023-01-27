@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tunes/models/tune.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:tunes/components/context_utils.dart';
 import 'package:tunes/providers/main.dart';
 import 'package:tunes/utils/constants.dart';
 import 'package:tunes/utils/extensions.dart';
@@ -16,14 +20,14 @@ class SongInfo extends ConsumerStatefulWidget {
     super.key,
     required this.tune,
   });
-  final Tune tune;
+  final Audio tune;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _SongInfoState();
 }
 
 class _SongInfoState extends ConsumerState<SongInfo> {
-  Tune get tune => widget.tune;
+  Audio get tune => widget.tune;
   @override
   Widget build(BuildContext context) {
     final editSongInfo = ref.watch(editSongInfoProvider);
@@ -47,22 +51,26 @@ class _SongInfoState extends ConsumerState<SongInfo> {
         child: Column(
           children: [
             TagTextField(
-              initialValue: getTitle(tune),
+              initialValue: tune.metas.title ?? tune.path,
               fieldName: 'title',
               onSave: (value) {},
               tune: tune,
             ),
             TagTextField(
-              initialValue: tune.tag?.artist,
+              initialValue: tune.metas.artist ?? "Unknown",
               fieldName: 'artist',
               onSave: (value) {},
               tune: tune,
             ),
             TagTextField(
-              initialValue: getAlbum(tune),
+              initialValue: tune.metas.album ?? "Unknown",
               fieldName: 'album',
               onSave: (value) {},
               tune: tune,
+            ),
+            Text(
+              'Path: ${tune.path}',
+              style: context.textTheme.bodySmall,
             ),
           ],
         ),
@@ -71,7 +79,7 @@ class _SongInfoState extends ConsumerState<SongInfo> {
   }
 }
 
-class TagTextField extends ConsumerStatefulWidget {
+class TagTextField extends HookConsumerWidget {
   const TagTextField({
     super.key,
     required this.tune,
@@ -79,20 +87,13 @@ class TagTextField extends ConsumerStatefulWidget {
     this.initialValue = "Unknown",
     required this.onSave,
   });
-  final Tune tune;
+  final Audio tune;
   final String fieldName;
   final String? initialValue;
   final ValueChanged<bool?> onSave;
 
-  @override
-  ConsumerState<TagTextField> createState() => _TagTextFieldState();
-}
-
-class _TagTextFieldState extends ConsumerState<TagTextField> {
-  late TextEditingController controller;
-
   String get _initialValue {
-    final inVal = widget.initialValue;
+    final inVal = initialValue;
     if (inVal == null) {
       return "Unknown";
     }
@@ -102,35 +103,48 @@ class _TagTextFieldState extends ConsumerState<TagTextField> {
     return inVal;
   }
 
+  // @override
   @override
-  void initState() {
-    super.initState();
-    controller = TextEditingController(text: _initialValue);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final editSongInfo = ref.watch(editSongInfoProvider);
+    final controller = useTextEditingController(text: _initialValue);
+    final textFieldFocusNode = useFocusNode();
+    final isFocused = useIsFocused(textFieldFocusNode);
+
+    useEffect(() {
+      if (isFocused) return;
+      if (controller.text == _initialValue) {
+        return;
+      }
+      Future<void> saveData() async {
+        final result = await tagger.writeTag(
+          path: tune.path,
+          tagField: fieldName.toLowerCase().trim(),
+          value: controller.text,
+        );
+        if (result != null) {
+          if (result) {
+            await ref.read(tunesRepositoryProvider).updateTune(tune.path);
+            // ref.invalidate(songsProvider);
+          }
+        }
+        onSave(result);
+      }
+
+      Future.microtask(saveData);
+      return null;
+    }, [isFocused]);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: TextFormField(
         controller: controller,
         readOnly: editSongInfo,
-        onEditingComplete: () async {
-          final result = await tagger.writeTag(
-            path: widget.tune.filePath,
-            tagField: widget.fieldName.toLowerCase().trim(),
-            value: controller.text,
-          );
-          if (result != null) {
-            if (result) {
-              ref.invalidate(songsListProvider);
-            }
-          }
-          widget.onSave(result);
-        },
+        focusNode: textFieldFocusNode,
+        // textInputAction: TextInputAction.done,
         decoration: InputDecoration(
-          labelText: widget.fieldName.capitalize(),
+          filled: false,
+          labelText: fieldName.capitalize(),
           floatingLabelBehavior: FloatingLabelBehavior.always,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 24.0,
@@ -140,6 +154,23 @@ class _TagTextFieldState extends ConsumerState<TagTextField> {
         ),
       ),
     );
-    ;
   }
+}
+
+bool useIsFocused(FocusNode node) {
+  final isFocused = useState(node.hasFocus);
+
+  useEffect(
+    () {
+      void listener() {
+        isFocused.value = node.hasFocus;
+      }
+
+      node.addListener(listener);
+      return () => node.removeListener(listener);
+    },
+    [node],
+  );
+
+  return isFocused.value;
 }

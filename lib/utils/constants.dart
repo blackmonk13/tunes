@@ -1,17 +1,17 @@
 // Obtain shared preferences.
 import 'dart:io';
 
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:audiotagger/audiotagger.dart';
+import 'package:audiotagger/models/tag.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tunes/models/tune.dart';
 
-final player = AudioPlayer();
+final player = AssetsAudioPlayer();
 final tagger = Audiotagger();
 
 Future<String?> pickMediaPath() async {
@@ -65,7 +65,6 @@ Stream<FileSystemEntity> getMusic(List<String> directories) async* {
   );
 
   await for (final entity in songs) {
-    
     if (entity is File && isMusicFile(entity) && entity.statSync().size > 100) {
       yield entity;
     }
@@ -77,29 +76,31 @@ bool isMusicFile(FileSystemEntity file) {
   return mimeType?.startsWith('audio/') == true;
 }
 
-String? getTitle(Tune? tune) {
-  if (tune == null) {
-    return null;
+String getTitle({required String filePath, Tag? tag}) {
+  final pathAsTitle = basenameWithoutExtension(filePath);
+  if (tag == null) {
+    return pathAsTitle;
   }
 
-  final title = tune.tag?.title;
+  final title = tag.title;
   if (title == null || title.isEmpty) {
-    return basenameWithoutExtension(tune.filePath);
+    return pathAsTitle;
   }
   return title;
 }
 
-String? getArtist(Tune? tune) {
-  if (tune == null) {
-    return null;
+String getArtist(Tag? tag) {
+  const unknown = "Unknown";
+  if (tag == null) {
+    return unknown;
   }
 
-  final albumArtist = tune.tag?.albumArtist;
-  final artist = tune.tag?.artist;
+  final albumArtist = tag.albumArtist;
+  final artist = tag.artist;
 
   if (albumArtist == null || albumArtist.isEmpty) {
     if (artist == null || artist.isEmpty) {
-      return null;
+      return unknown;
     }
     return artist;
   }
@@ -107,17 +108,18 @@ String? getArtist(Tune? tune) {
   return albumArtist;
 }
 
-String? getAlbum(Tune? tune) {
-  if (tune == null) {
-    return null;
+String getAlbum(Tag? tag) {
+  const unknown = "Unknown";
+  if (tag == null) {
+    return unknown;
   }
 
-  final album = tune.tag?.album;
+  final album = tag.album;
   if (album == null) {
-    return null;
+    return unknown;
   }
   if (album.isEmpty) {
-    return null;
+    return unknown;
   }
   return album;
 }

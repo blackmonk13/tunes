@@ -1,3 +1,5 @@
+import 'package:drift_db_viewer/drift_db_viewer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
@@ -6,10 +8,13 @@ import 'package:tunes/components/album_view.dart';
 import 'package:tunes/components/artists_view.dart';
 import 'package:tunes/components/collapsed_player.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/components/set_timer.dart';
 import 'package:tunes/components/songs_view.dart';
+import 'package:tunes/controllers/main.dart';
 import 'package:tunes/pages/find_songs.dart';
 import 'package:tunes/pages/media_folders.dart';
 import 'package:tunes/pages/scan_music.dart';
+import 'package:tunes/pages/settings.dart';
 import 'package:tunes/providers/main.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -23,6 +28,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final mediaPths = ref.watch(mediaPathsProvider);
+    final songList = ref.watch(songsProvider);
     final mpaths = mediaPths.valueOrNull;
 
     if (mpaths == null) {
@@ -33,34 +39,43 @@ class _HomePageState extends ConsumerState<HomePage> {
       return const MediaFolders();
     }
 
+    return songList.when(
+      data: (data) {
+        if (data.isEmpty) {
+          return const ScanMusic();
+        }
+        return _defaultView();
+      },
+      error: (error, stackTrace) {
+        return const ScanMusic();
+      },
+      loading: () {
+        return _defaultView(loading: true);
+      },
+    );
+  }
+
+  Widget _defaultView({bool loading = false}) {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         appBar: AppBar(
           actions: [
-            IconButton(
-              icon: const HeroIcon(
-                HeroIcons.clock,
-              ),
-              onPressed: () {
-                showMaterialModalBottomSheet(
-                  context: context,
-                  builder: (context) => SizedBox(
-                    height: context.screenHeight * .3,
-                    child: Column(
-                      children: [
-                        Slider(
-                          value: 30,
-                          min: 0,
-                          max: 90,
-                          onChanged: (value) {},
-                        ),
-                      ],
+            if (kDebugMode)
+              IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DriftDbViewer(ref.read(databaseProvider)),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+                icon: const HeroIcon(
+                  HeroIcons.circleStack,
+                ),
+              ),
+            _timerBtn(),
             IconButton(
               icon: const HeroIcon(
                 HeroIcons.magnifyingGlass,
@@ -90,6 +105,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     );
                     break;
                   default:
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (BuildContext context) => const Settings()),
+                    );
                 }
                 // Navigator.of(context).pushNamed(value);
               },
@@ -99,16 +118,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     value: "/scanmusic",
                     child: Text("Find Local Songs"),
                   ),
-                  ...[
-                    "Manage Songs",
-                    "Settings",
-                  ].map(
-                    (menuEntry) {
-                      return PopupMenuItem<String>(
-                        child: Text(menuEntry),
-                      );
-                    },
-                  ).toList()
+                  const PopupMenuItem(
+                    value: "/settings",
+                    child: Text("Settings"),
+                  ),
                 ];
               },
             ),
@@ -148,16 +161,46 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            SongsView(),
-            ArtistsView(),
-            AlbumView(),
-            Icon(Icons.directions_bike),
-          ],
-        ),
+        body: loading
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: context.colorScheme.primary,
+                  strokeWidth: 2.0,
+                ),
+              )
+            : const TabBarView(
+                children: [
+                  SongsView(),
+                  ArtistsView(),
+                  AlbumView(),
+                  Icon(Icons.directions_bike),
+                ],
+              ),
         bottomNavigationBar: const CollapsedPlayer(),
       ),
     );
+  }
+
+  Widget _timerBtn() {
+    return Consumer(builder: (context, ref, child) {
+      final timer = ref.watch(timerControllerProvider);
+      return IconButton(
+        icon: HeroIcon(
+          HeroIcons.clock,
+          color: timer.when(
+            data: (data) => null,
+            error: (error, stackTrace) => null,
+            loading: () => context.colorScheme.primary,
+          ),
+        ),
+        onPressed: () {
+          showMaterialModalBottomSheet(
+            context: context,
+            enableDrag: false,
+            builder: (context) => const SetTimer(),
+          );
+        },
+      );
+    });
   }
 }

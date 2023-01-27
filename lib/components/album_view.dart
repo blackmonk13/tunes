@@ -9,39 +9,48 @@ class AlbumView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(songStreamProvider);
-    final albums = ref.watch(albumsProvider);
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(albumsProvider);
-      },
-      child: ListView.separated(
-        itemBuilder: (context, index) {
-          final albumName = albums.keys.elementAt(index);
-          return ListTile(
-            dense: true,
-            onTap: () {
-              // context.go("/artists/$artistName");
-              showMaterialModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return AlbumSongs(
-                    albumName: albumName,
+    final asyncAlbums = ref.watch(albumsProvider);
+    return asyncAlbums.when(
+      data: (albums) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(albumsProvider);
+          },
+          child: ListView.separated(
+            itemBuilder: (context, index) {
+              final album = albums.elementAt(index);
+              return ListTile(
+                dense: true,
+                onTap: () {
+                  // context.go("/artists/$artistName");
+                  showMaterialModalBottomSheet(
+                    context: context,
+                    builder: (context) {
+                      return AlbumSongs(
+                        album: album,
+                      );
+                    },
                   );
                 },
+                title: Text(album.name ?? "Unknown"),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                ),
               );
             },
-            title: Text(albumName),
-            trailing: const Icon(
-              Icons.chevron_right_rounded,
-            ),
-          );
-        },
-        separatorBuilder: (context, index) {
-          return const Divider();
-        },
-        itemCount: albums.length,
-      ),
+            separatorBuilder: (context, index) {
+              return const Divider();
+            },
+            itemCount: albums.length,
+          ),
+        );
+      },
+      error: (error, stackTrace) {
+        return const Center(child: Text("Unexpected Error Occurred"));
+      },
+      loading: () {
+        return const Center(child: CircularProgressIndicator());
+      },
     );
   }
 }

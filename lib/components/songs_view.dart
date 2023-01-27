@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:tunes/components/context_utils.dart';
 import 'package:tunes/components/song_tile.dart';
 import 'package:tunes/providers/main.dart';
@@ -14,37 +13,48 @@ class SongsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(songStreamProvider);
-    final songList = ref.watch(songsProvider);
+    final asyncSongs = ref.watch(songsProvider);
 
     return Column(
       children: [
         const SongsViewHeader(),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(songsListProvider);
+          child: asyncSongs.when(
+            data: (songList) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(songsProvider);
+                },
+                child: ListView.separated(
+                  restorationId: "songsview",
+                  itemCount: songList.length,
+                  separatorBuilder: (BuildContext context, int index) {
+                    final indent = context.screenWidth * .18;
+                    return Divider(
+                      indent: indent,
+                      endIndent: indent,
+                      color: context.colorScheme.outline.withOpacity(.5),
+                    );
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return SongTile(
+                      audio: songList[index],
+                    );
+                  },
+                ),
+              );
             },
-            child: ListView.separated(
-              restorationId: "songsview",
-              itemCount: songList.length,
-              separatorBuilder: (BuildContext context, int index) {
-                final indent = context.screenWidth * .18;
-                return Divider(
-                  indent: indent,
-                  endIndent: indent,
-                  color: context.colorScheme.outline.withOpacity(.5),
-                );
-              },
-              itemBuilder: (BuildContext context, int index) {
-                return SongTile(
-                  tune: songList[index],
-                );
-              },
-            ),
+            error: (error, stackTrace) {
+              return Text("Error");
+            },
+            loading: () {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            },
           ),
         ),
-        SongsViewFooter(),
+        const SongsViewFooter(),
       ],
     );
   }
@@ -57,7 +67,7 @@ class SongsViewFooter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final multiSelect = ref.watch(multiSelectSongsProvider);
+    ref.watch(multiSelectSongsProvider);
     final selectedSongs = ref.watch(selectedSongsProvider);
 
     if (selectedSongs.isEmpty) {
@@ -93,7 +103,9 @@ class SongsViewFooter extends ConsumerWidget {
             icon: const HeroIcon(
               HeroIcons.trash,
             ),
-            label: const Text("Delete"),
+            label: const Text(
+              "Delete",
+            ),
           ),
         ],
       ),
@@ -111,9 +123,16 @@ class SongsViewHeader extends ConsumerStatefulWidget {
 class _SongsViewHeaderState extends ConsumerState<SongsViewHeader> {
   @override
   Widget build(BuildContext context) {
-    final songList = ref.watch(songsProvider);
+    final asyncSongs = ref.watch(songsProvider);
     final multiSelect = ref.watch(multiSelectSongsProvider);
     final selectedSongs = ref.watch(selectedSongsProvider);
+
+    final songList = asyncSongs.valueOrNull;
+
+    if (songList == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -129,10 +148,7 @@ class _SongsViewHeaderState extends ConsumerState<SongsViewHeader> {
             : [
                 TextButton.icon(
                   onPressed: () {
-                    final addSongs = songList
-                        .map((e) => AudioSource.file(e.filePath))
-                        .toList();
-                    ref.read(playlistItemsProvider.notifier).addAll(addSongs);
+                    ref.read(playlistItemsProvider.notifier).addAll(songList);
                   },
                   icon: const HeroIcon(
                     HeroIcons.playCircle,
@@ -160,7 +176,7 @@ class _SongsViewHeaderState extends ConsumerState<SongsViewHeader> {
                 IconButton(
                   onPressed: () {},
                   icon: const HeroIcon(
-                    HeroIcons.adjustmentsVertical,
+                    HeroIcons.barsArrowDown,
                   ),
                 ),
               ],
@@ -169,9 +185,14 @@ class _SongsViewHeaderState extends ConsumerState<SongsViewHeader> {
   }
 
   List<Widget> get selectionWidgets {
-    final songList = ref.watch(songsProvider);
+    final asyncSongs = ref.watch(songsProvider);
     final multiSelect = ref.watch(multiSelectSongsProvider);
     final selectedSongs = ref.watch(selectedSongsProvider);
+
+    final songList = asyncSongs.valueOrNull;
+
+    if (songList == null) return [];
+
     final selectedAll = songList.length == selectedSongs.length;
     return [
       TextButton.icon(

@@ -1,10 +1,16 @@
 library providers;
 
+import 'dart:async';
+
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:tunes/models/tune.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tunes/database/database.dart';
+import 'package:tunes/repository/tunes_repo.dart';
 import 'package:tunes/utils/constants.dart';
+
+part 'main.g.dart';
 
 part 'common.dart';
 part 'player.dart';

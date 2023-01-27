@@ -1,11 +1,11 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:sheet/route.dart';
 import 'package:tunes/components/context_utils.dart';
-import 'package:tunes/models/tune.dart';
+import 'package:tunes/database/database.dart';
 import 'package:tunes/pages/album_songs.dart';
 import 'package:tunes/pages/artist_songs.dart';
 import 'package:tunes/pages/song_info.dart';
@@ -15,11 +15,11 @@ import 'package:tunes/utils/constants.dart';
 class SongTile extends ConsumerStatefulWidget {
   const SongTile({
     super.key,
-    required this.tune,
+    required this.audio,
     this.onTap,
     this.selected = false,
   });
-  final Tune tune;
+  final Audio audio;
   final void Function()? onTap;
   final bool selected;
 
@@ -29,15 +29,23 @@ class SongTile extends ConsumerStatefulWidget {
 
 class _SongTileState extends ConsumerState<SongTile> {
   String get artistName {
-    return getArtist(widget.tune) ?? "Unknown";
+    return widget.audio.metas.artist ?? "Unknown";
   }
 
   String get albumName {
-    return getAlbum(widget.tune) ?? "Unknown";
+    return widget.audio.metas.album ?? "Unknown";
   }
 
   String get songTitle {
-    return getTitle(widget.tune) ?? "Unknown";
+    return widget.audio.metas.title ?? widget.audio.path;
+  }
+
+  Artist get artist {
+    return widget.audio.metas.extra!['artist'];
+  }
+
+  Album get album {
+    return widget.audio.metas.extra!['album'];
   }
 
   @override
@@ -50,9 +58,9 @@ class _SongTileState extends ConsumerState<SongTile> {
         selected: widget.selected,
         title: titleW,
         subtitle: subTitle,
-        value: selectedSongs.contains(widget.tune),
+        value: selectedSongs.contains(widget.audio),
         onChanged: (value) {
-          ref.read(selectedSongsProvider.notifier).add(widget.tune);
+          ref.read(selectedSongsProvider.notifier).add(widget.audio);
         },
       );
     }
@@ -62,7 +70,7 @@ class _SongTileState extends ConsumerState<SongTile> {
       onTap: onTap,
       onLongPress: () {
         ref.read(multiSelectSongsProvider.notifier).state = !multiSelect;
-        ref.read(selectedSongsProvider.notifier).add(widget.tune);
+        ref.read(selectedSongsProvider.notifier).add(widget.audio);
       },
       leading: leading,
       title: titleW,
@@ -86,7 +94,8 @@ class _SongTileState extends ConsumerState<SongTile> {
   }
 
   Widget get leading {
-    final tagImg = widget.tune.artWork;
+    // TODO:
+    final tagImg = widget.audio.metas.extra?['artWork'];
     return CircleAvatar(
       backgroundImage: tagImg == null ? null : Image.memory(tagImg).image,
       child: tagImg == null ? const HeroIcon(HeroIcons.musicalNote) : null,
@@ -100,7 +109,7 @@ class _SongTileState extends ConsumerState<SongTile> {
           context: context,
           builder: (context) {
             return Container(
-              height: context.screenHeight * .35,
+              height: context.screenHeight * .45,
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
                 vertical: 24.0,
@@ -114,7 +123,7 @@ class _SongTileState extends ConsumerState<SongTile> {
                         SheetRoute(
                           builder: (context) {
                             return ArtistSongs(
-                              artistName: artistName,
+                              artist: artist,
                             );
                           },
                         ),
@@ -133,7 +142,7 @@ class _SongTileState extends ConsumerState<SongTile> {
                         SheetRoute(
                           builder: (context) {
                             return AlbumSongs(
-                              albumName: albumName,
+                              album: album,
                             );
                           },
                         ),
@@ -148,11 +157,19 @@ class _SongTileState extends ConsumerState<SongTile> {
                   ),
                   ListTile(
                     onTap: () {
+                      ref.read(nowPlayingPlaylistProvider).add(widget.audio);
+                      Navigator.of(context).maybePop();
+                    },
+                    leading: const HeroIcon(HeroIcons.next),
+                    title: const Text("Play Next"),
+                  ),
+                  ListTile(
+                    onTap: () {
                       Navigator.of(context).pushReplacement(
                         SheetRoute(
                           builder: (context) {
                             return SongInfo(
-                              tune: widget.tune,
+                              tune: widget.audio,
                             );
                           },
                         ),
@@ -162,7 +179,24 @@ class _SongTileState extends ConsumerState<SongTile> {
                     title: const Text("Song info"),
                   ),
                   ListTile(
-                    onTap: () {},
+                    onTap: () async {
+                      if (!mounted) return;
+                      Navigator.of(context).maybePop();
+                      final deleted = await ref
+                          .read(tunesRepositoryProvider)
+                          .deleteTunes([widget.audio.path]);
+                      if (!mounted) return;
+                      if (deleted < 1) {
+                        context.showErrorSnackBar(
+                          message:
+                              'Failed to delete ${widget.audio.metas.title}',
+                        );
+                      } else {
+                        context.showSnackBar(
+                          message: 'Deleted ${widget.audio.metas.title}',
+                        );
+                      }
+                    },
                     leading: const HeroIcon(HeroIcons.trash),
                     title: const Text("Delete"),
                   ),
@@ -183,9 +217,29 @@ class _SongTileState extends ConsumerState<SongTile> {
       widget.onTap?.call();
       return;
     }
-    // final tuneAs = AudioSource.file(widget.tune.filePath);
-    // player.setAudioSource(widget.tune.audioSource);
-    // player.play();
-    ref.read(playlistItemsProvider.notifier).add(widget.tune.audioSource);
+    ref.read(nowPlayingPlaylistProvider).add(widget.audio);
+    final playlistAudios = ref.read(nowPlayingPlaylistProvider).audios;
+    if (player.playlist == null) {
+      player.open(
+        ref.read(nowPlayingPlaylistProvider),
+        autoStart: true,
+        respectSilentMode: true,
+        showNotification: true,
+        notificationSettings: const NotificationSettings(
+          stopEnabled: false,
+        ),
+        playInBackground: PlayInBackground.enabled,
+        headPhoneStrategy: HeadPhoneStrategy.pauseOnUnplugPlayOnPlug,
+      );
+    }
+    final thisId = playlistAudios
+        .indexWhere((element) => widget.audio.path == element.path);
+    if (thisId > 0) {
+      player.stop();
+      player.playlistPlayAtIndex(thisId);
+      return;
+    }
+
+    player.play();
   }
 }

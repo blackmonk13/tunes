@@ -38,7 +38,7 @@ class MediaFolders extends ConsumerWidget {
                 },
                 error: (error, stackTrace) {
                   return [
-                    Text("We encountered an unknown Error"),
+                    const Text("We encountered an unknown Error"),
                   ];
                 },
                 loading: () {

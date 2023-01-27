@@ -3,26 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:tunes/components/concentric_clipper.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/controllers/main.dart';
 
 class Breath extends ConsumerWidget {
-  const Breath({super.key});
+  const Breath({super.key, this.multiplier = 1.0});
+  final double multiplier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(scanControllerProvider);
     final MovieTween tween = MovieTween()
       ..scene(
               begin: const Duration(milliseconds: 0),
-              end: const Duration(milliseconds: 1000))
+              end: Duration(milliseconds: (1000 * multiplier).toInt()))
           .tween(
         'opacity',
         Tween(begin: 0.8, end: 1.0),
       )
       ..scene(
               begin: const Duration(milliseconds: 0),
-              end: const Duration(milliseconds: 2500))
+              end: Duration(milliseconds: (2500 * multiplier).toInt()))
           .tween(
         'size',
-        Tween(begin: 4.0, end: 16.0),
+        Tween(
+          begin: 24.0,
+          end: 36.0,
+        ),
       );
 
     return MirrorAnimationBuilder(

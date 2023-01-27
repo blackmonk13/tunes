@@ -2,7 +2,7 @@ part of providers;
 
 final playpositionProvider = StreamProvider<Duration>(
   (ref) async* {
-    await for (final value in player.positionStream) {
+    await for (final value in player.currentPosition) {
       yield value;
     }
   },
@@ -10,7 +10,7 @@ final playpositionProvider = StreamProvider<Duration>(
 
 final playIdProvider = StreamProvider<int?>(
   (ref) async* {
-    await for (final value in player.currentIndexStream) {
+    await for (final value in player.audioSessionId) {
       yield value;
     }
   },
@@ -18,43 +18,24 @@ final playIdProvider = StreamProvider<int?>(
 
 final playerStateProvider = StreamProvider<PlayerState>(
   (ref) async* {
-    await for (final value in player.playerStateStream) {
+    await for (final value in player.playerState) {
       yield value;
     }
   },
 );
 
-final nowPlayingProvider = Provider<Tune?>(
+final nowPlayingStreamProvider = StreamProvider<Audio?>(
+  (ref) async* {
+    await for (final value in player.current) {
+      yield value?.audio.audio;
+    }
+  },
+);
+
+final nowPlayingProvider = Provider<Audio?>(
   (ref) {
-    ref.watch(playIdProvider);
-    ref.watch(playpositionProvider);
-    final songStream = ref.watch(songsProvider);
-    final playlist = ref.watch(playlistProvider);
+    final nowStream = ref.watch(nowPlayingStreamProvider);
 
-    if (player.audioSource != playlist) {
-      print("Not a playlist");
-      return null;
-    }
-
-    if (playlist.children.isEmpty) {
-      return null;
-    }
-
-    final playingNowId = player.currentIndex;
-    if (playingNowId == null) {
-      return null;
-    }
-
-    final playingNowAs =
-        playlist.children.elementAt(playingNowId) as ProgressiveAudioSource;
-    final playingNowPath = playingNowAs.uri.toFilePath();
-    final findPlayingNowTune =
-        songStream.where((element) => element.filePath == playingNowPath);
-    if (findPlayingNowTune.isEmpty) {
-      return null;
-    }
-
-    final playingNowTune = findPlayingNowTune.first;
-    return playingNowTune;
+    return nowStream.valueOrNull;
   },
 );

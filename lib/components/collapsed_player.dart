@@ -1,8 +1,9 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:sheet/route.dart';
+import 'package:sheet/sheet.dart';
 import 'package:tunes/components/context_utils.dart';
 import 'package:tunes/pages/music_player.dart';
 import 'package:tunes/providers/main.dart';
@@ -18,22 +19,13 @@ class CollapsedPlayer extends ConsumerStatefulWidget {
 }
 
 class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
-  bool get isPlaying {
-    return player.playerState.playing &&
-        player.playerState.processingState != ProcessingState.completed;
-  }
-
   @override
   Widget build(BuildContext context) {
-    ref.watch(playpositionProvider);
     ref.watch(playerStateProvider);
-    final playlist = ref.watch(playlistProvider);
-    final nowPlaying = ref.watch(nowPlayingProvider);
+    final playlist = ref.watch(nowPlayingPlaylistProvider);
     final height = context.screenHeight * .1;
 
-    final artWork = nowPlaying?.artWork;
-
-    if (nowPlaying == null) {
+    if (playlist.audios.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -43,6 +35,7 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
         if (pvel == null) {
           return;
         }
+
         if (pvel.isNegative) {
           Navigator.of(context).push(
             SheetRoute(
@@ -50,7 +43,6 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
             ),
           );
         }
-        print(details.primaryVelocity);
       },
       child: Container(
         width: context.screenWidth,
@@ -60,58 +52,48 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
         ),
         child: Column(
           children: [
-            LinearProgressIndicator(
-              value: playPos ?? 0,
-              minHeight: 3,
-              color: context.colorScheme.primary,
-            ),
+            const MiniProgressBar(),
             Row(
               children: [
                 Expanded(
-                  child: ListTile(
-                    dense: true,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        SheetRoute(
-                          builder: (context) => const MusicPlayer(),
+                  child: player.builderCurrent(
+                    builder: (context, playing) {
+                      final artWork =
+                          playing.audio.audio.metas.extra?['artWork'];
+                      return ListTile(
+                        dense: true,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            SheetRoute(
+                              physics: const AlwaysDraggableSheetPhysics(),
+                              builder: (context) => const MusicPlayer(),
+                            ),
+                          );
+                        },
+                        leading: CircleAvatar(
+                          backgroundImage:
+                              artWork == null ? null : Image.memory(artWork).image,
+                          child: artWork == null
+                              ? const Icon(
+                                  Icons.music_note_outlined,
+                                )
+                              : null,
+                        ),
+                        title: Text(
+                          player.getCurrentAudioTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          player.getCurrentAudioArtist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       );
-                    },
-                    leading: CircleAvatar(
-                      backgroundImage:
-                          artWork == null ? null : Image.memory(artWork).image,
-                      child: artWork == null
-                          ? const Icon(
-                              Icons.music_note_outlined,
-                            )
-                          : null,
-                    ),
-                    title: Text(
-                      getTitle(nowPlaying) ?? "Unknown",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      getArtist(nowPlaying) ?? "Unknown",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: HeroIcon(
-                    isPlaying ? HeroIcons.pause : HeroIcons.play,
-                    style: HeroIconStyle.solid,
-                    size: height * .5,
-                  ),
-                  onPressed: () async {
-                    if (player.playing) {
-                      await player.pause();
-                      return;
                     }
-                    await player.play();
-                  },
+                  ),
                 ),
+                _playPauseButton(height),
                 IconButton(
                   icon: HeroIcon(
                     HeroIcons.next,
@@ -119,7 +101,8 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
                     style: HeroIconStyle.solid,
                   ),
                   onPressed: () async {
-                    await player.seekToNext();
+                    await player.next(stopIfLast: true);
+                    
                   },
                 ),
               ],
@@ -130,11 +113,44 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
     );
   }
 
-  double? get playPos {
-    final drt = player.duration?.inMilliseconds;
-    if (drt == null) {
-      return null;
-    }
-    return player.position.inMilliseconds / drt;
+  Widget _playPauseButton(double height) {
+    return player.builderIsPlaying(
+      builder: (context, isPlaying) {
+        return IconButton(
+          icon: HeroIcon(
+            isPlaying ? HeroIcons.pause : HeroIcons.play,
+            style: HeroIconStyle.solid,
+            size: height * .5,
+          ),
+          onPressed: () async {
+            if (isPlaying) {
+              await player.pause();
+              return;
+            }
+            await player.play();
+          },
+        );
+      },
+    );
+  }
+}
+
+class MiniProgressBar extends StatelessWidget {
+  const MiniProgressBar({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return player.builderCurrentPosition(
+      builder: (context, position) {
+        final duration =
+            player.current.valueOrNull?.audio.duration.inMilliseconds;
+
+        return LinearProgressIndicator(
+          value: duration == null ? 0 : position.inMilliseconds / duration,
+          minHeight: 3,
+          color: context.colorScheme.primary,
+        );
+      },
+    );
   }
 }

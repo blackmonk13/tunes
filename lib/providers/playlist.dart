@@ -1,14 +1,14 @@
 part of providers;
 
-class PlaylistItemsNotifier extends StateNotifier<List<UriAudioSource>> {
+class PlaylistItemsNotifier extends StateNotifier<List<Audio>> {
   final Ref ref;
   PlaylistItemsNotifier(this.ref) : super([]);
 
-  void add(UriAudioSource item) {
+  void add(Audio item) {
     state = [...state, item];
   }
 
-  void addAll(List<UriAudioSource> items) {
+  void addAll(List<Audio> items) {
     state = [...items];
   }
 
@@ -18,23 +18,36 @@ class PlaylistItemsNotifier extends StateNotifier<List<UriAudioSource>> {
 }
 
 final playlistItemsProvider =
-    StateNotifierProvider<PlaylistItemsNotifier, List<UriAudioSource>>(
+    StateNotifierProvider<PlaylistItemsNotifier, List<Audio>>(
   (ref) {
     return PlaylistItemsNotifier(ref);
   },
 );
 
-final playlistProvider = Provider<ConcatenatingAudioSource>(
+final playlistProvider = Provider<Playlist>(
   (ref) {
     final playlistItems = ref.watch(playlistItemsProvider);
-
-    return ConcatenatingAudioSource(
-      // Start loading next item just before reaching it
-      useLazyPreparation: true,
-      // Customise the shuffle algorithm
-      shuffleOrder: DefaultShuffleOrder(),
-      // Specify the playlist items
-      children: playlistItems,
+    return Playlist(
+      audios: playlistItems,
     );
   },
 );
+
+@riverpod
+class NowPlayingPlaylist extends _$NowPlayingPlaylist {
+  @override
+  Playlist build() {
+    final defaultPlaylist = Playlist(
+      audios: [],
+    );
+    return defaultPlaylist;
+  }
+
+  void changePlayList(Playlist playlist) {
+    state = playlist;
+  }
+
+  void clearPlaylist() {
+    state = state.copyWith(audios: []);
+  }
+}

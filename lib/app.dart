@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tunes/pages/artist_songs.dart';
 import 'package:tunes/pages/home.dart';
 import 'package:tunes/pages/scan_music.dart';
 import 'package:tunes/providers/main.dart';
@@ -26,12 +25,7 @@ final _router = GoRouter(
       path: '/musicfolders',
       builder: (context, state) => const MediaFolders(),
     ),
-    GoRoute(
-      path: '/artists/:artist',
-      builder: (context, state) => ArtistSongs(
-        artistName: state.params['artist'],
-      ),
-    ),
+    
   ],
 );
 
@@ -41,33 +35,28 @@ class TunesApp extends ConsumerWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(databaseProvider);
     ref.listen(
-      playlistProvider,
+      nowPlayingPlaylistProvider,
       (previous, current) async {
-        await player.setAudioSource(current);
-        if (previous == null) {
-          player.play();
+        if (current.audios.isEmpty) {
+          player.stop();
           return;
         }
-        // PlaylistItems deleted
-        if (current.children.isEmpty) {
-          player.stop();
-        }
-        final extraId = current.children.indexWhere(
+
+        final extraId = current.audios.indexWhere(
           (element) {
-            return !previous.children.contains(element);
+            if (previous == null) {
+              return false;
+            }
+            return !previous.audios.contains(element);
           },
         );
         if (extraId <= 0) {
-          player.play();
+          player.playlistPlayAtIndex(extraId);
           return;
         }
-        player.seek(
-          Duration.zero,
-          index: extraId,
-        );
-
-        player.play;
+        player.play();
       },
     );
     return MaterialApp.router(
@@ -119,7 +108,7 @@ class TunesApp extends ConsumerWidget {
         blendLevel: 15,
         appBarOpacity: 0.85,
         darkIsTrueBlack: true,
-        surfaceTint: Color(0xff000000),
+        surfaceTint: const Color(0xff000000),
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 20,
           inputDecoratorRadius: 20.0,
