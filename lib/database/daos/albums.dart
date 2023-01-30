@@ -1,10 +1,6 @@
-import 'package:drift/drift.dart';
-import 'package:tunes/database/database.dart';
-import 'package:tunes/database/tables.dart';
+part of tunesdbdaos;
 
-part 'albums.g.dart';
-
-@DriftAccessor(tables: [Albums])
+@DriftAccessor(tables: [Albums, Tunes])
 class AlbumsDao extends DatabaseAccessor<TunesDb> with _$AlbumsDaoMixin {
   AlbumsDao(TunesDb db) : super(db);
   Future<List<Album>> get allAlbums {
@@ -46,11 +42,23 @@ class AlbumsDao extends DatabaseAccessor<TunesDb> with _$AlbumsDaoMixin {
         .getSingleOrNull();
   }
 
+  Future<int> addAlbum(AlbumsCompanion entry) {
+    return into(albums).insert(entry);
+  }
+
   Future<void> addAlbums(List<AlbumsCompanion> newAlbums) async {
     return batch(
       (batch) {
         batch.insertAllOnConflictUpdate(albums, newAlbums);
       },
     );
+  }
+
+  Future<void> deleteAlbum(Album albm) async {
+    return transaction(() async {
+      await (update(tunes)..where((row) => row.album.equals(albm.id)))
+        .write(const TunesCompanion(album: Value(null)));
+      await delete(albums).delete(albm);
+    });
   }
 }

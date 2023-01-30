@@ -5,6 +5,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:sheet/route.dart';
 import 'package:sheet/sheet.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/components/current_builder.dart';
 import 'package:tunes/pages/music_player.dart';
 import 'package:tunes/providers/main.dart';
 import 'package:tunes/utils/constants.dart';
@@ -19,6 +20,7 @@ class CollapsedPlayer extends ConsumerStatefulWidget {
 }
 
 class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
+  Audio? currently;
   @override
   Widget build(BuildContext context) {
     ref.watch(playerStateProvider);
@@ -56,42 +58,7 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
             Row(
               children: [
                 Expanded(
-                  child: player.builderCurrent(
-                    builder: (context, playing) {
-                      final artWork =
-                          playing.audio.audio.metas.extra?['artWork'];
-                      return ListTile(
-                        dense: true,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            SheetRoute(
-                              physics: const AlwaysDraggableSheetPhysics(),
-                              builder: (context) => const MusicPlayer(),
-                            ),
-                          );
-                        },
-                        leading: CircleAvatar(
-                          backgroundImage:
-                              artWork == null ? null : Image.memory(artWork).image,
-                          child: artWork == null
-                              ? const Icon(
-                                  Icons.music_note_outlined,
-                                )
-                              : null,
-                        ),
-                        title: Text(
-                          player.getCurrentAudioTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          player.getCurrentAudioArtist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }
-                  ),
+                  child: _playingNowInfo(),
                 ),
                 _playPauseButton(height),
                 IconButton(
@@ -102,7 +69,6 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
                   ),
                   onPressed: () async {
                     await player.next(stopIfLast: true);
-                    
                   },
                 ),
               ],
@@ -111,6 +77,78 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
         ),
       ),
     );
+  }
+
+  Widget _playingNowInfo() {
+    return PlayingNowOrPreviousBuilder(
+      builder: (context, artwork, title, album, artist) {
+        return ListTile(
+          dense: true,
+          onTap: () {
+            Navigator.of(context).push(
+              SheetRoute(
+                physics: const AlwaysDraggableSheetPhysics(),
+                builder: (context) => const MusicPlayer(),
+              ),
+            );
+          },
+          leading: CircleAvatar(
+            backgroundImage:
+                artwork == null ? null : Image.memory(artwork).image,
+            child: artwork == null
+                ? const Icon(
+                    Icons.music_note_outlined,
+                  )
+                : null,
+          ),
+          title: Text(
+            title ?? "Unknown",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            artist ?? "Unknown",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      },
+    );
+  }
+
+  PlayerBuilder newMethod() {
+    return player.builderCurrent(builder: (context, playing) {
+      final artWork = playing.audio.audio.metas.extra?['artWork'];
+      return ListTile(
+        dense: true,
+        onTap: () {
+          Navigator.of(context).push(
+            SheetRoute(
+              physics: const AlwaysDraggableSheetPhysics(),
+              builder: (context) => const MusicPlayer(),
+            ),
+          );
+        },
+        leading: CircleAvatar(
+          backgroundImage: artWork == null ? null : Image.memory(artWork).image,
+          child: artWork == null
+              ? const Icon(
+                  Icons.music_note_outlined,
+                )
+              : null,
+        ),
+        title: Text(
+          playing.audio.audio.metas.title ?? "Unknown",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          player.getCurrentAudioArtist,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+    });
   }
 
   Widget _playPauseButton(double height) {

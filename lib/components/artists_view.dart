@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:tunes/components/context_utils.dart';
 import 'package:tunes/pages/artist_songs.dart';
 import 'package:tunes/providers/main.dart';
 
@@ -41,7 +42,12 @@ class ArtistsView extends ConsumerWidget {
               );
             },
             separatorBuilder: (context, index) {
-              return const Divider();
+              final indent = context.screenWidth;
+              return Divider(
+                indent: indent,
+                endIndent: indent,
+                color: context.colorScheme.outline.withOpacity(.49),
+              );
             },
             itemCount: artists.length,
           ),
@@ -54,7 +60,5 @@ class ArtistsView extends ConsumerWidget {
         return const Center(child: CircularProgressIndicator());
       },
     );
-
-    
   }
 }

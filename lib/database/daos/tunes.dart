@@ -1,8 +1,4 @@
-import 'package:drift/drift.dart';
-import 'package:tunes/database/database.dart';
-import 'package:tunes/database/tables.dart';
-
-part 'tunes.g.dart';
+part of tunesdbdaos;
 
 @DriftAccessor(tables: [Tunes])
 class TunesDao extends DatabaseAccessor<TunesDb> with _$TunesDaoMixin {
@@ -21,7 +17,13 @@ class TunesDao extends DatabaseAccessor<TunesDb> with _$TunesDaoMixin {
         .get();
   }
 
-  Stream<List<Tune>> get streamedTunes => select(tunes).watch();
+  Stream<List<Tune>> streamedTunes(
+      {List<OrderingTerm Function($TunesTable)> clauses = const []}) {
+    if (clauses.isEmpty) {
+      return select(tunes).watch();
+    }
+    return (select(tunes)..orderBy(clauses)).watch();
+  }
 
   Stream<List<Tune>> tunesForArtist(int artistId) {
     return (select(tunes)

@@ -125,7 +125,7 @@ class TagTextField extends HookConsumerWidget {
         if (result != null) {
           if (result) {
             await ref.read(tunesRepositoryProvider).updateTune(tune.path);
-            // ref.invalidate(songsProvider);
+            ref.invalidate(songsProvider);
           }
         }
         onSave(result);

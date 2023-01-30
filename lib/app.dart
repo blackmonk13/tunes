@@ -112,6 +112,7 @@ class TunesApp extends ConsumerWidget {
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 20,
           inputDecoratorRadius: 20.0,
+          inputDecoratorBorderType: FlexInputBorderType.underline,
           popupMenuOpacity: 0.85,
           dialogRadius: 20.0,
           timePickerDialogRadius: 20.0,

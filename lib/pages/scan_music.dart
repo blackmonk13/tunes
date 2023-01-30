@@ -150,7 +150,7 @@ class _ScanMusicState extends ConsumerState<ScanMusic> {
                   ),
                   if (atleastOneSong)
                     Text(
-                      "${itemCount} songs found",
+                      "$itemCount songs found",
                       style: context.textTheme.bodySmall,
                     ),
                 ],

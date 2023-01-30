@@ -11,7 +11,7 @@ class ScanController extends _$ScanController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(
-      () async {
+      () async {await ref.read(tunesRepositoryProvider).db.resetTunes();
         final fsMap = await ref.read(tunesRepositoryProvider).getFsTunes();
         final rawarts = fsMap
             .map((e) => e['artwork'] as Uint8List?)

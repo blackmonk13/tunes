@@ -5,10 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:tunes/database/daos/albums.dart';
-import 'package:tunes/database/daos/artists.dart';
-import 'package:tunes/database/daos/covers.dart';
-import 'package:tunes/database/daos/tunes.dart';
+import 'package:tunes/database/daos/daos.dart';
 import 'package:tunes/database/tables.dart';
 
 part 'database.g.dart';

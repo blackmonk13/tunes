@@ -46,7 +46,7 @@ abstract class _$TimerController extends AsyncNotifier<void> {
   FutureOr<void> build();
 }
 
-String _$ScanControllerHash() => r'9e535b4fccc119ad0a8cf14119837a6773d3bc73';
+String _$ScanControllerHash() => r'2ec07ff669a5eaa63aa830686091caf5502517ae';
 
 /// See also [ScanController].
 final scanControllerProvider =

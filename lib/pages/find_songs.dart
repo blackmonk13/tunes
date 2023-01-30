@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:tunes/components/context_utils.dart';
+import 'package:heroicons/heroicons.dart';
 
 class FindSongs extends StatelessWidget {
   const FindSongs({
@@ -9,35 +8,40 @@ class FindSongs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoScaffold(
-      transitionBackgroundColor: context.colorScheme.background,
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: context.screenHeight * .15,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Column(
-                children: const [
-                  Spacer(),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.only(left: 24.0,),
-                        hintText: "Find Songs",
-                        prefixIcon: Icon(Icons.search)
-                      ),
-                    ),
-                  ),
-                ],
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: const [
+            Positioned.fill(
+              child: CustomScrollView(
+                slivers: <Widget>[],
               ),
             ),
-          )
-        ],
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.only(
+                      right: 28.0,
+                    ),
+                    hintText: "Search",
+                    suffixIconConstraints: BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                    suffixIcon: HeroIcon(
+                      HeroIcons.magnifyingGlass,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

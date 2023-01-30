@@ -8,6 +8,7 @@ import 'package:tunes/components/album_view.dart';
 import 'package:tunes/components/artists_view.dart';
 import 'package:tunes/components/collapsed_player.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/components/playlists_view.dart';
 import 'package:tunes/components/set_timer.dart';
 import 'package:tunes/components/songs_view.dart';
 import 'package:tunes/controllers/main.dart';
@@ -134,7 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             title: Text(
               "MUSIC",
-              style: context.textTheme.headline5,
+              style: context.textTheme.headlineSmall,
             ),
           ),
           bottom: TabBar(
@@ -173,7 +174,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   SongsView(),
                   ArtistsView(),
                   AlbumView(),
-                  Icon(Icons.directions_bike),
+                  PlayListsView(),
                 ],
               ),
         bottomNavigationBar: const CollapsedPlayer(),

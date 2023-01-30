@@ -1,8 +1,4 @@
-import 'package:drift/drift.dart';
-import 'package:tunes/database/database.dart';
-import 'package:tunes/database/tables.dart';
-
-part 'artists.g.dart';
+part of tunesdbdaos;
 
 @DriftAccessor(tables: [Artists])
 class ArtistsDao extends DatabaseAccessor<TunesDb> with _$ArtistsDaoMixin {
@@ -25,7 +21,7 @@ class ArtistsDao extends DatabaseAccessor<TunesDb> with _$ArtistsDaoMixin {
           ..orderBy(
             [
               (ats) => OrderingTerm(
-                    expression: ats.name, 
+                    expression: ats.name,
                   )
             ],
           ))
@@ -44,6 +40,10 @@ class ArtistsDao extends DatabaseAccessor<TunesDb> with _$ArtistsDaoMixin {
           ..where((element) => element.name.equals(name))
           ..limit(1))
         .getSingleOrNull();
+  }
+
+  Future<int> addArtist(ArtistsCompanion entry) {
+    return into(artists).insert(entry);
   }
 
   Future<void> addArtists(List<ArtistsCompanion> newArtists) async {

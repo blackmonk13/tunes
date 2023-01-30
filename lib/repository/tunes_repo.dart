@@ -15,7 +15,10 @@ class TunesRepository {
   }
 
   Future<List<Tune>> get tunes => db.tunesDao.allTuneEntries;
-  Stream<List<Tune>> get streamedTunes => db.tunesDao.streamedTunes;
+  Stream<List<Tune>> streamedTunes(
+      {List<OrderingTerm Function($TunesTable)> clauses = const []}) {
+    return db.tunesDao.streamedTunes(clauses: clauses);
+  }
 
   final _fscountController = StreamController<int>();
   Stream<int> fsCount() => _fscountController.stream;
@@ -96,13 +99,11 @@ class TunesRepository {
   }
 
   Future<TunesCompanion> tuneFromMap(Map<String, dynamic> tunemap) async {
-    final tuneCover =
-        await db.coversDao.coverByData(tunemap['artwork'] as Uint8List?);
+    final tuneCover = await findOrCreateCover(tunemap['artwork'] as Uint8List?);
     final coverId = tuneCover?.id;
-    final artist =
-        await db.artistsDao.artistByName(tunemap['artist'] as String);
+    final artist = await findOrCreateArtist(tunemap['artist'] as String);
     final artistId = artist?.id;
-    final album = await db.albumsDao.albumByName(tunemap['album'] as String);
+    final album = await findOrCreateAlbum(tunemap['album'] as String);
     final albumId = album?.id;
     final title = tunemap['title'];
     final tcom = TunesCompanion(
@@ -114,6 +115,48 @@ class TunesRepository {
       artwork: coverId != null ? Value(coverId) : const Value.absent(),
     );
     return tcom;
+  }
+
+  Future<Cover?> findOrCreateCover(Uint8List? coverData) async {
+    if (coverData == null) return null;
+    final existing = await db.coversDao.coverByData(coverData);
+    if (existing != null) {
+      return existing;
+    }
+    final newId = await db.coversDao.addCover(
+      CoversCompanion(
+        art: Value(coverData),
+      ),
+    );
+    return db.coversDao.coverById(newId);
+  }
+
+  Future<Album?> findOrCreateAlbum(String albumData) async {
+    if (albumData.isEmpty) return null;
+    final existing = await db.albumsDao.albumByName(albumData);
+    if (existing != null) {
+      return existing;
+    }
+    final newId = await db.albumsDao.addAlbum(
+      AlbumsCompanion(
+        name: Value(albumData),
+      ),
+    );
+    return db.albumsDao.albumById(newId);
+  }
+
+  Future<Artist?> findOrCreateArtist(String artistData) async {
+    if (artistData.isEmpty) return null;
+    final existing = await db.artistsDao.artistByName(artistData);
+    if (existing != null) {
+      return existing;
+    }
+    final newId = await db.artistsDao.addArtist(
+      ArtistsCompanion(
+        name: Value(artistData),
+      ),
+    );
+    return db.artistsDao.artistById(newId);
   }
 
   Future<int> deleteTunes(List<String> filePaths) async {
@@ -162,14 +205,15 @@ class TunesRepository {
     final audio = Audio.file(
       tune.pathname,
       metas: Metas(
-          album: album?.name,
-          title: tune.title,
-          artist: artist?.name,
-          extra: {
-            'artWork': cover?.art,
-            'artist': artist,
-            'album': album,
-          }),
+        album: album?.name,
+        title: tune.title,
+        artist: artist?.name,
+        extra: {
+          'artWork': cover?.art,
+          'artist': artist,
+          'album': album,
+        },
+      ),
     );
     return audio;
   }

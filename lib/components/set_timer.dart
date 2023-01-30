@@ -106,7 +106,7 @@ class SetTimer extends HookConsumerWidget {
     final avTimes = List.generate(3600, (index) => index).sublist(1);
     return Consumer(
       builder: (context, ref, child) {
-        final selectedTv = ref.watch(_timerValueProvider);
+        ref.watch(_timerValueProvider);
         const width = 100.0;
         return SizedBox(
           width: width,
@@ -151,7 +151,7 @@ class SetTimer extends HookConsumerWidget {
   Widget _tuPicker(Border border) {
     return Consumer(
       builder: (context, ref, child) {
-        final selectedTu = ref.watch(_timeUnitProvider);
+        ref.watch(_timeUnitProvider);
         final width = context.screenWidth * .4;
         final dsmSize = context.textTheme.displaySmall?.fontSize;
         return SizedBox(

@@ -1,15 +1,11 @@
-import 'package:drift/drift.dart';
-import 'package:tunes/database/database.dart';
-import 'package:tunes/database/tables.dart';
-
-part 'covers.g.dart';
+part of tunesdbdaos;
 
 @DriftAccessor(tables: [Covers])
 class CoversDao extends DatabaseAccessor<TunesDb> with _$CoversDaoMixin {
   CoversDao(TunesDb db) : super(db);
-  
+
   Future<List<Cover>> get allCoverEntries => select(covers).get();
-  
+
   Future<Cover?> coverByData(Uint8List? coverData) async {
     if (coverData == null) {
       return null;
@@ -25,6 +21,10 @@ class CoversDao extends DatabaseAccessor<TunesDb> with _$CoversDaoMixin {
           ..where((tbl) => tbl.id.equals(coverId))
           ..limit(1))
         .getSingle();
+  }
+
+  Future<int> addCover(CoversCompanion entry) {
+    return into(covers).insert(entry);
   }
 
   Future<void> addCovers(List<CoversCompanion> coverImages) async {

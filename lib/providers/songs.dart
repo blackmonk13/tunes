@@ -10,14 +10,42 @@ final scannedItemsProvider = StreamProvider<int>(
 );
 final songsStreamProvider = StreamProvider<List<Tune>>(
   (ref) {
-    return ref.watch(tunesRepositoryProvider).streamedTunes;
+    return ref.watch(tunesRepositoryProvider).streamedTunes();
+  },
+);
+
+final songsSortModeProvider = StateProvider<OrderingMode>(
+  (ref) {
+    return OrderingMode.asc;
+  },
+);
+
+final songsSortKeyProvider = StateProvider<String>(
+  (ref) {
+    return 'date';
   },
 );
 
 final songsProvider = StreamProvider<List<Audio>>(
   (ref) async* {
     final tunesRepo = ref.watch(tunesRepositoryProvider);
-    await for (final value in tunesRepo.streamedTunes) {
+    final sortMode = ref.watch(songsSortModeProvider);
+    final sortKey = ref.watch(songsSortKeyProvider);
+    List<OrderingTerm Function($TunesTable)> clauses = [
+      (tbl) {
+        final skmap = {
+          'title': tbl.title,
+          'artist': tbl.artist,
+          'album': tbl.album,
+        };
+        final expression = skmap[sortKey] ?? tbl.modified;
+        return OrderingTerm(
+          expression: expression,
+          mode: sortMode,
+        );
+      }
+    ];
+    await for (final value in tunesRepo.streamedTunes(clauses: clauses)) {
       yield await Future.wait(
         value.map(
           (dbt) async {
@@ -29,7 +57,6 @@ final songsProvider = StreamProvider<List<Audio>>(
   },
 );
 
-
 @riverpod
 FutureOr<Audio> tuneAudio(TuneAudioRef ref, {required Tune tune}) {
   final tunesRepo = ref.watch(tunesRepositoryProvider);
@@ -40,9 +67,21 @@ final artistsProvider = StreamProvider<List<Artist>>(
   (ref) => ref.watch(databaseProvider).artistsDao.streamedArtists,
 );
 
-final artistSongsProvider = StreamProvider.family<List<Tune>, int>(
-  (ref, id) {
-    return ref.watch(databaseProvider).tunesDao.tunesForArtist(id);
+final artistSongsProvider = StreamProvider.family<List<Audio>, int>(
+  (ref, id) async* {
+    final tunesRepo = ref.watch(tunesRepositoryProvider);
+    final streamedArtistTunes =
+        ref.watch(databaseProvider).tunesDao.tunesForArtist(id);
+
+    await for (final value in streamedArtistTunes) {
+      yield await Future.wait(
+        value.map(
+          (dbt) async {
+            return await tunesRepo.audioFromTune(dbt);
+          },
+        ).toList(),
+      );
+    }
   },
 );
 
@@ -50,9 +89,22 @@ final albumsProvider = StreamProvider<List<Album>>(
   (ref) => ref.watch(databaseProvider).albumsDao.streamedAlbums,
 );
 
-final albumSongsProvider = StreamProvider.family<List<Tune>, int>((ref, id) {
-  return ref.watch(databaseProvider).tunesDao.tunesForAlbum(id);
-});
+final albumSongsProvider = StreamProvider.family<List<Audio>, int>(
+  (ref, id) async* {
+    final tunesRepo = ref.watch(tunesRepositoryProvider);
+    final streamedAlbumTunes =
+        ref.watch(databaseProvider).tunesDao.tunesForAlbum(id);
+    await for (final value in streamedAlbumTunes) {
+      yield await Future.wait(
+        value.map(
+          (dbt) async {
+            return await tunesRepo.audioFromTune(dbt);
+          },
+        ).toList(),
+      );
+    }
+  },
+);
 
 final multiSelectSongsProvider = StateProvider.autoDispose<bool>(
   (ref) {

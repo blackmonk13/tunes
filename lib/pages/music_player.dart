@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:sheet/sheet.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/components/current_builder.dart';
 import 'package:tunes/components/playlist_songs.dart';
 import 'package:tunes/providers/main.dart';
 import 'package:tunes/utils/constants.dart';
@@ -20,13 +21,10 @@ class MusicPlayer extends ConsumerStatefulWidget {
 
 class _MusicPlayerState extends ConsumerState<MusicPlayer> {
   final SheetController controller = SheetController();
-
+  Audio? currently;
   @override
   Widget build(BuildContext context) {
-    ref.watch(playpositionProvider);
     ref.watch(playerStateProvider);
-    final playlist = ref.watch(playlistProvider);
-    final nowPlaying = ref.watch(nowPlayingProvider);
 
     return Material(
       child: Stack(
@@ -57,36 +55,7 @@ class _MusicPlayerState extends ConsumerState<MusicPlayer> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    player.builderCurrent(builder: (context, playing) {
-                      final artWork =
-                          playing.audio.audio.metas.extra?['artWork'];
-                      return AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 16.0,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(
-                              20.0,
-                            ),
-                            image: artWork == null
-                                ? null
-                                : DecorationImage(
-                                    image: Image.memory(artWork).image,
-                                  ),
-                          ),
-                          child: artWork == null
-                              ? const Icon(
-                                  Icons.music_note,
-                                  size: 50,
-                                )
-                              : null,
-                        ),
-                      );
-                    }),
+                    _playingNowInfo(),
                     _progressBar(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -152,6 +121,39 @@ class _MusicPlayerState extends ConsumerState<MusicPlayer> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _playingNowInfo() {
+    return PlayingNowOrPreviousBuilder(
+      builder: (context, artwork, title, album, artist) {
+        return AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            margin: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 16.0,
+            ),
+            decoration: BoxDecoration(
+              color: context.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(
+                20.0,
+              ),
+              image: artwork == null
+                  ? null
+                  : DecorationImage(
+                      image: Image.memory(artwork).image,
+                    ),
+            ),
+            child: artwork == null
+                ? const Icon(
+                    Icons.music_note,
+                    size: 50,
+                  )
+                : null,
+          ),
+        );
+      },
     );
   }
 
