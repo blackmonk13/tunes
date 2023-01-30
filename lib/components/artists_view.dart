@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:tunes/components/context_utils.dart';
+import 'package:tunes/database/database.dart';
 import 'package:tunes/pages/artist_songs.dart';
 import 'package:tunes/providers/main.dart';
 
@@ -22,24 +23,7 @@ class ArtistsView extends ConsumerWidget {
           child: ListView.separated(
             itemBuilder: (context, index) {
               final artist = artists.elementAt(index);
-              return ListTile(
-                dense: true,
-                onTap: () {
-                  // context.go("/artists/$artistName");
-                  showMaterialModalBottomSheet(
-                    context: context,
-                    builder: (context) {
-                      return ArtistSongs(
-                        artist: artist,
-                      );
-                    },
-                  );
-                },
-                title: Text(artist.name ?? "Unknown"),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                ),
-              );
+              return ArtistTile(artist: artist);
             },
             separatorBuilder: (context, index) {
               final indent = context.screenWidth;
@@ -59,6 +43,37 @@ class ArtistsView extends ConsumerWidget {
       loading: () {
         return const Center(child: CircularProgressIndicator());
       },
+    );
+  }
+}
+
+class ArtistTile extends StatelessWidget {
+  const ArtistTile({
+    super.key,
+    required this.artist,
+  });
+
+  final Artist artist;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      onTap: () {
+        // context.go("/artists/$artistName");
+        showMaterialModalBottomSheet(
+          context: context,
+          builder: (context) {
+            return ArtistSongs(
+              artist: artist,
+            );
+          },
+        );
+      },
+      title: Text(artist.name ?? "Unknown"),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+      ),
     );
   }
 }
