@@ -117,7 +117,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 return [
                   const PopupMenuItem(
                     value: "/scanmusic",
-                    child: Text("Find Local Songs"),
+                    child: Text("Scan Songs"),
                   ),
                   const PopupMenuItem(
                     value: "/settings",

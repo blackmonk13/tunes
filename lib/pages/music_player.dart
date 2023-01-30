@@ -1,12 +1,15 @@
+import 'dart:ui';
+
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:sheet/sheet.dart';
 import 'package:tunes/components/context_utils.dart';
 import 'package:tunes/components/current_builder.dart';
-import 'package:tunes/components/playlist_songs.dart';
+import 'package:tunes/components/song_tile.dart';
 import 'package:tunes/providers/main.dart';
 import 'package:tunes/utils/constants.dart';
 
@@ -26,134 +29,183 @@ class _MusicPlayerState extends ConsumerState<MusicPlayer> {
   Widget build(BuildContext context) {
     ref.watch(playerStateProvider);
 
-    return Material(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: context.screenHeight * .1,
-                left: 16.0,
-                right: 16.0,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      player.getCurrentAudioAlbum,
-                      maxLines: 1,
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: <Widget>[
+          PlayingNowOrPreviousBuilder(
+            builder: (context, artwork, title, album, artist, filepath) {
+              return SliverAppBar(
+                pinned: true,
+                automaticallyImplyLeading: false,
+                expandedHeight: context.screenHeight * .5,
+                // title: Text(album ?? ""),
+                flexibleSpace: FlexibleSpaceBar(
+                  expandedTitleScale: 1,
+                  titlePadding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                  ),
+                  title: SafeArea(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: "$title\n"),
+                          TextSpan(text: "$artist / $album\n"),
+                        ],
+                      ),
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      player.getCurrentAudioTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      player.getCurrentAudioArtist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    _playingNowInfo(),
-                    _progressBar(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const LoopButton(),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const HeroIcon(HeroIcons.heart),
+                  ),
+                  background: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: _currentArtwork(artwork),
+                      ),
+                      Positioned.fill(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(
+                            sigmaX: .3,
+                            sigmaY: .3,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  context.colorScheme.surface.withOpacity(
+                                    .7,
+                                  ),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                              ),
+                            ),
+                          ),
                         ),
-                        IconButton(
-                          onPressed: () {
-                            controller.relativeAnimateTo(
-                              .6,
-                              duration: kThemeAnimationDuration,
-                              curve: Curves.easeInOut,
-                            );
-                            return;
-                          },
-                          icon: const HeroIcon(HeroIcons.queueList),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            await player.previous();
-                          },
-                          icon: const HeroIcon(HeroIcons.previous),
-                        ),
-                        _playPauseBtn(),
-                        IconButton(
-                          onPressed: () async {
-                            await player.next();
-                          },
-                          icon: const HeroIcon(HeroIcons.next),
-                        ),
-                      ],
-                    ),
-                    const Text(
-                      "",
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
+              );
+            },
+          ),
+          SliverAppBar(
+            automaticallyImplyLeading: false,
+            primary: false,
+            pinned: true,
+            title: _progressBar(),
+          ),
+          SliverToBoxAdapter(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const LoopButton(),
+                IconButton(
+                  onPressed: () {},
+                  icon: const HeroIcon(HeroIcons.heart),
+                ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    ref.watch(playpositionProvider);
+                    return IconButton(
+                      onPressed: () {
+                        player.toggleShuffle();
+                      },
+                      icon: HeroIcon(
+                        HeroIcons.arrowsRightLeft,
+                        color:
+                            player.shuffle ? context.colorScheme.primary : null,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          SliverAppBar(
+            automaticallyImplyLeading: false,
+            primary: false,
+            pinned: true,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(42.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      await player.previous();
+                    },
+                    icon: const HeroIcon(HeroIcons.previous),
+                  ),
+                  _playPauseBtn(),
+                  IconButton(
+                    onPressed: () async {
+                      await player.next();
+                    },
+                    icon: const HeroIcon(HeroIcons.next),
+                  ),
+                ],
               ),
             ),
           ),
-          Sheet(
-            controller: controller,
-            physics: const SnapSheetPhysics(
-              stops: <double>[0, 0.6, 1],
-            ),
-            child: PlaylistSongs(
-              onClose: () {
-                controller.relativeAnimateTo(
-                  0.0,
-                  duration: kThemeAnimationDuration,
-                  curve: Curves.easeInOut,
-                );
-              },
-            ),
-          ),
+          _nowPlayingPlaylist(),
         ],
       ),
     );
   }
 
-  Widget _playingNowInfo() {
+  Widget _nowPlayingPlaylist() {
+    final playlistItems = player.playlist?.audios.reversed.toList();
+    if (playlistItems == null) {
+      return const SliverToBoxAdapter();
+    }
     return PlayingNowOrPreviousBuilder(
-      builder: (context, artwork, title, album, artist) {
-        return AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 16.0,
-            ),
-            decoration: BoxDecoration(
-              color: context.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(
-                20.0,
-              ),
-              image: artwork == null
-                  ? null
-                  : DecorationImage(
-                      image: Image.memory(artwork).image,
-                    ),
-            ),
-            child: artwork == null
-                ? const Icon(
-                    Icons.music_note,
-                    size: 50,
-                  )
-                : null,
+      builder: (context, artwork, title, album, artist, filepath) {
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final realIndex =
+                  player.playlist?.audios.indexOf(playlistItems[index]) ?? 0;
+              return SongTile(
+                selected: playlistItems[index].path == filepath,
+                audio: playlistItems[index],
+                onTap: () async {
+                  player.stop();
+                  player.playlistPlayAtIndex(realIndex);
+                  await player.seek(
+                    Duration.zero,
+                  );
+                  // player.play();
+                },
+              );
+            },
+            childCount: playlistItems.length,
           ),
         );
       },
+    );
+  }
+
+  Widget _currentArtwork(Uint8List? artwork) {
+    if (artwork == null) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              context.colorScheme.primaryContainer,
+              context.colorScheme.secondaryContainer,
+            ],
+          ),
+        ),
+      );
+    }
+    return Image.memory(
+      artwork,
+      fit: BoxFit.cover,
     );
   }
 

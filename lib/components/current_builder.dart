@@ -22,6 +22,7 @@ class PlayingNowOrPreviousBuilder extends ConsumerWidget {
     String? title,
     String? album,
     String? artist,
+    String? filePath,
   ) builder;
 
   @override
@@ -39,6 +40,13 @@ class PlayingNowOrPreviousBuilder extends ConsumerWidget {
     final title = current?.metas.title;
     final album = current?.metas.album;
     final artist = current?.metas.artist;
-    return builder(context, artWork, title, album, artist);
+    return builder(
+      context,
+      artWork,
+      title,
+      album,
+      artist,
+      current?.path,
+    );
   }
 }

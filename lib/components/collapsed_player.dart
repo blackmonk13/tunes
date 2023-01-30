@@ -81,7 +81,7 @@ class _CollapsedPlayerState extends ConsumerState<CollapsedPlayer> {
 
   Widget _playingNowInfo() {
     return PlayingNowOrPreviousBuilder(
-      builder: (context, artwork, title, album, artist) {
+      builder: (context, artwork, title, album, artist, filepath) {
         return ListTile(
           dense: true,
           onTap: () {
