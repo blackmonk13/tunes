@@ -1,4 +1,4 @@
-part of providers;
+part of 'providers.dart';
 
 @riverpod
 class PagedTuneAlbums extends _$PagedTuneAlbums {

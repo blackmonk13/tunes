@@ -1,4 +1,4 @@
-part of providers;
+part of 'providers.dart';
 
 @riverpod
 class AudioFileController extends _$AudioFileController {

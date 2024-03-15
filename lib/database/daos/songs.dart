@@ -1,4 +1,4 @@
-part of daos;
+part of 'daos.dart';
 
 @DriftAccessor(
   tables: [

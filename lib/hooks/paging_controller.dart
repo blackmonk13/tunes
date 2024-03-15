@@ -1,4 +1,4 @@
-part of hooks;
+part of 'hooks.dart';
 
 /// Creates a [PagingController] that will be disposed automatically.
 ///
