@@ -1,41 +1,80 @@
 part of providers;
 
-final playpositionProvider = StreamProvider<Duration>(
-  (ref) async* {
-    await for (final value in player.currentPosition) {
-      yield value;
-    }
-  },
-);
+@Riverpod(keepAlive: true)
+AudioPlayer audioPlayer(Ref ref) {
+  return AudioPlayer();
+}
 
-final playIdProvider = StreamProvider<int?>(
-  (ref) async* {
-    await for (final value in player.audioSessionId) {
-      yield value;
-    }
-  },
-);
+@Riverpod(keepAlive: true)
+class PlaylistController extends _$PlaylistController {
+  @override
+  ConcatenatingAudioSource build() {
+    return ConcatenatingAudioSource(
+      children: [],
+    );
+  }
 
-final playerStateProvider = StreamProvider<PlayerState>(
-  (ref) async* {
-    await for (final value in player.playerState) {
-      yield value;
-    }
-  },
-);
+  void addSong(TuneSong song) {
+    final songTitle =
+        song.songInfo.title ?? basenameWithoutExtension(song.songInfo.pathname);
+    final mediaItem = MediaItem(
+      id: song.songInfo.id.toString(),
+      title: songTitle,
+      album: song.albumInfo?.name,
+      artist: song.artistInfo?.name,
+      extras: {
+        'song': song,
+      },
+    );
 
-final nowPlayingStreamProvider = StreamProvider<Audio?>(
-  (ref) async* {
-    await for (final value in player.current) {
-      yield value?.audio.audio;
-    }
-  },
-);
+    final audioSource = AudioSource.file(
+      song.songInfo.pathname,
+      tag: mediaItem,
+    );
 
-final nowPlayingProvider = Provider<Audio?>(
-  (ref) {
-    final nowStream = ref.watch(nowPlayingStreamProvider);
+    state.add(audioSource);
+  }
+}
 
-    return nowStream.valueOrNull;
-  },
-);
+@Riverpod(keepAlive: true)
+Stream<Duration> playerPosition(Ref ref) {
+  final player = ref.watch(audioPlayerProvider);
+
+  return player.positionStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<bool> playerPlaying(PlayerPlayingRef ref) {
+  final player = ref.watch(audioPlayerProvider);
+  return player.playingStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<List<IndexedAudioSource>?> playlistSequence(Ref ref) {
+  return ref.watch(audioPlayerProvider).sequenceStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<int?> playerCurrentIndex(Ref ref) {
+  return ref.watch(audioPlayerProvider).currentIndexStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<PlayerState> playerState(Ref ref) {
+  return ref.watch(audioPlayerProvider).playerStateStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<AudioSource?> playerNowPlaying(Ref ref) async* {
+  final index = await ref.watch(playerCurrentIndexProvider.future);
+  final sequence = await ref.watch(playlistSequenceProvider.future);
+
+  if (index == null || sequence == null) {
+    yield null;
+    return;
+  }
+
+  final indexedAudio = sequence.elementAt(index);
+  
+  yield indexedAudio;
+}

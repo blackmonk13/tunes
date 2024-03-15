@@ -1,64 +1,112 @@
-part of tunesdbdaos;
+part of daos;
 
-@DriftAccessor(tables: [Albums, Tunes])
-class AlbumsDao extends DatabaseAccessor<TunesDb> with _$AlbumsDaoMixin {
-  AlbumsDao(TunesDb db) : super(db);
-  Future<List<Album>> get allAlbums {
-    return (select(albums)
-          ..orderBy(
-            [
-              (ats) => OrderingTerm(
-                    expression: ats.name,
-                    mode: OrderingMode.desc,
-                  )
-            ],
-          ))
-        .get();
-  }
+@DriftAccessor(
+  tables: [
+    Albums,
+  ],
+)
+class AlbumsDao extends DatabaseAccessor<TunesDatabase> with _$AlbumsDaoMixin {
+  AlbumsDao(TunesDatabase db) : super(db);
 
-  Stream<List<Album>> get streamedAlbums {
-    return (select(albums)
-          ..orderBy(
-            [
-              (ats) => OrderingTerm(
-                    expression: ats.name,
-                  )
-            ],
-          ))
-        .watch();
-  }
-
-  Future<Album> albumById(int id) async {
-    return (select(albums)
-          ..where((element) => element.id.equals(id))
-          ..limit(1))
-        .getSingle();
-  }
-
-  Future<Album?> albumByName(String name) async {
-    return (select(albums)
-          ..where((element) => element.name.equals(name))
-          ..limit(1))
-        .getSingleOrNull();
-  }
-
+  // returns the generated id
   Future<int> addAlbum(AlbumsCompanion entry) {
-    return into(albums).insert(entry);
-  }
-
-  Future<void> addAlbums(List<AlbumsCompanion> newAlbums) async {
-    return batch(
-      (batch) {
-        batch.insertAllOnConflictUpdate(albums, newAlbums);
-      },
+    return into(albums).insert(
+      entry,
+      mode: InsertMode.insertOrIgnore,
     );
   }
 
-  Future<void> deleteAlbum(Album albm) async {
-    return transaction(() async {
-      await (update(tunes)..where((row) => row.album.equals(albm.id)))
-        .write(const TunesCompanion(album: Value(null)));
-      await delete(albums).delete(albm);
+  Future<List<Album>> albumsForFilter({
+    Expression<bool> Function($AlbumsTable)? filter,
+    List<OrderingTerm Function($AlbumsTable)> clauses = const [],
+    int? limit,
+    int? offset,
+  }) {
+    final query = albumsQueryForFilter(
+      filter: filter,
+      clauses: clauses,
+      limit: limit,
+      offset: offset,
+    );
+
+    return query.get();
+  }
+
+  Future<List<TuneAlbum>> tuneAlbumsForFilter({
+    Expression<bool> Function($AlbumsTable)? filter,
+    List<OrderingTerm Function($AlbumsTable)> clauses = const [],
+    int? limit,
+    int? offset,
+  }) {
+    final query = tuneAlbumsQueryForFilter(
+      filter: filter,
+      clauses: clauses,
+      limit: limit,
+      offset: offset,
+    );
+
+    return query.get();
+  }
+
+  Selectable<TuneAlbum> tuneAlbumsQueryForFilter({
+    Expression<bool> Function($AlbumsTable)? filter,
+    List<OrderingTerm Function($AlbumsTable)> clauses = const [],
+    int? limit,
+    int? offset,
+  }) {
+    final query = albumsQueryForFilter(
+      filter: filter,
+      clauses: clauses,
+      limit: limit,
+      offset: offset,
+    );
+
+    return (query).join([
+      leftOuterJoin(
+        covers,
+        covers.id.equalsExp(albums.artwork),
+      ),
+      leftOuterJoin(
+        artists,
+        artists.id.equalsExp(albums.artist),
+      ),
+    ]).map((row) {
+      final album = row.readTable(albums);
+      final cover = row.readTableOrNull(covers);
+      final artist = row.readTableOrNull(artists);
+
+      return TuneAlbum(
+        album: album,
+        cover: cover,
+        artist: artist,
+      );
     });
+  }
+
+  SimpleSelectStatement<$AlbumsTable, Album> albumsQueryForFilter({
+    Expression<bool> Function($AlbumsTable)? filter,
+    List<OrderingTerm Function($AlbumsTable)> clauses = const [],
+    int? limit,
+    int? offset,
+  }) {
+    SimpleSelectStatement<$AlbumsTable, Album> query = select(albums);
+
+    if (filter != null) {
+      query = query..where(filter);
+    }
+
+    if (clauses.isNotEmpty) {
+      query = query..orderBy(clauses);
+    }
+
+    if (limit != null) {
+      query = query..limit(limit, offset: offset);
+    }
+
+    if (clauses.isNotEmpty) {
+      query = query..orderBy(clauses);
+    }
+
+    return query;
   }
 }

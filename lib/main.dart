@@ -1,16 +1,20 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+
 import 'package:tunes/app.dart';
+import 'package:tunes/utils/prefs.dart';
 
 Future<void> main() async {
-  LicenseRegistry.addLicense(
-    () async* {
-      final license = await rootBundle.loadString('google_fonts/OFL.txt');
-      yield LicenseEntryWithLineBreaks(['google_fonts'], license);
-    },
+  WidgetsFlutterBinding.ensureInitialized();
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.mukoyani.tunes.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
   );
+  prefs = await SharedPreferences.getInstance();
+
   runApp(
     const ProviderScope(
       child: TunesApp(),

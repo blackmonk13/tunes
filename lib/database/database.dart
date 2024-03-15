@@ -6,15 +6,32 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:tunes/database/daos/daos.dart';
+// import 'package:tunes/database/daos/daos.dart';
 import 'package:tunes/database/tables.dart';
+import 'package:tunes/database/views/songs.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
-    tables: [Tunes, Covers, Artists, Albums],
-    daos: [TunesDao, ArtistsDao, AlbumsDao, CoversDao])
-class TunesDb extends _$TunesDb {
-  TunesDb() : super(_openConnection());
+  tables: [
+    Songs,
+    Covers,
+    Artists,
+    Albums,
+    Playlists,
+    PlaylistSongs,
+  ],
+  daos: [
+    SongsDao,
+    ArtistsDao,
+    AlbumsDao,
+    // CoversDao,
+    // PlaylistsDao,
+  ],
+  views: [SongsCount]
+)
+class TunesDatabase extends _$TunesDatabase {
+  TunesDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
@@ -22,26 +39,6 @@ class TunesDb extends _$TunesDb {
   @override
   MigrationStrategy get migration {
     return MigrationStrategy();
-  }
-
-  Future<void> resetTunes() async {
-    return transaction(() async {
-      await covers.deleteAll();
-      await albums.deleteAll();
-      await artists.deleteAll();
-      await tunes.deleteAll();
-      return;
-    });
-  }
-
-  Future<int> deleteTunes(List<String> filePaths) async {
-    return transaction(
-      () async {
-        return tunes.deleteWhere(
-          (tbl) => tbl.pathname.isIn(filePaths),
-        );
-      },
-    );
   }
 }
 

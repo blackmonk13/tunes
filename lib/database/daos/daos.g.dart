@@ -1,23 +1,20 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of tunesdbdaos;
+part of 'daos.dart';
 
 // ignore_for_file: type=lint
-mixin _$AlbumsDaoMixin on DatabaseAccessor<TunesDb> {
-  $AlbumsTable get albums => attachedDatabase.albums;
-  $ArtistsTable get artists => attachedDatabase.artists;
+mixin _$SongsDaoMixin on DatabaseAccessor<TunesDatabase> {
   $CoversTable get covers => attachedDatabase.covers;
-  $TunesTable get tunes => attachedDatabase.tunes;
-}
-mixin _$ArtistsDaoMixin on DatabaseAccessor<TunesDb> {
-  $ArtistsTable get artists => attachedDatabase.artists;
-}
-mixin _$CoversDaoMixin on DatabaseAccessor<TunesDb> {
-  $CoversTable get covers => attachedDatabase.covers;
-}
-mixin _$TunesDaoMixin on DatabaseAccessor<TunesDb> {
   $ArtistsTable get artists => attachedDatabase.artists;
   $AlbumsTable get albums => attachedDatabase.albums;
+  $SongsTable get songs => attachedDatabase.songs;
+}
+mixin _$ArtistsDaoMixin on DatabaseAccessor<TunesDatabase> {
   $CoversTable get covers => attachedDatabase.covers;
-  $TunesTable get tunes => attachedDatabase.tunes;
+  $ArtistsTable get artists => attachedDatabase.artists;
+}
+mixin _$AlbumsDaoMixin on DatabaseAccessor<TunesDatabase> {
+  $CoversTable get covers => attachedDatabase.covers;
+  $ArtistsTable get artists => attachedDatabase.artists;
+  $AlbumsTable get albums => attachedDatabase.albums;
 }

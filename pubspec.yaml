@@ -1,9 +1,8 @@
 name: tunes
-description: Music Player.
-
+description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: "none" # Remove this line if you wish to publish to pub.dev
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -20,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.18.6 <3.7.0"
+  sdk: '>=3.1.5 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -29,51 +28,51 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  assets_audio_player: ^3.0.6
-  audio_video_progress_bar: ^0.11.0
   audiotagger: ^2.2.1
-  collection: ^1.16.0
+  beamer: ^1.5.6
+  bottom_sheet_scroll_physics: ^1.0.0
   cupertino_icons: ^1.0.2
-  drift: ^2.4.2
+  drift: ^2.13.1
   drift_db_viewer: ^2.0.0
-  drift_dev: ^2.4.1
-  file_picker: ^5.2.4
-  flex_color_scheme: ^6.1.2
+  file_picker: ^6.1.1
+  fluent_ui: ^4.7.7
+  fluentui_system_icons: ^1.1.221
   flutter:
     sdk: flutter
-  flutter_hooks: ^0.18.5+1
-  flutter_riverpod: ^2.1.3
-  flutter_svg: ^1.1.6
-  go_router: ^6.0.1
-  google_fonts: ^3.0.1
-  heroicons:
-    git:
-      url: https://github.com/blackmonk13/heroicons_flutter.git
-      ref: master
-  hooks_riverpod: ^2.1.3
-  mime: ^1.0.3
+  flutter_animate: ^4.2.0+1
+  flutter_hooks: ^0.20.3
+  freezed_annotation: ^2.4.1
+  hooks_riverpod: ^2.4.5
+  infinite_scroll_pagination: ^4.0.0
+  json_annotation: ^4.8.1
+  just_audio: ^0.9.36
+  just_audio_background: ^0.0.1-beta.11
+  mime: ^1.0.4
   modal_bottom_sheet: ^3.0.0-pre
-  path: ^1.8.2
-  path_provider: ^2.0.11
-  permission_handler: ^10.2.0
-  riverpod_annotation: ^1.1.1
-  rxdart: ^0.27.7
-  shared_preferences: ^2.0.15
-  sheet: ^1.0.0-pre                  
-  simple_animations: ^5.0.0+3
-  sqlite3_flutter_libs: ^0.5.12
+  path: ^1.8.3
+  path_provider: ^2.1.1
+  permission_handler: ^11.0.1
+  riverpod_annotation: ^2.3.0
+  shared_preferences: ^2.2.2
+  sqlite3_flutter_libs: ^0.5.18
 
 dev_dependencies:
-  build_runner: ^2.3.3
-  flutter_lints: ^2.0.0
+  build_runner: ^2.4.6
+  custom_lint: ^0.6.2
+  drift_dev: ^2.13.1
+  flutter_lints: ^3.0.1
   flutter_test:
     sdk: flutter
-  riverpod_generator: ^1.1.1
+  freezed: ^2.4.5
+  json_serializable: ^6.7.1
+  riverpod_generator: ^2.3.5
+  riverpod_lint: ^2.3.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.
 flutter:
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
