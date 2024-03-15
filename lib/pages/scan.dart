@@ -1,7 +1,6 @@
 import 'package:beamer/beamer.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/material.dart' as material;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/utils/extensions.dart';
 

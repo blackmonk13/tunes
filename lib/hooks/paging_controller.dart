@@ -23,8 +23,8 @@ class _PagingControllerHook<PageKeyType, ItemType>
   const _PagingControllerHook({
     required this.firstPageKey,
     this.invisibleItemsThreshold,
-    List<Object?>? keys,
-  }) : super(keys: keys);
+    super.keys,
+  });
   final PageKeyType firstPageKey;
   final int? invisibleItemsThreshold;
 

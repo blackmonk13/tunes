@@ -1,4 +1,4 @@
-part of providers;
+part of 'providers.dart';
 
 @riverpod
 FutureOr<bool> appPermissions(Ref ref) async {

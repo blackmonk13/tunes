@@ -1,4 +1,4 @@
-part of providers;
+part of 'providers.dart';
 
 @Riverpod(keepAlive: true)
 AudioPlayer audioPlayer(Ref ref) {

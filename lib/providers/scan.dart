@@ -99,7 +99,7 @@ class AudioPathsWatcher extends _$AudioPathsWatcher {
 
     // Listen for events
     await for (FileSystemEvent event in stream) {
-      print('Path: ${event.path}, Type: ${event.type}');
+      debugPrint('Path: ${event.path}, Type: ${event.type}');
     }
   }
 }

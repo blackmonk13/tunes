@@ -6,7 +6,7 @@ part of 'daos.dart';
   ],
 )
 class SongsDao extends DatabaseAccessor<TunesDatabase> with _$SongsDaoMixin {
-  SongsDao(TunesDatabase db) : super(db);
+  SongsDao(super.db);
 
   // returns the generated id
   Future<int> addSong(SongsCompanion entry) {
