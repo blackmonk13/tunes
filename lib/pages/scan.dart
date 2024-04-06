@@ -3,12 +3,15 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/providers/providers.dart';
 
 class ScanPage extends HookConsumerWidget {
   const ScanPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final asyncScanControl = ref.watch(scanControllerProvider);
+    
     return ScaffoldPage(
       padding: EdgeInsets.only(
         top: context.statusBarHeight,
@@ -25,20 +28,35 @@ class ScanPage extends HookConsumerWidget {
           },
         ),
       ),
-      content: Stack(
-        alignment: Alignment.center,
+      content: Column(
         children: [
-          Positioned.fill(
-            child: SizedBox.square(
-              dimension: context.shortestSide * .5,
-              child: Acrylic(
-                luminosityAlpha: .3,
-                tint: FluentTheme.of(context).accentColor,
-                blurAmount: 10,
-                elevation: 30.0,
-                shape: const CircleBorder(),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: SizedBox.square(
+                  dimension: context.shortestSide * .3,
+                  child: Acrylic(
+                    luminosityAlpha: .3,
+                    tint: FluentTheme.of(context).accentColor,
+                    blurAmount: 10,
+                    elevation: 30.0,
+                    shape: const CircleBorder(),
+                  ),
+                ),
               ),
-            ),
+            ],
+          ),
+          asyncScanControl.when(
+            data: (data) {
+              return const Text('Scan Complete');
+            },
+            error: (error, stackTrace) {
+              return const Text('Error');
+            },
+            loading: () {
+              return const ProgressRing();
+            },
           ),
         ],
       ),

@@ -333,7 +333,7 @@ class _TuneSongWithPathProviderElement
   String get pathname => (origin as TuneSongWithPathProvider).pathname;
 }
 
-String _$pagedTuneAlbumsHash() => r'80ddea4704fca21fa2164e2b2e727e7ae911f7fe';
+String _$pagedTuneAlbumsHash() => r'48c85fd067f559297c6646918b64b683196bc980';
 
 /// See also [PagedTuneAlbums].
 @ProviderFor(PagedTuneAlbums)
@@ -349,7 +349,7 @@ final pagedTuneAlbumsProvider =
 );
 
 typedef _$PagedTuneAlbums = AutoDisposeAsyncNotifier<List<TuneAlbum>>;
-String _$pagedTuneArtistsHash() => r'f68cad6c60bdea74f762b663d763304bd300b995';
+String _$pagedTuneArtistsHash() => r'7e08a1096cd71b05d4c8d4b5b6bbcf47af5802cb';
 
 /// See also [PagedTuneArtists].
 @ProviderFor(PagedTuneArtists)
@@ -411,7 +411,7 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 
 typedef _$TabIndex = Notifier<int>;
 String _$playlistControllerHash() =>
-    r'0e035335d9dc12d8a1e51ce47d1743333ebadeb3';
+    r'e17a0120b12d1b27866d02c4cf4fed71551db899';
 
 /// See also [PlaylistController].
 @ProviderFor(PlaylistController)
@@ -572,7 +572,7 @@ class _AudioFileControllerProviderElement
   File get file => (origin as AudioFileControllerProvider).file;
 }
 
-String _$audioPathsWatcherHash() => r'a7d8cab533a542afaf02e6d07a0669f507760f62';
+String _$audioPathsWatcherHash() => r'2a8001a28cd51bd1df4b51367a6eeb19ae3eee49';
 
 /// See also [AudioPathsWatcher].
 @ProviderFor(AudioPathsWatcher)
@@ -619,7 +619,7 @@ final tuneSongsProvider =
 );
 
 typedef _$TuneSongs = AutoDisposeStreamNotifier<List<TuneSong>>;
-String _$pagedTuneSongsHash() => r'993abb108647878dce4026acc605861d7864827f';
+String _$pagedTuneSongsHash() => r'096e09aa266bb4b5a573a90b841fab83bcf8d458';
 
 /// See also [PagedTuneSongs].
 @ProviderFor(PagedTuneSongs)
