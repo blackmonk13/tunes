@@ -108,7 +108,7 @@ class AudioPathsWatcher extends _$AudioPathsWatcher {
 class ScanController extends _$ScanController {
   @override
   FutureOr<List<int>> build() {
-    return scanMusic();
+    return [];
   }
 
   Future<void> runScan() async {
