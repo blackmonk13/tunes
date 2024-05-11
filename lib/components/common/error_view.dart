@@ -2,11 +2,22 @@ import 'dart:math';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:tunes/models/errormsg.dart';
-import 'package:tunes/utils/extensions.dart';
 
-class ErrorView extends HookConsumerWidget {
+class ErrorMsg {
+  final String code;
+  final String brief;
+  final String? details;
+  final String? solution;
+
+  ErrorMsg({
+    this.code = "0000",
+    this.brief = "Unknown error",
+    this.details,
+    this.solution,
+  });
+}
+
+class ErrorView extends StatelessWidget {
   const ErrorView({
     super.key,
     required this.errorMsg,
@@ -22,14 +33,13 @@ class ErrorView extends HookConsumerWidget {
   final List<Widget> trailing;
   final Widget Function(
     BuildContext context,
-    WidgetRef ref,
     ErrorMsg errorMsg,
   )? builder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (builder != null) {
-      return builder!(context, ref, errorMsg);
+      return builder!(context, errorMsg);
     }
 
     return SingleChildScrollView(
@@ -42,19 +52,19 @@ class ErrorView extends HookConsumerWidget {
         children: [
           Icon(
             FluentIcons.warning_20_regular,
-            size: context.shortestSide * .15,
+            size: MediaQuery.of(context).size.shortestSide * .15,
           ),
           Text.rich(
             TextSpan(
               children: [
                 TextSpan(
                     text: 'Oops, something went wrong.\n\n',
-                    style: context.textTheme.headlineSmall),
+                    style: Theme.of(context).textTheme.headlineSmall),
                 TextSpan(
                   children: [
                     TextSpan(
                       text: "Error ${errorMsg.code}: ",
-                      style: context.textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     TextSpan(
                       text: errorMsg.brief,
@@ -68,7 +78,7 @@ class ErrorView extends HookConsumerWidget {
                     children: [
                       TextSpan(
                         text: 'Details\n',
-                        style: context.textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       TextSpan(
                         text: "${errorMsg.details}\n\n",
@@ -80,7 +90,7 @@ class ErrorView extends HookConsumerWidget {
                     children: [
                       TextSpan(
                         text: "Solution\n",
-                        style: context.textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       TextSpan(
                         text: "${errorMsg.solution}\n\n",
@@ -115,7 +125,7 @@ class ErrorView extends HookConsumerWidget {
   }
 }
 
-class AsyncErrorView extends HookConsumerWidget {
+class AsyncErrorView extends StatelessWidget {
   const AsyncErrorView({
     super.key,
     required this.error,
@@ -132,12 +142,11 @@ class AsyncErrorView extends HookConsumerWidget {
   final List<Widget> trailing;
   final Widget Function(
     BuildContext context,
-    WidgetRef ref,
     ErrorMsg errorMsg,
   )? builder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final random = Random();
     final pageError = ErrorMsg(
       code: random.nextInt(9999).toString(),

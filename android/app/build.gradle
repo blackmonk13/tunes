@@ -23,8 +23,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "org.mukoyani.tunes"
-    compileSdkVersion 33
+    namespace "com.blackmonk13.tunes"
+    compileSdk 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -42,11 +42,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "org.mukoyani.tunes"
+        applicationId "com.blackmonk13.tunes"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 21
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
