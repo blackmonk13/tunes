@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/pages/song_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
@@ -27,10 +28,17 @@ class HomePage extends ConsumerWidget {
             itemCount: data.length,
             itemBuilder: (BuildContext context, int index) {
               final currentSong = data[index];
-              
+
               return ListTile(
                 onTap: () {
-                  
+                  // Navigate to song info page
+                  Navigator.of(context).push(
+                    routeTo(
+                      page: SongInfo(
+                        songInfo: currentSong,
+                      ),
+                    ),
+                  );
                 },
                 title: Text(
                   currentSong.title,
@@ -79,22 +87,6 @@ class HomePage extends ConsumerWidget {
           );
         },
       ),
-    );
-  }
-}
-
-
-class SongInfo extends ConsumerWidget {
-  final SongModel songInfo;
-  const SongInfo({super.key, required this.songInfo});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Title'),
-      ),
-      body: Container(),
     );
   }
 }

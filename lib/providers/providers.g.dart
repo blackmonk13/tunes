@@ -79,7 +79,7 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 );
 
 typedef _$TabIndex = Notifier<int>;
-String _$songsControllerHash() => r'8e1967e7b6f70398727062aa0b58dd0886439b36';
+String _$songsControllerHash() => r'd8f8adc336f5f196b471631f7e9567495ad12260';
 
 /// See also [SongsController].
 @ProviderFor(SongsController)
@@ -95,5 +95,235 @@ final songsControllerProvider =
 );
 
 typedef _$SongsController = AutoDisposeAsyncNotifier<List<SongModel>>;
+String _$albumsControllerHash() => r'bcc768364faca97d0bef1975ae9159370e76eeac';
+
+/// See also [AlbumsController].
+@ProviderFor(AlbumsController)
+final albumsControllerProvider = AutoDisposeAsyncNotifierProvider<
+    AlbumsController, List<AlbumModel>>.internal(
+  AlbumsController.new,
+  name: r'albumsControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$albumsControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$AlbumsController = AutoDisposeAsyncNotifier<List<AlbumModel>>;
+String _$artistsControllerHash() => r'af37debb21b9732ec98d7be4473cbc777f2178e0';
+
+/// See also [ArtistsController].
+@ProviderFor(ArtistsController)
+final artistsControllerProvider = AutoDisposeAsyncNotifierProvider<
+    ArtistsController, List<ArtistModel>>.internal(
+  ArtistsController.new,
+  name: r'artistsControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$artistsControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ArtistsController = AutoDisposeAsyncNotifier<List<ArtistModel>>;
+String _$genresControllerHash() => r'60933916d0a498d194a169d5231886910c0b618c';
+
+/// See also [GenresController].
+@ProviderFor(GenresController)
+final genresControllerProvider = AutoDisposeAsyncNotifierProvider<
+    GenresController, List<GenreModel>>.internal(
+  GenresController.new,
+  name: r'genresControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$genresControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$GenresController = AutoDisposeAsyncNotifier<List<GenreModel>>;
+String _$playlistsControllerHash() =>
+    r'4736e13fba599b7f62b1d6e312790c6067b6dbc7';
+
+/// See also [PlaylistsController].
+@ProviderFor(PlaylistsController)
+final playlistsControllerProvider = AutoDisposeAsyncNotifierProvider<
+    PlaylistsController, List<PlaylistModel>>.internal(
+  PlaylistsController.new,
+  name: r'playlistsControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playlistsControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$PlaylistsController = AutoDisposeAsyncNotifier<List<PlaylistModel>>;
+String _$metadataControllerHash() =>
+    r'74ddd2da3521b20b63a49edc7f461b4a8f5b66c0';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+abstract class _$MetadataController
+    extends BuildlessAutoDisposeAsyncNotifier<bool?> {
+  late final SongModel song;
+
+  FutureOr<bool?> build(
+    SongModel song,
+  );
+}
+
+/// See also [MetadataController].
+@ProviderFor(MetadataController)
+const metadataControllerProvider = MetadataControllerFamily();
+
+/// See also [MetadataController].
+class MetadataControllerFamily extends Family<AsyncValue<bool?>> {
+  /// See also [MetadataController].
+  const MetadataControllerFamily();
+
+  /// See also [MetadataController].
+  MetadataControllerProvider call(
+    SongModel song,
+  ) {
+    return MetadataControllerProvider(
+      song,
+    );
+  }
+
+  @override
+  MetadataControllerProvider getProviderOverride(
+    covariant MetadataControllerProvider provider,
+  ) {
+    return call(
+      provider.song,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'metadataControllerProvider';
+}
+
+/// See also [MetadataController].
+class MetadataControllerProvider
+    extends AutoDisposeAsyncNotifierProviderImpl<MetadataController, bool?> {
+  /// See also [MetadataController].
+  MetadataControllerProvider(
+    SongModel song,
+  ) : this._internal(
+          () => MetadataController()..song = song,
+          from: metadataControllerProvider,
+          name: r'metadataControllerProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$metadataControllerHash,
+          dependencies: MetadataControllerFamily._dependencies,
+          allTransitiveDependencies:
+              MetadataControllerFamily._allTransitiveDependencies,
+          song: song,
+        );
+
+  MetadataControllerProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.song,
+  }) : super.internal();
+
+  final SongModel song;
+
+  @override
+  FutureOr<bool?> runNotifierBuild(
+    covariant MetadataController notifier,
+  ) {
+    return notifier.build(
+      song,
+    );
+  }
+
+  @override
+  Override overrideWith(MetadataController Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: MetadataControllerProvider._internal(
+        () => create()..song = song,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        song: song,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<MetadataController, bool?>
+      createElement() {
+    return _MetadataControllerProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MetadataControllerProvider && other.song == song;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, song.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin MetadataControllerRef on AutoDisposeAsyncNotifierProviderRef<bool?> {
+  /// The parameter `song` of this provider.
+  SongModel get song;
+}
+
+class _MetadataControllerProviderElement
+    extends AutoDisposeAsyncNotifierProviderElement<MetadataController, bool?>
+    with MetadataControllerRef {
+  _MetadataControllerProviderElement(super.provider);
+
+  @override
+  SongModel get song => (origin as MetadataControllerProvider).song;
+}
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
