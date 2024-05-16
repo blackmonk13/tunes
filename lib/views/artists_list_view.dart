@@ -6,6 +6,8 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
+import 'package:tunes/pages/artist_info.dart';
+
 class ArtistsListView extends ConsumerWidget {
   const ArtistsListView({super.key});
 
@@ -27,24 +29,35 @@ class ArtistsListView extends ConsumerWidget {
             return ListTile(
               onTap: () {
                 // Navigate to song info page
-                // Navigator.of(context).push(
-                //   routeTo(
-                //     page: SongInfo(
-                //       songInfo: currentSong,
-                //     ),
-                //   ),
-                // );
+                Navigator.of(context).push(
+                  routeTo(
+                    page: ArtistInfoPage(
+                      artist: currentArtist,
+                    ),
+                  ),
+                );
               },
               title: Text(
                 currentArtist.artist,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 3,
               ),
-              // subtitle: Text(
-              //   currentArtist.artist ?? "No Artist",
-              //   overflow: TextOverflow.ellipsis,
-              //   maxLines: 1,
-              // ),
+              subtitle: Text(
+                (() {
+                  final songCount = currentArtist.numberOfTracks;
+
+                  if (songCount == null) {
+                    return "";
+                  }
+
+                  if (songCount == 1) {
+                    return "$songCount song";
+                  }
+                  return "$songCount songs";
+                })(),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
               // This Widget will query/load image.
               // You can use/create your own widget/method using [queryArtwork].
               leading: QueryArtworkWidget(

@@ -7,67 +7,29 @@ import 'package:tunes/pages/song_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
-class SongsListView extends ConsumerWidget {
-  const SongsListView({super.key});
+class AsyncSongsListView extends StatelessWidget {
+  final AsyncValue<List<SongModel>> asyncSongs;
+  final ScrollController? scrollController;
+  const AsyncSongsListView({
+    super.key,
+    required this.asyncSongs,
+    this.scrollController,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
-    final asyncSongs = ref.watch(songsControllerProvider);
-
+  Widget build(BuildContext context) {
     return asyncSongs.when(
       data: (data) {
         if (data.isEmpty) {
           return const Text("No Songs");
         }
         return ListView.builder(
+          controller: scrollController,
           itemCount: data.length,
           itemBuilder: (BuildContext context, int index) {
             final currentSong = data[index];
 
-            return ListTile(
-              onTap: () {
-                // Navigate to song info page
-                Navigator.of(context).push(
-                  routeTo(
-                    page: SongInfo(
-                      songInfo: currentSong,
-                    ),
-                  ),
-                );
-              },
-              title: Text(
-                currentSong.title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 3,
-              ),
-              subtitle: Text(
-                currentSong.artist ?? "No Artist",
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              // This Widget will query/load image.
-              // You can use/create your own widget/method using [queryArtwork].
-              leading: QueryArtworkWidget(
-                controller: audioQuery,
-                id: currentSong.id,
-                type: ArtworkType.AUDIO,
-                artworkBorder: BorderRadius.circular(20.0),
-                nullArtworkWidget: Container(
-                  decoration: BoxDecoration(
-                    color: context.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  width: 50,
-                  height: 50,
-                  child: Icon(
-                    FluentIcons.music_note_2_24_regular,
-                    color: context.colorScheme.onPrimaryContainer,
-                    size: 32.0,
-                  ),
-                ),
-              ),
-            );
+            return SongListTile(song: currentSong);
           },
         );
       },
@@ -82,6 +44,76 @@ class SongsListView extends ConsumerWidget {
           child: CircularProgressIndicator(),
         );
       },
+    );
+  }
+}
+
+class SongsListView extends ConsumerWidget {
+  const SongsListView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncSongs = ref.watch(songsControllerProvider);
+
+    return AsyncSongsListView(
+      asyncSongs: asyncSongs,
+    );
+  }
+}
+
+class SongListTile extends ConsumerWidget {
+  const SongListTile({
+    super.key,
+    required this.song,
+  });
+
+  final SongModel song;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final audioQuery = ref.watch(onAudioQueryProvider);
+    return ListTile(
+      onTap: () {
+        // Navigate to song info page
+        Navigator.of(context).push(
+          routeTo(
+            page: SongInfo(
+              songInfo: song,
+            ),
+          ),
+        );
+      },
+      title: Text(
+        song.title,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 3,
+      ),
+      subtitle: Text(
+        song.artist ?? "No Artist",
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+      // This Widget will query/load image.
+      // You can use/create your own widget/method using [queryArtwork].
+      leading: QueryArtworkWidget(
+        controller: audioQuery,
+        id: song.id,
+        type: ArtworkType.AUDIO,
+        artworkBorder: BorderRadius.circular(20.0),
+        nullArtworkWidget: Container(
+          decoration: BoxDecoration(
+            color: context.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          width: 50,
+          height: 50,
+          child: Icon(
+            FluentIcons.music_note_2_24_regular,
+            color: context.colorScheme.onPrimaryContainer,
+            size: 32.0,
+          ),
+        ),
+      ),
     );
   }
 }

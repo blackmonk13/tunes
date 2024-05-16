@@ -1,11 +1,9 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:id3_codec/id3_codec.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/join_btns.dart';
 import 'package:tunes/providers/providers.dart';

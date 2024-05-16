@@ -1,9 +1,6 @@
 part of 'providers.dart';
 
-@Riverpod(keepAlive: true)
-OnAudioQuery onAudioQuery(OnAudioQueryRef ref) {
-  return OnAudioQuery();
-}
+
 
 @riverpod
 class SongsController extends _$SongsController {
@@ -16,7 +13,7 @@ class SongsController extends _$SongsController {
 
     final filteredSongs =
         allSongs.where((element) => element.fileExtension == "mp3").toList();
-    return filteredSongs;
+    return allSongs;
   }
 }
 
@@ -25,14 +22,6 @@ class AlbumsController extends _$AlbumsController {
   @override
   FutureOr<List<AlbumModel>> build() {
     return ref.read(onAudioQueryProvider).queryAlbums();
-  }
-}
-
-@riverpod
-class ArtistsController extends _$ArtistsController {
-  @override
-  FutureOr<List<ArtistModel>> build() {
-    return ref.read(onAudioQueryProvider).queryArtists();
   }
 }
 
