@@ -11,7 +11,6 @@ class GenresListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
     final asyncGenre = ref.watch(genresControllerProvider);
 
     return asyncGenre.when(
@@ -24,55 +23,8 @@ class GenresListView extends ConsumerWidget {
           itemBuilder: (BuildContext context, int index) {
             final currentGenre = data[index];
 
-            return ListTile(
-              onTap: () {
-                // Navigate to song info page
-                // Navigator.of(context).push(
-                //   routeTo(
-                //     page: SongInfo(
-                //       songInfo: currentSong,
-                //     ),
-                //   ),
-                // );
-              },
-              title: Text(
-                currentGenre.genre,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 3,
-              ),
-              subtitle: Text(
-                (() {
-                  final songCount = currentGenre.numOfSongs;
-
-                  if (songCount == 1) {
-                    return "$songCount song";  
-                  }
-                  return "$songCount songs";
-                })(),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              // This Widget will query/load image.
-              // You can use/create your own widget/method using [queryArtwork].
-              leading: QueryArtworkWidget(
-                controller: audioQuery,
-                id: currentGenre.id,
-                type: ArtworkType.ALBUM,
-                artworkBorder: BorderRadius.circular(20.0),
-                nullArtworkWidget: Container(
-                  decoration: BoxDecoration(
-                    color: context.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  width: 50,
-                  height: 50,
-                  child: Icon(
-                    FluentIcons.music_note_2_24_regular,
-                    color: context.colorScheme.onPrimaryContainer,
-                    size: 32.0,
-                  ),
-                ),
-              ),
+            return GenreListTile(
+              currentGenre: currentGenre,
             );
           },
         );
@@ -88,6 +40,70 @@ class GenresListView extends ConsumerWidget {
           child: CircularProgressIndicator(),
         );
       },
+    );
+  }
+}
+
+class GenreListTile extends ConsumerWidget {
+  const GenreListTile({
+    super.key,
+    required this.currentGenre,
+  });
+
+  final GenreModel currentGenre;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final audioQuery = ref.watch(onAudioQueryProvider);
+    return ListTile(
+      onTap: () {
+        // Navigate to song info page
+        // Navigator.of(context).push(
+        //   routeTo(
+        //     page: SongInfo(
+        //       songInfo: currentSong,
+        //     ),
+        //   ),
+        // );
+      },
+      title: Text(
+        currentGenre.genre,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 3,
+      ),
+      subtitle: Text(
+        (() {
+          final songCount = currentGenre.numOfSongs;
+
+          if (songCount == 1) {
+            return "$songCount song";
+          }
+          return "$songCount songs";
+        })(),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+      // This Widget will query/load image.
+      // You can use/create your own widget/method using [queryArtwork].
+      leading: QueryArtworkWidget(
+        controller: audioQuery,
+        id: currentGenre.id,
+        type: ArtworkType.GENRE,
+        artworkBorder: BorderRadius.circular(20.0),
+        nullArtworkWidget: Container(
+          decoration: BoxDecoration(
+            color: context.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          width: 50,
+          height: 50,
+          child: Icon(
+            FluentIcons.music_note_2_24_regular,
+            color: context.colorScheme.onPrimaryContainer,
+            size: 32.0,
+          ),
+        ),
+      ),
     );
   }
 }
