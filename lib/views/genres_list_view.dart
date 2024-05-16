@@ -6,13 +6,15 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
-class GenresListView extends ConsumerWidget {
-  const GenresListView({super.key});
+class AsyncGenreListView extends StatelessWidget {
+  final AsyncValue<List<GenreModel>> asyncGenre;
+  const AsyncGenreListView({
+    super.key,
+    required this.asyncGenre,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncGenre = ref.watch(genresControllerProvider);
-
+  Widget build(BuildContext context) {
     return asyncGenre.when(
       data: (data) {
         if (data.isEmpty) {
@@ -40,6 +42,19 @@ class GenresListView extends ConsumerWidget {
           child: CircularProgressIndicator(),
         );
       },
+    );
+  }
+}
+
+class GenresListView extends ConsumerWidget {
+  const GenresListView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncGenre = ref.watch(genresControllerProvider);
+
+    return AsyncGenreListView(
+      asyncGenre: asyncGenre,
     );
   }
 }
