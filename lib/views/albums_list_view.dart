@@ -6,6 +6,8 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
+import 'package:tunes/pages/album_info.dart';
+
 class AsyncAlbumsListView extends StatelessWidget {
   final AsyncValue<List<AlbumModel>> asyncAlbums;
   final ScrollController? scrollController;
@@ -62,13 +64,13 @@ class AlbumListTile extends ConsumerWidget {
     return ListTile(
       onTap: () {
         // Navigate to song info page
-        // Navigator.of(context).push(
-        //   routeTo(
-        //     page: SongInfo(
-        //       songInfo: currentSong,
-        //     ),
-        //   ),
-        // );
+        Navigator.of(context).push(
+          routeTo(
+            page: AlbumInfoPage(
+              album: album,
+            ),
+          ),
+        );
       },
       title: Text(
         album.album,

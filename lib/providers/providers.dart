@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tunes/utils/prefs.dart';
 
+part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
 part 'providers.g.dart';

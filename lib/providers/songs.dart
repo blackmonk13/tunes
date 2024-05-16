@@ -18,14 +18,6 @@ class SongsController extends _$SongsController {
 }
 
 @riverpod
-class AlbumsController extends _$AlbumsController {
-  @override
-  FutureOr<List<AlbumModel>> build() {
-    return ref.read(onAudioQueryProvider).queryAlbums();
-  }
-}
-
-@riverpod
 class GenresController extends _$GenresController {
   @override
   FutureOr<List<GenreModel>> build() {
