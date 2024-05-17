@@ -1,6 +1,8 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/pages/song_info.dart';
@@ -71,17 +73,34 @@ class SongListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(audioPlayerProvider);
     final audioQuery = ref.watch(onAudioQueryProvider);
     return ListTile(
-      onTap: () {
-        // Navigate to song info page
-        Navigator.of(context).push(
-          routeTo(
-            page: SongInfo(
-              songInfo: song,
-            ),
+      onTap: () async {
+        // Play song
+        final audioSource = AudioSource.uri(
+          Uri.parse(song.data),
+          tag: MediaItem(
+            id: song.id.toString(),
+            title: song.title,
+            artist: song.artist,
+            album: song.album,
+            genre: song.genre,
           ),
         );
+        await player.setAudioSource(audioSource);
+        if (player.playing) {
+          return;
+        }
+        player.play();
+        // Navigate to song info page
+        // Navigator.of(context).push(
+        //   routeTo(
+        //     page: SongInfo(
+        //       songInfo: song,
+        //     ),
+        //   ),
+        // );
       },
       title: Text(
         song.title,
