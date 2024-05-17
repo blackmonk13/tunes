@@ -564,22 +564,6 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 );
 
 typedef _$TabIndex = Notifier<int>;
-String _$songsControllerHash() => r'5344086fb07da31a85b131216889efc1accf52f7';
-
-/// See also [SongsController].
-@ProviderFor(SongsController)
-final songsControllerProvider =
-    AutoDisposeAsyncNotifierProvider<SongsController, List<SongModel>>.internal(
-  SongsController.new,
-  name: r'songsControllerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$songsControllerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$SongsController = AutoDisposeAsyncNotifier<List<SongModel>>;
 String _$genresControllerHash() => r'60933916d0a498d194a169d5231886910c0b618c';
 
 /// See also [GenresController].
@@ -596,6 +580,166 @@ final genresControllerProvider = AutoDisposeAsyncNotifierProvider<
 );
 
 typedef _$GenresController = AutoDisposeAsyncNotifier<List<GenreModel>>;
+String _$genreSongsHash() => r'7751c7136d1e5649455334f577836c820976cfc1';
+
+abstract class _$GenreSongs
+    extends BuildlessAutoDisposeAsyncNotifier<List<SongModel>> {
+  late final GenreModel genre;
+
+  FutureOr<List<SongModel>> build(
+    GenreModel genre,
+  );
+}
+
+/// See also [GenreSongs].
+@ProviderFor(GenreSongs)
+const genreSongsProvider = GenreSongsFamily();
+
+/// See also [GenreSongs].
+class GenreSongsFamily extends Family<AsyncValue<List<SongModel>>> {
+  /// See also [GenreSongs].
+  const GenreSongsFamily();
+
+  /// See also [GenreSongs].
+  GenreSongsProvider call(
+    GenreModel genre,
+  ) {
+    return GenreSongsProvider(
+      genre,
+    );
+  }
+
+  @override
+  GenreSongsProvider getProviderOverride(
+    covariant GenreSongsProvider provider,
+  ) {
+    return call(
+      provider.genre,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'genreSongsProvider';
+}
+
+/// See also [GenreSongs].
+class GenreSongsProvider
+    extends AutoDisposeAsyncNotifierProviderImpl<GenreSongs, List<SongModel>> {
+  /// See also [GenreSongs].
+  GenreSongsProvider(
+    GenreModel genre,
+  ) : this._internal(
+          () => GenreSongs()..genre = genre,
+          from: genreSongsProvider,
+          name: r'genreSongsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$genreSongsHash,
+          dependencies: GenreSongsFamily._dependencies,
+          allTransitiveDependencies:
+              GenreSongsFamily._allTransitiveDependencies,
+          genre: genre,
+        );
+
+  GenreSongsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.genre,
+  }) : super.internal();
+
+  final GenreModel genre;
+
+  @override
+  FutureOr<List<SongModel>> runNotifierBuild(
+    covariant GenreSongs notifier,
+  ) {
+    return notifier.build(
+      genre,
+    );
+  }
+
+  @override
+  Override overrideWith(GenreSongs Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: GenreSongsProvider._internal(
+        () => create()..genre = genre,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        genre: genre,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<GenreSongs, List<SongModel>>
+      createElement() {
+    return _GenreSongsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GenreSongsProvider && other.genre == genre;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, genre.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin GenreSongsRef on AutoDisposeAsyncNotifierProviderRef<List<SongModel>> {
+  /// The parameter `genre` of this provider.
+  GenreModel get genre;
+}
+
+class _GenreSongsProviderElement
+    extends AutoDisposeAsyncNotifierProviderElement<GenreSongs, List<SongModel>>
+    with GenreSongsRef {
+  _GenreSongsProviderElement(super.provider);
+
+  @override
+  GenreModel get genre => (origin as GenreSongsProvider).genre;
+}
+
+String _$songsControllerHash() => r'5344086fb07da31a85b131216889efc1accf52f7';
+
+/// See also [SongsController].
+@ProviderFor(SongsController)
+final songsControllerProvider =
+    AutoDisposeAsyncNotifierProvider<SongsController, List<SongModel>>.internal(
+  SongsController.new,
+  name: r'songsControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$songsControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$SongsController = AutoDisposeAsyncNotifier<List<SongModel>>;
 String _$playlistsControllerHash() =>
     r'4736e13fba599b7f62b1d6e312790c6067b6dbc7';
 

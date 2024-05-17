@@ -6,6 +6,8 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
+import '../pages/genre_info.dart';
+
 class AsyncGenreListView extends StatelessWidget {
   final AsyncValue<List<GenreModel>> asyncGenre;
   const AsyncGenreListView({
@@ -26,7 +28,7 @@ class AsyncGenreListView extends StatelessWidget {
             final currentGenre = data[index];
 
             return GenreListTile(
-              currentGenre: currentGenre,
+              genre: currentGenre,
             );
           },
         );
@@ -62,10 +64,10 @@ class GenresListView extends ConsumerWidget {
 class GenreListTile extends ConsumerWidget {
   const GenreListTile({
     super.key,
-    required this.currentGenre,
+    required this.genre,
   });
 
-  final GenreModel currentGenre;
+  final GenreModel genre;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -73,22 +75,22 @@ class GenreListTile extends ConsumerWidget {
     return ListTile(
       onTap: () {
         // Navigate to song info page
-        // Navigator.of(context).push(
-        //   routeTo(
-        //     page: SongInfo(
-        //       songInfo: currentSong,
-        //     ),
-        //   ),
-        // );
+        Navigator.of(context).push(
+          routeTo(
+            page: GenreInfoPage(
+              genre: genre,
+            ),
+          ),
+        );
       },
       title: Text(
-        currentGenre.genre,
+        genre.genre,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
       ),
       subtitle: Text(
         (() {
-          final songCount = currentGenre.numOfSongs;
+          final songCount = genre.numOfSongs;
 
           if (songCount == 1) {
             return "$songCount song";
@@ -102,7 +104,7 @@ class GenreListTile extends ConsumerWidget {
       // You can use/create your own widget/method using [queryArtwork].
       leading: QueryArtworkWidget(
         controller: audioQuery,
-        id: currentGenre.id,
+        id: genre.id,
         type: ArtworkType.GENRE,
         artworkBorder: BorderRadius.circular(20.0),
         nullArtworkWidget: Container(

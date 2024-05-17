@@ -14,5 +14,6 @@ import 'package:tunes/utils/prefs.dart';
 part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
+part 'genres.dart';
 part 'providers.g.dart';
 part 'songs.dart';
