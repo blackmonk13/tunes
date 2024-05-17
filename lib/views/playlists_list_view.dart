@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/pages/playlist_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
@@ -59,13 +60,13 @@ class PlaylistListTile extends ConsumerWidget {
     return ListTile(
       onTap: () {
         // Navigate to song info page
-        // Navigator.of(context).push(
-        //   routeTo(
-        //     page: SongInfo(
-        //       songInfo: currentSong,
-        //     ),
-        //   ),
-        // );
+        Navigator.of(context).push(
+          routeTo(
+            page: PlaylistInfoPage(
+              playlist: playlist,
+            ),
+          ),
+        );
       },
       title: Text(
         playlist.playlist,
