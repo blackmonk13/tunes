@@ -39,6 +39,8 @@ dependencies:
   form_builder_validators: ^9.1.0
   hooks_riverpod: ^2.5.1
   id3_codec: ^1.0.3
+  just_audio: ^0.9.37
+  just_audio_background: ^0.0.1-beta.11
   on_audio_query: ^2.9.0
   permission_handler: ^11.3.1
   riverpod_annotation: ^2.3.5
