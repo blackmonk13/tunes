@@ -15,5 +15,6 @@ part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
 part 'genres.dart';
+part 'playlists.dart';
 part 'providers.g.dart';
 part 'songs.dart';
