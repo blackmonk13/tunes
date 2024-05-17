@@ -7,14 +7,12 @@ import 'package:tunes/pages/playlist_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
-class PlaylistsListView extends ConsumerWidget {
-  const PlaylistsListView({super.key});
+class AsyncPlaylistView extends StatelessWidget {
+  final AsyncValue<List<PlaylistModel>> asyncPlaylists;
+  const AsyncPlaylistView({super.key, required this.asyncPlaylists});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
-    final asyncPlaylists = ref.watch(playlistsControllerProvider);
-
+  Widget build(BuildContext context) {
     return asyncPlaylists.when(
       data: (data) {
         if (data.isEmpty) {
@@ -43,6 +41,17 @@ class PlaylistsListView extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+class PlaylistsListView extends ConsumerWidget {
+  const PlaylistsListView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncPlaylists = ref.watch(playlistsControllerProvider);
+
+    return AsyncPlaylistView(asyncPlaylists: asyncPlaylists);
   }
 }
 
