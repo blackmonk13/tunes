@@ -49,6 +49,20 @@ final onAudioQueryProvider = Provider<OnAudioQuery>.internal(
 );
 
 typedef OnAudioQueryRef = ProviderRef<OnAudioQuery>;
+String _$audioPlayerHash() => r'e54ce7e5ba2cd12db0f50d7caaf550952480c971';
+
+/// See also [audioPlayer].
+@ProviderFor(audioPlayer)
+final audioPlayerProvider = Provider<AudioPlayer>.internal(
+  audioPlayer,
+  name: r'audioPlayerProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$audioPlayerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef AudioPlayerRef = ProviderRef<AudioPlayer>;
 String _$albumsControllerHash() => r'bcc768364faca97d0bef1975ae9159370e76eeac';
 
 /// See also [AlbumsController].

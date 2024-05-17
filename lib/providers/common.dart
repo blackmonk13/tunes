@@ -48,3 +48,8 @@ class TabIndex extends _$TabIndex {
 OnAudioQuery onAudioQuery(OnAudioQueryRef ref) {
   return OnAudioQuery();
 }
+
+@Riverpod(keepAlive: true)
+AudioPlayer audioPlayer(AudioPlayerRef ref) {
+  return AudioPlayer();
+}
