@@ -62,6 +62,13 @@ Stream<Duration> playerPosition(PlayerPositionRef ref) {
 }
 
 @Riverpod(keepAlive: true)
+Stream<Duration?> playerDuration(PlayerDurationRef ref) {
+  final player = ref.watch(audioPlayerProvider);
+
+  return player.durationStream;
+}
+
+@Riverpod(keepAlive: true)
 Stream<bool> playerPlaying(PlayerPlayingRef ref) {
   final player = ref.watch(audioPlayerProvider);
   return player.playingStream;
