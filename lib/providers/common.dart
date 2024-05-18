@@ -53,3 +53,31 @@ OnAudioQuery onAudioQuery(OnAudioQueryRef ref) {
 AudioPlayer audioPlayer(AudioPlayerRef ref) {
   return AudioPlayer();
 }
+
+@Riverpod(keepAlive: true)
+Stream<Duration> playerPosition(PlayerPositionRef ref) {
+  final player = ref.watch(audioPlayerProvider);
+
+  return player.positionStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<bool> playerPlaying(PlayerPlayingRef ref) {
+  final player = ref.watch(audioPlayerProvider);
+  return player.playingStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<List<IndexedAudioSource>?> playlistSequence(PlaylistSequenceRef ref) {
+  return ref.watch(audioPlayerProvider).sequenceStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<int?> playerCurrentIndex(PlayerCurrentIndexRef ref) {
+  return ref.watch(audioPlayerProvider).currentIndexStream;
+}
+
+@Riverpod(keepAlive: true)
+Stream<PlayerState> playerState(PlayerStateRef ref) {
+  return ref.watch(audioPlayerProvider).playerStateStream;
+}

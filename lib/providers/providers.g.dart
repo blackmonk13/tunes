@@ -63,6 +63,82 @@ final audioPlayerProvider = Provider<AudioPlayer>.internal(
 );
 
 typedef AudioPlayerRef = ProviderRef<AudioPlayer>;
+String _$playerPositionHash() => r'40b0da81266f5646e83242918de401f8b358e11f';
+
+/// See also [playerPosition].
+@ProviderFor(playerPosition)
+final playerPositionProvider = StreamProvider<Duration>.internal(
+  playerPosition,
+  name: r'playerPositionProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerPositionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerPositionRef = StreamProviderRef<Duration>;
+String _$playerPlayingHash() => r'2cc799cfd775a5ae21eae5c3f2125e43f40a1c90';
+
+/// See also [playerPlaying].
+@ProviderFor(playerPlaying)
+final playerPlayingProvider = StreamProvider<bool>.internal(
+  playerPlaying,
+  name: r'playerPlayingProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerPlayingHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerPlayingRef = StreamProviderRef<bool>;
+String _$playlistSequenceHash() => r'52c714961990c6c470632db2c5fee1b08b007179';
+
+/// See also [playlistSequence].
+@ProviderFor(playlistSequence)
+final playlistSequenceProvider =
+    StreamProvider<List<IndexedAudioSource>?>.internal(
+  playlistSequence,
+  name: r'playlistSequenceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playlistSequenceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlaylistSequenceRef = StreamProviderRef<List<IndexedAudioSource>?>;
+String _$playerCurrentIndexHash() =>
+    r'320f28f7539f7f3340e0651e7a8f948ffc9045cc';
+
+/// See also [playerCurrentIndex].
+@ProviderFor(playerCurrentIndex)
+final playerCurrentIndexProvider = StreamProvider<int?>.internal(
+  playerCurrentIndex,
+  name: r'playerCurrentIndexProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerCurrentIndexHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerCurrentIndexRef = StreamProviderRef<int?>;
+String _$playerStateHash() => r'8d7aedca6df3881f65f6eb7fce2f8edc14ed80d2';
+
+/// See also [playerState].
+@ProviderFor(playerState)
+final playerStateProvider = StreamProvider<PlayerState>.internal(
+  playerState,
+  name: r'playerStateProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$playerStateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerStateRef = StreamProviderRef<PlayerState>;
 String _$albumsControllerHash() => r'bcc768364faca97d0bef1975ae9159370e76eeac';
 
 /// See also [AlbumsController].
