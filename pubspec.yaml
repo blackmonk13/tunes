@@ -38,6 +38,7 @@ dependencies:
   flutter_hooks: ^0.20.5
   form_builder_extra_fields: ^10.1.0
   form_builder_validators: ^9.1.0
+  glass_kit: ^3.0.0
   hooks_riverpod: ^2.5.1
   id3_codec: ^1.0.3
   just_audio: ^0.9.37
