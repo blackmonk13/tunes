@@ -27,62 +27,52 @@ class PlayPauseBtn extends HookConsumerWidget {
 
     return asyncPlayerState.when(
       data: (state) {
-        if (state.playing) {
-          return IconButton(
-            icon: Icon(
-              pauseIcon,
-              size: size,
-            ),
-            onPressed: () => player.pause(),
-          );
-        } else {
-          switch (state.processingState) {
-            case ProcessingState.idle:
-              if (player.currentIndex == null) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                icon: Icon(
-                  playIcon,
-                  size: size,
-                ),
-                onPressed: () {
-                  player.seek(
-                    Duration.zero,
-                    index: 0,
-                  );
-                  player.play();
-                },
-              );
-            case ProcessingState.loading:
-              return loadingWidget;
-            case ProcessingState.buffering:
-              return loadingWidget;
-            case ProcessingState.ready:
-              return IconButton(
-                icon: Icon(
-                  player.playing ? pauseIcon : playIcon,
-                  size: size,
-                ),
-                onPressed: () => player.play(),
-              );
-            case ProcessingState.completed:
-              return IconButton(
-                icon: Icon(
-                  playIcon,
-                  size: size,
-                ),
-                onPressed: () {
-                  player.seek(
-                    Duration.zero,
-                    index: 0,
-                  );
-                  player.play();
-                },
-              );
-            default:
+        switch (state.processingState) {
+          case ProcessingState.idle:
+            if (player.currentIndex == null) {
               return const SizedBox.shrink();
-          }
+            }
+            return IconButton(
+              icon: Icon(
+                playIcon,
+                size: size,
+              ),
+              onPressed: () {
+                player.seek(
+                  Duration.zero,
+                  index: 0,
+                );
+                player.play();
+              },
+            );
+          case ProcessingState.loading:
+            return loadingWidget;
+          case ProcessingState.buffering:
+            return loadingWidget;
+          case ProcessingState.ready:
+            return IconButton(
+              icon: Icon(
+                player.playing ? pauseIcon : playIcon,
+                size: size,
+              ),
+              onPressed: () => player.play(),
+            );
+          case ProcessingState.completed:
+            return IconButton(
+              icon: Icon(
+                playIcon,
+                size: size,
+              ),
+              onPressed: () {
+                player.seek(
+                  Duration.zero,
+                  index: 0,
+                );
+                player.play();
+              },
+            );
+          default:
+            return const SizedBox.shrink();
         }
       },
       error: (error, stackTrace) {
