@@ -8,8 +8,16 @@ class PlayPauseBtn extends HookConsumerWidget {
   const PlayPauseBtn({
     super.key,
     this.size = 42.0,
+    this.playIcon = FluentIcons.play_circle_28_filled,
+    this.pauseIcon = FluentIcons.pause_circle_24_filled,
+    this.loadingWidget = const CircularProgressIndicator(
+      strokeWidth: 2.0,
+    ),
   });
   final double size;
+  final IconData playIcon;
+  final IconData pauseIcon;
+  final Widget loadingWidget;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +30,7 @@ class PlayPauseBtn extends HookConsumerWidget {
         if (state.playing) {
           return IconButton(
             icon: Icon(
-              FluentIcons.pause_circle_24_filled,
+              pauseIcon,
               size: size,
             ),
             onPressed: () => player.pause(),
@@ -35,7 +43,7 @@ class PlayPauseBtn extends HookConsumerWidget {
               }
               return IconButton(
                 icon: Icon(
-                  FluentIcons.play_circle_28_filled,
+                  playIcon,
                   size: size,
                 ),
                 onPressed: () {
@@ -47,19 +55,13 @@ class PlayPauseBtn extends HookConsumerWidget {
                 },
               );
             case ProcessingState.loading:
-              return const CircularProgressIndicator(
-                strokeWidth: 2.0,
-              );
+              return loadingWidget;
             case ProcessingState.buffering:
-              return const CircularProgressIndicator(
-                strokeWidth: 2.0,
-              );
+              return loadingWidget;
             case ProcessingState.ready:
               return IconButton(
                 icon: Icon(
-                  player.playing
-                      ? FluentIcons.pause_circle_24_filled
-                      : FluentIcons.play_circle_28_filled,
+                  player.playing ? pauseIcon : playIcon,
                   size: size,
                 ),
                 onPressed: () => player.play(),
@@ -67,7 +69,7 @@ class PlayPauseBtn extends HookConsumerWidget {
             case ProcessingState.completed:
               return IconButton(
                 icon: Icon(
-                  FluentIcons.play_circle_28_filled,
+                  playIcon,
                   size: size,
                 ),
                 onPressed: () {
@@ -87,9 +89,7 @@ class PlayPauseBtn extends HookConsumerWidget {
         return const SizedBox.shrink();
       },
       loading: () {
-        return const CircularProgressIndicator(
-          strokeWidth: 2.0,
-        );
+        return loadingWidget;
       },
     );
   }
