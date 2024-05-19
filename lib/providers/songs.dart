@@ -1,22 +1,66 @@
 part of 'providers.dart';
 
-
-
 @riverpod
 class SongsController extends _$SongsController {
   @override
-  FutureOr<List<SongModel>> build() async {
-    final allSongs = await ref.read(onAudioQueryProvider).querySongs(
+  FutureOr<List<SongModel>> build() {
+    return ref.read(onAudioQueryProvider).querySongs(
           sortType: SongSortType.DATE_ADDED,
           orderType: OrderType.DESC_OR_GREATER,
         );
-
-    final filteredSongs =
-        allSongs.where((element) => element.fileExtension == "mp3").toList();
-    return allSongs;
   }
 }
 
+@riverpod
+FutureOr<List<SongModel>> allSongs(AllSongsRef ref) {
+  return ref.read(onAudioQueryProvider).querySongs();
+}
+
+@riverpod
+FutureOr<SongModel?> songWithId(SongWithIdRef ref, String id) async {
+  final intId = int.parse(id);
+  final allSongs = await ref.watch(allSongsProvider.future);
+
+  final filteredSongs = allSongs.where((song) {
+    return song.id == intId;
+  }).toList();
+
+  if (filteredSongs.isNotEmpty) {
+    return filteredSongs.first;
+  }
+  
+  return null;
+}
+
+@riverpod
+FutureOr<SongModel?> currentSongInfo(CurrentSongInfoRef ref) async {
+  final currentIndex = await ref.watch(playerCurrentIndexProvider.future);
+  final sequence = await ref.watch(playlistSequenceProvider.future);
+
+  if (currentIndex == null || sequence == null) {
+    return null;
+  }
+
+  if (sequence.isEmpty) {
+    return null;
+  }
+
+  if (currentIndex >= sequence.length) {
+    return null;
+  }
+
+  final currentSource = sequence[currentIndex];
+
+  final mediaItem = currentSource.tag as MediaItem?;
+
+  if (mediaItem == null) {
+    return null;
+  }
+
+  final mediaId = mediaItem.id;
+
+  return ref.watch(songWithIdProvider(mediaId).future);
+}
 
 @riverpod
 class MetadataController extends _$MetadataController {
