@@ -154,6 +154,21 @@ final playerStateProvider = StreamProvider<PlayerState>.internal(
 );
 
 typedef PlayerStateRef = StreamProviderRef<PlayerState>;
+String _$playerLoopModeHash() => r'3c057fe077d1007357d714b026a38197cddcd120';
+
+/// See also [playerLoopMode].
+@ProviderFor(playerLoopMode)
+final playerLoopModeProvider = StreamProvider<LoopMode>.internal(
+  playerLoopMode,
+  name: r'playerLoopModeProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerLoopModeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerLoopModeRef = StreamProviderRef<LoopMode>;
 String _$allSongsHash() => r'09666ac0a630e50962c5184d295b205a7c72a7a4';
 
 /// See also [allSongs].

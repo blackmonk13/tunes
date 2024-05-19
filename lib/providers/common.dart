@@ -88,3 +88,8 @@ Stream<int?> playerCurrentIndex(PlayerCurrentIndexRef ref) {
 Stream<PlayerState> playerState(PlayerStateRef ref) {
   return ref.watch(audioPlayerProvider).playerStateStream;
 }
+
+@Riverpod(keepAlive: true)
+Stream<LoopMode> playerLoopMode(PlayerLoopModeRef ref) {
+  return ref.watch(audioPlayerProvider).loopModeStream;
+}
