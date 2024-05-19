@@ -169,6 +169,22 @@ final playerLoopModeProvider = StreamProvider<LoopMode>.internal(
 );
 
 typedef PlayerLoopModeRef = StreamProviderRef<LoopMode>;
+String _$playerShuffleModeEnabledHash() =>
+    r'c1ee3d9b0b41afa0ff0622f58c5fda4f73835249';
+
+/// See also [playerShuffleModeEnabled].
+@ProviderFor(playerShuffleModeEnabled)
+final playerShuffleModeEnabledProvider = StreamProvider<bool>.internal(
+  playerShuffleModeEnabled,
+  name: r'playerShuffleModeEnabledProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerShuffleModeEnabledHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerShuffleModeEnabledRef = StreamProviderRef<bool>;
 String _$allSongsHash() => r'09666ac0a630e50962c5184d295b205a7c72a7a4';
 
 /// See also [allSongs].

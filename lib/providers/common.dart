@@ -93,3 +93,8 @@ Stream<PlayerState> playerState(PlayerStateRef ref) {
 Stream<LoopMode> playerLoopMode(PlayerLoopModeRef ref) {
   return ref.watch(audioPlayerProvider).loopModeStream;
 }
+
+@Riverpod(keepAlive: true)
+Stream<bool> playerShuffleModeEnabled(PlayerShuffleModeEnabledRef ref) {
+  return ref.watch(audioPlayerProvider).shuffleModeEnabledStream;
+}
