@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/utils/extensions.dart';
 
 enum DurationDisplay {
@@ -9,49 +8,59 @@ enum DurationDisplay {
   none,
 }
 
-class AudioProgressBar extends HookConsumerWidget {
+class AudioProgressBar extends StatelessWidget {
   const AudioProgressBar({
     super.key,
     this.progress = Duration.zero,
     this.total = Duration.zero,
     this.durationDisplay = DurationDisplay.bottom,
     required this.onSeek,
+    this.textStyle,
   });
   final Duration progress;
   final Duration total;
   final ValueChanged<Duration> onSeek;
   final DurationDisplay durationDisplay;
+  final TextStyle? textStyle;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final progressMilliseconds = progress.inMilliseconds.toDouble();
-    final totalMilliseconds = total.inMilliseconds.toDouble();
-    final progressPercentage = progressMilliseconds / totalMilliseconds * 100;
+  Widget build(BuildContext context) {
+    int progressMilliseconds = progress.inMilliseconds;
+    int totalMilliseconds = total.inMilliseconds;
 
-    if (progressPercentage.compareTo(0) == -1 ||
-        // progressPercentage.compareTo(100) > 0 ||
-        progressMilliseconds.compareTo(totalMilliseconds) > 0) {
-      return const LinearProgressIndicator(
-        value: 0,
-      );
+    if (progressMilliseconds < 0) {
+      progressMilliseconds = 0;
     }
 
-    if (durationDisplay == DurationDisplay.none) {
-      return LinearProgressIndicator(
-        value: progressPercentage,
-      );
+    if (progressMilliseconds > totalMilliseconds && totalMilliseconds > 0) {
+      progressMilliseconds = totalMilliseconds;
     }
 
-    final slider = Slider(
-      value: progressMilliseconds,
-      max: totalMilliseconds,
-      onChanged: (value) {
-        onSeek(
-          Duration(
-            milliseconds: value.toInt(),
-          ),
-        );
-      },
+    if (progressMilliseconds > totalMilliseconds && totalMilliseconds <= 0) {
+      totalMilliseconds = progressMilliseconds;
+    }
+
+    final slider = SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        trackHeight: 2, // This changes the track height
+        overlayShape: const RoundSliderOverlayShape(
+          overlayRadius: 20.0,
+        ), // This changes the overlay shape
+        thumbShape: const RoundSliderThumbShape(
+          enabledThumbRadius: 15.0,
+        ), // This changes the thumb shape
+      ),
+      child: Slider(
+        value: progressMilliseconds.toDouble(),
+        max: totalMilliseconds.toDouble(),
+        onChanged: (value) {
+          onSeek(
+            Duration(
+              milliseconds: value.toInt(),
+            ),
+          );
+        },
+      ),
     );
 
     final progressText = Padding(
@@ -60,7 +69,7 @@ class AudioProgressBar extends HookConsumerWidget {
       ),
       child: Text(
         formatDuration(progress),
-        style: context.textTheme.labelMedium,
+        style: context.textTheme.labelMedium?.merge(textStyle),
       ),
     );
 
@@ -70,7 +79,7 @@ class AudioProgressBar extends HookConsumerWidget {
       ),
       child: Text(
         formatDuration(total),
-        style: context.textTheme.labelMedium,
+        style: context.textTheme.labelMedium?.merge(textStyle),
       ),
     );
 
@@ -109,7 +118,7 @@ class AudioProgressBar extends HookConsumerWidget {
             )
           ],
         );
-      default:
+      case DurationDisplay.sides:
         return Row(
           children: [
             progressText,
@@ -119,6 +128,9 @@ class AudioProgressBar extends HookConsumerWidget {
             totalText,
           ],
         );
+
+      default:
+        return slider;
     }
   }
 }
