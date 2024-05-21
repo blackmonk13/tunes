@@ -185,21 +185,22 @@ final playerShuffleModeEnabledProvider = StreamProvider<bool>.internal(
 );
 
 typedef PlayerShuffleModeEnabledRef = StreamProviderRef<bool>;
-String _$allSongsHash() => r'09666ac0a630e50962c5184d295b205a7c72a7a4';
+String _$mappedSongsHash() => r'9b1f304849883da9b96bef7d83438f9783e7d42f';
 
-/// See also [allSongs].
-@ProviderFor(allSongs)
-final allSongsProvider = AutoDisposeFutureProvider<List<SongModel>>.internal(
-  allSongs,
-  name: r'allSongsProvider',
+/// See also [mappedSongs].
+@ProviderFor(mappedSongs)
+final mappedSongsProvider =
+    AutoDisposeFutureProvider<Map<int, SongModel>>.internal(
+  mappedSongs,
+  name: r'mappedSongsProvider',
   debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$allSongsHash,
+      const bool.fromEnvironment('dart.vm.product') ? null : _$mappedSongsHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef AllSongsRef = AutoDisposeFutureProviderRef<List<SongModel>>;
-String _$songWithIdHash() => r'2e635ae6e466e9f56da6c52dcca7500b7a088011';
+typedef MappedSongsRef = AutoDisposeFutureProviderRef<Map<int, SongModel>>;
+String _$songWithIdHash() => r'b062616051875ec5327830db0ad16c13a138ac0f';
 
 /// Copied from Dart SDK
 class _SystemHash {

@@ -12,24 +12,18 @@ class SongsController extends _$SongsController {
 }
 
 @riverpod
-FutureOr<List<SongModel>> allSongs(AllSongsRef ref) {
-  return ref.read(onAudioQueryProvider).querySongs();
+FutureOr<Map<int, SongModel>> mappedSongs(MappedSongsRef ref) async {
+  final songs = await ref.read(onAudioQueryProvider).querySongs();
+
+  return {for (var song in songs) song.id: song};
 }
 
 @riverpod
 FutureOr<SongModel?> songWithId(SongWithIdRef ref, String id) async {
   final intId = int.parse(id);
-  final allSongs = await ref.watch(allSongsProvider.future);
+  final songsMap = await ref.watch(mappedSongsProvider.future);
 
-  final filteredSongs = allSongs.where((song) {
-    return song.id == intId;
-  }).toList();
-
-  if (filteredSongs.isNotEmpty) {
-    return filteredSongs.first;
-  }
-  
-  return null;
+  return songsMap[intId];
 }
 
 @riverpod
