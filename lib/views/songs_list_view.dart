@@ -1,5 +1,6 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:glass_kit/glass_kit.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -119,13 +120,17 @@ class SongListTile extends ConsumerWidget {
         id: song.id,
         type: ArtworkType.AUDIO,
         artworkBorder: BorderRadius.circular(20.0),
-        nullArtworkWidget: Container(
-          decoration: BoxDecoration(
-            color: context.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          width: 50,
+        nullArtworkWidget: GlassContainer(
           height: 50,
+          width: 50,
+          borderColor: context.colorScheme.outline.withOpacity(.3),
+          borderRadius: BorderRadius.circular(20.0),
+          gradient: RadialGradient(
+            colors: [
+              context.colorScheme.primaryContainer.withOpacity(0.40),
+              context.colorScheme.primaryContainer.withOpacity(0.10)
+            ],
+          ),
           child: Icon(
             FluentIcons.music_note_2_24_regular,
             color: context.colorScheme.onPrimaryContainer,
