@@ -2,11 +2,8 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:glass_kit/glass_kit.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
-import 'package:tunes/pages/song_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
@@ -51,6 +48,49 @@ class AsyncSongsListView extends StatelessWidget {
   }
 }
 
+class AsyncSongsSliverListView extends StatelessWidget {
+  final AsyncValue<List<SongModel>> asyncSongs;
+  const AsyncSongsSliverListView({
+    super.key,
+    required this.asyncSongs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return asyncSongs.when(
+      data: (data) {
+        if (data.isEmpty) {
+          return const Text("No Songs");
+        }
+
+        return SliverList.builder(
+          itemCount: data.length,
+          itemBuilder: (BuildContext context, int index) {
+            final currentSong = data[index];
+
+            return SongListTile(song: currentSong);
+          },
+        );
+      },
+      error: (error, stackTrace) {
+        return SliverToBoxAdapter(
+          child: AsyncErrorView(
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+      },
+      loading: () {
+        return const SliverToBoxAdapter(
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class SongsListView extends ConsumerWidget {
   const SongsListView({super.key});
 
@@ -74,26 +114,10 @@ class SongListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final player = ref.watch(audioPlayerProvider);
     final audioQuery = ref.watch(onAudioQueryProvider);
     return ListTile(
       onTap: () async {
-        // Play song
-        final audioSource = AudioSource.uri(
-          Uri.parse(song.data),
-          tag: MediaItem(
-            id: song.id.toString(),
-            title: song.title,
-            artist: song.artist,
-            album: song.album,
-            genre: song.genre,
-          ),
-        );
-        await player.setAudioSource(audioSource);
-        if (player.playing) {
-          return;
-        }
-        player.play();
+        await ref.read(nowPlayingControllerProvider.notifier).addSong(song);
         // Navigate to song info page
         // Navigator.of(context).push(
         //   routeTo(

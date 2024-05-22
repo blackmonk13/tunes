@@ -858,6 +858,23 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 );
 
 typedef _$TabIndex = Notifier<int>;
+String _$nowPlayingControllerHash() =>
+    r'ec0fd0c92973f4d102730f535341070cc415e3fa';
+
+/// See also [NowPlayingController].
+@ProviderFor(NowPlayingController)
+final nowPlayingControllerProvider =
+    AsyncNotifierProvider<NowPlayingController, List<SongModel>>.internal(
+  NowPlayingController.new,
+  name: r'nowPlayingControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$nowPlayingControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$NowPlayingController = AsyncNotifier<List<SongModel>>;
 String _$genresControllerHash() => r'60933916d0a498d194a169d5231886910c0b618c';
 
 /// See also [GenresController].

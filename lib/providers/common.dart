@@ -98,3 +98,99 @@ Stream<LoopMode> playerLoopMode(PlayerLoopModeRef ref) {
 Stream<bool> playerShuffleModeEnabled(PlayerShuffleModeEnabledRef ref) {
   return ref.watch(audioPlayerProvider).shuffleModeEnabledStream;
 }
+
+@Riverpod(keepAlive: true)
+class NowPlayingController extends _$NowPlayingController {
+  @override
+  FutureOr<List<SongModel>> build() async {
+    final audioSequence = await ref.watch(playlistSequenceProvider.future);
+
+    if (audioSequence == null) {
+      final playlist = await createAndLoadPlaylist();
+      return getPlaylistSongs(playlist.sequence);
+    }
+
+    return getPlaylistSongs(audioSequence);
+  }
+
+  Future<void> addSong(SongModel song) async {
+    final player = ref.watch(audioPlayerProvider);
+    final audioSource = player.audioSource;
+
+    if (audioSource == null) {
+      return;
+    }
+
+    if (audioSource is! ConcatenatingAudioSource) {
+      return;
+    }
+
+    // Play song
+    final songAudioSource = AudioSource.uri(
+      Uri.parse(song.data),
+      tag: MediaItem(
+        id: song.id.toString(),
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        genre: song.genre,
+      ),
+    );
+
+    await audioSource.add(songAudioSource);
+
+    if (player.playing) {
+      return;
+    }
+
+    return player.play();
+  }
+
+  FutureOr<List<SongModel>> getPlaylistSongs(
+    List<IndexedAudioSource> sequence,
+  ) async {
+    if (sequence.isEmpty) {
+      return [];
+    }
+
+    final songIds = await Future.wait(
+      sequence.map(
+        (audioSource) async {
+          final mediaItem = audioSource.tag as MediaItem;
+          final mediaId = mediaItem.id;
+          return mediaId;
+        },
+      ),
+    );
+
+    final intIds = songIds.map(int.parse).toList();
+
+    final mappedSongs = await ref.read(mappedSongsProvider.future);
+
+    final foundSongs =
+        intIds.map((id) => mappedSongs[id]).whereType<SongModel>().toList();
+
+    return foundSongs;
+  }
+
+  FutureOr<ConcatenatingAudioSource> createAndLoadPlaylist() async {
+    final player = ref.watch(audioPlayerProvider);
+    // Define the playlist
+    final playlist = ConcatenatingAudioSource(
+      // Start loading next item just before reaching it
+      useLazyPreparation: true,
+      // Customise the shuffle algorithm
+      shuffleOrder: DefaultShuffleOrder(),
+      // Specify the playlist items
+      children: [],
+    );
+    // Load the playlist
+    await player.setAudioSource(
+      playlist,
+      initialIndex: 0,
+      initialPosition: Duration.zero,
+    );
+
+    return playlist;
+  }
+}
