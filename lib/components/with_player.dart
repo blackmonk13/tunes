@@ -13,7 +13,8 @@ class WithPlayer extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(audioPlayerProvider);
+    final nowPlayingController = ref.watch(nowPlayingControllerProvider);
+    final player = ref.watch(audioPlayerProvider);
     final asyncPlayerState = ref.watch(playerStateProvider);
     const hiddenPosition = -72.0;
     const visiblePosition = 10.0;
@@ -28,6 +29,16 @@ class WithPlayer extends HookConsumerWidget {
           curve: Curves.bounceInOut,
           bottom: asyncPlayerState.when(
             data: (data) {
+              final playlistSongs = nowPlayingController.valueOrNull;
+
+              if (playlistSongs == null) {
+                return hiddenPosition;
+              }
+
+              if (playlistSongs.isEmpty) {
+                return hiddenPosition;
+              }
+              
               switch (data.processingState) {
                 case ProcessingState.idle:
                   return hiddenPosition;
@@ -36,7 +47,10 @@ class WithPlayer extends HookConsumerWidget {
                 case ProcessingState.buffering:
                   return hiddenPosition;
                 case ProcessingState.ready:
-                  return visiblePosition;
+                  if (data.playing && player.playing) {
+                    return visiblePosition;
+                  }
+                  return hiddenPosition;
                 case ProcessingState.completed:
                   return visiblePosition;
               }
