@@ -28,60 +28,75 @@ class PlayPauseBtn extends HookConsumerWidget {
 
     return asyncPlayerState.when(
       data: (state) {
+        IconData iconData;
+        VoidCallback? onPressed;
+
         switch (state.processingState) {
           case ProcessingState.idle:
             if (player.currentIndex == null) {
-              return const SizedBox.shrink();
+              iconData = playIcon;
+              onPressed = null;
+            } else {
+              iconData = playIcon;
+              onPressed = () {
+                player.seek(
+                  Duration.zero,
+                  index: 0,
+                );
+                player.play();
+              };
             }
-            return IconButton(
-              icon: Icon(
-                playIcon,
-                size: size,
-              ),
-              onPressed: () {
-                player.seek(
-                  Duration.zero,
-                  index: 0,
-                );
-                player.play();
-              },
-            );
+            break;
           case ProcessingState.loading:
-            return loadingWidget;
           case ProcessingState.buffering:
-            return loadingWidget;
+            iconData = playIcon;
+            onPressed = null;
+            break;
           case ProcessingState.ready:
-            return IconButton(
-              icon: Icon(
-                state.playing ? pauseIcon : playIcon,
-                size: size,
-              ),
-              onPressed: () => state.playing ? player.pause() : player.play(),
-            );
+            iconData = state.playing ? pauseIcon : playIcon;
+            onPressed = () => state.playing ? player.pause() : player.play();
+            break;
           case ProcessingState.completed:
-            return IconButton(
-              icon: Icon(
-                playIcon,
-                size: size,
-              ),
-              onPressed: () {
-                player.seek(
-                  Duration.zero,
-                  index: 0,
-                );
-                player.play();
-              },
-            );
+            iconData = playIcon;
+            onPressed = () {
+              player.seek(
+                Duration.zero,
+                index: 0,
+              );
+              player.play();
+            };
+            break;
           default:
-            return const SizedBox.shrink();
+            iconData = playIcon;
+            onPressed = null;
         }
+
+        return IconButton(
+          disabledColor: context.colorScheme.outline.withOpacity(.5),
+          icon: Icon(
+            iconData,
+            size: size,
+          ),
+          onPressed: onPressed,
+        );
       },
       error: (error, stackTrace) {
-        return const SizedBox.shrink();
+        return disabledBtn(context);
       },
       loading: () {
-        return loadingWidget;
+        return disabledBtn(context);
       },
+    );
+  }
+
+  IconButton disabledBtn(BuildContext context) {
+    return IconButton(
+      onPressed: null,
+      disabledColor: context.colorScheme.outline.withOpacity(.5),
+      icon: Icon(
+        playIcon,
+        size: size,
+      ),
     );
   }
 }
@@ -154,7 +169,10 @@ class PreviousBtn extends HookConsumerWidget {
 
 class RepeatBtn extends ConsumerWidget {
   final double size;
-  const RepeatBtn({super.key, this.size = 24.0,});
+  const RepeatBtn({
+    super.key,
+    this.size = 24.0,
+  });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final player = ref.watch(audioPlayerProvider);
