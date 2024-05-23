@@ -1,13 +1,16 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:glass_kit/glass_kit.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
-class AsyncSongsListView extends StatelessWidget {
+import 'package:tunes/components/song_list_tile.dart';
+
+import 'package:tunes/components/sort_order_view.dart';
+
+class AsyncSongsListView extends ConsumerWidget {
   final AsyncValue<List<SongModel>> asyncSongs;
   final ScrollController? scrollController;
   const AsyncSongsListView({
@@ -17,20 +20,117 @@ class AsyncSongsListView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(audioPlayerProvider);
+    final songsSortOrder = ref.watch(songsSortOrderProvider('all_songs'));
     return asyncSongs.when(
       data: (data) {
         if (data.isEmpty) {
-          return const Text("No Songs");
+          return const Center(
+            child: Text("No Songs"),
+          );
         }
-        return ListView.builder(
-          controller: scrollController,
-          itemCount: data.length,
-          itemBuilder: (BuildContext context, int index) {
-            final currentSong = data[index];
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      await ref
+                          .read(nowPlayingControllerProvider.notifier)
+                          .playAll(data);
+                    },
+                    icon: Icon(
+                      FluentIcons.play_circle_28_filled,
+                      color: context.colorScheme.primary,
+                    ),
+                    label: Text(
+                      "Play All",
+                      style: context.textTheme.labelSmall,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      await showModalBottomSheet<void>(
+                        context: context,
+                        showDragHandle: true,
+                        backgroundColor: Colors.grey[900],
+                        builder: (BuildContext context) {
+                          return const SortOrderView(viewKey: 'all_songs');
+                        },
+                      );
+                    },
+                    icon: Icon(
+                      (() {
+                        switch (songsSortOrder.orderType) {
+                          case OrderType.ASC_OR_SMALLER:
+                            return FluentIcons.text_sort_ascending_24_regular;
+                          case OrderType.DESC_OR_GREATER:
+                            return FluentIcons.text_sort_descending_24_regular;
 
-            return SongListTile(song: currentSong);
-          },
+                          default:
+                            return FluentIcons.text_sort_descending_24_regular;
+                        }
+                      })(),
+                      size: 18.0,
+                      color: context.iconTheme.color,
+                    ),
+                    label: Text(
+                      "Sort",
+                      style: context.textTheme.labelSmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: data.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final currentSong = data[index];
+
+                  return SongListTile(
+                    song: currentSong,
+                    onTap: (song) async {
+                      final sequence = player.sequence;
+
+                      if (sequence == null) {
+                        return ref
+                            .read(nowPlayingControllerProvider.notifier)
+                            .queue(
+                              data,
+                              startWith: song,
+                            );
+                      }
+                      if (sequence.isNotEmpty) {
+                        return ref
+                            .read(nowPlayingControllerProvider.notifier)
+                            .queue([song]);
+                      }
+                      await ref
+                          .read(nowPlayingControllerProvider.notifier)
+                          .queue(
+                            data,
+                            startWith: song,
+                          );
+                      // Navigate to song info page
+                      // Navigator.of(context).push(
+                      //   routeTo(
+                      //     page: SongInfo(
+                      //       songInfo: song,
+                      //     ),
+                      //   ),
+                      // );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
       error: (error, stackTrace) {
@@ -41,7 +141,10 @@ class AsyncSongsListView extends StatelessWidget {
       },
       loading: () {
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            strokeWidth: 2.0,
+            strokeCap: StrokeCap.round,
+          ),
         );
       },
     );
@@ -100,68 +203,6 @@ class SongsListView extends ConsumerWidget {
 
     return AsyncSongsListView(
       asyncSongs: asyncSongs,
-    );
-  }
-}
-
-class SongListTile extends ConsumerWidget {
-  const SongListTile({
-    super.key,
-    required this.song,
-  });
-
-  final SongModel song;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
-    return ListTile(
-      onTap: () async {
-        await ref.read(nowPlayingControllerProvider.notifier).addSong(song);
-        // Navigate to song info page
-        // Navigator.of(context).push(
-        //   routeTo(
-        //     page: SongInfo(
-        //       songInfo: song,
-        //     ),
-        //   ),
-        // );
-      },
-      title: Text(
-        song.title,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 3,
-      ),
-      subtitle: Text(
-        song.artist ?? "No Artist",
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-      // This Widget will query/load image.
-      // You can use/create your own widget/method using [queryArtwork].
-      leading: QueryArtworkWidget(
-        controller: audioQuery,
-        id: song.id,
-        type: ArtworkType.AUDIO,
-        artworkBorder: BorderRadius.circular(20.0),
-        nullArtworkWidget: GlassContainer(
-          height: 50,
-          width: 50,
-          borderColor: context.colorScheme.outline.withOpacity(.3),
-          borderRadius: BorderRadius.circular(20.0),
-          gradient: RadialGradient(
-            colors: [
-              context.colorScheme.primaryContainer.withOpacity(0.40),
-              context.colorScheme.primaryContainer.withOpacity(0.10)
-            ],
-          ),
-          child: Icon(
-            FluentIcons.music_note_2_24_regular,
-            color: context.colorScheme.onPrimaryContainer,
-            size: 32.0,
-          ),
-        ),
-      ),
     );
   }
 }

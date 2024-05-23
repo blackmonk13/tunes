@@ -106,27 +106,98 @@ class NowPlayingController extends _$NowPlayingController {
     final audioSequence = await ref.watch(playlistSequenceProvider.future);
 
     if (audioSequence == null) {
-      final playlist = await createAndLoadPlaylist();
-      return getPlaylistSongs(playlist.sequence);
+      return [];
     }
 
     return getPlaylistSongs(audioSequence);
   }
 
-  Future<void> addSong(SongModel song) async {
-    final player = ref.watch(audioPlayerProvider);
-    final audioSource = player.audioSource;
+  Future<void> queue(List<SongModel> songs, {SongModel? startWith}) async {
+    final player = ref.read(audioPlayerProvider);
+    final playlist = getPlaylist();
 
-    if (audioSource == null) {
+    final audioSources = songs.map((song) => createAudioSource(song)).toList();
+
+    if (playlist == null) {
+      await createAndLoadPlaylist(
+        items: audioSources,
+        initialIndex: startWith == null ? null : songs.indexOf(startWith),
+      );
+      return player.play();
+    }
+
+    final playlistItems = await getPlaylistSongs(playlist.sequence);
+
+    if (playlistItems.isEmpty) {
+      await createAndLoadPlaylist(
+        items: audioSources,
+        initialIndex: startWith == null ? null : songs.indexOf(startWith),
+      );
+      return player.play();
+    }
+
+    await playlist.addAll(audioSources);
+
+    final startIndex = await getStartIndex(startWith);
+
+    if (startWith != null) {
+      await player.seek(Duration.zero, index: startIndex);
+    }
+
+    if (player.playing) {
       return;
     }
 
-    if (audioSource is! ConcatenatingAudioSource) {
-      return;
+    return player.play();
+  }
+
+  Future<void> playAll(List<SongModel> songs, {SongModel? startWith}) async {
+    final player = ref.read(audioPlayerProvider);
+    final playlist = getPlaylist();
+
+    final audioSources = songs.map((song) => createAudioSource(song)).toList();
+
+    if (playlist == null) {
+      await createAndLoadPlaylist(
+        items: audioSources,
+        initialIndex: startWith == null ? null : songs.indexOf(startWith),
+      );
+      return player.play();
     }
 
-    // Play song
-    final songAudioSource = AudioSource.uri(
+    await player.stop();
+    await playlist.clear();
+    return queue(songs, startWith: startWith);
+  }
+
+  FutureOr<int?> getStartIndex(SongModel? song) async {
+    if (song == null) {
+      return null;
+    }
+
+    final playlist = getPlaylist();
+
+    if (playlist == null) {
+      return null;
+    }
+
+    final playlistItems = await getPlaylistSongs(playlist.sequence);
+
+    if (playlistItems.isEmpty) {
+      return null;
+    }
+
+    final startIndex = playlistItems.indexOf(song);
+
+    if (startIndex < 0 || startIndex >= playlistItems.length) {
+      return null;
+    }
+
+    return startIndex;
+  }
+
+  UriAudioSource createAudioSource(SongModel song) {
+    return AudioSource.uri(
       Uri.parse(song.data),
       tag: MediaItem(
         id: song.id.toString(),
@@ -136,14 +207,21 @@ class NowPlayingController extends _$NowPlayingController {
         genre: song.genre,
       ),
     );
+  }
 
-    await audioSource.add(songAudioSource);
+  ConcatenatingAudioSource? getPlaylist() {
+    final player = ref.read(audioPlayerProvider);
+    final audioSource = player.audioSource;
 
-    if (player.playing) {
-      return;
+    if (audioSource == null) {
+      return null;
     }
 
-    return player.play();
+    if (audioSource is! ConcatenatingAudioSource) {
+      return null;
+    }
+
+    return audioSource;
   }
 
   FutureOr<List<SongModel>> getPlaylistSongs(
@@ -173,7 +251,11 @@ class NowPlayingController extends _$NowPlayingController {
     return foundSongs;
   }
 
-  FutureOr<ConcatenatingAudioSource> createAndLoadPlaylist() async {
+  FutureOr<ConcatenatingAudioSource> createAndLoadPlaylist({
+    List<AudioSource>? items,
+    int? initialIndex,
+    Duration? initialPosition,
+  }) async {
     final player = ref.watch(audioPlayerProvider);
     // Define the playlist
     final playlist = ConcatenatingAudioSource(
@@ -182,13 +264,13 @@ class NowPlayingController extends _$NowPlayingController {
       // Customise the shuffle algorithm
       shuffleOrder: DefaultShuffleOrder(),
       // Specify the playlist items
-      children: [],
+      children: items ?? [],
     );
     // Load the playlist
     await player.setAudioSource(
       playlist,
-      initialIndex: 0,
-      initialPosition: Duration.zero,
+      initialIndex: initialIndex ?? 0,
+      initialPosition: initialPosition ?? Duration.zero,
     );
 
     return playlist;
