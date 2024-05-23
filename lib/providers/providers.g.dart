@@ -859,7 +859,7 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 
 typedef _$TabIndex = Notifier<int>;
 String _$nowPlayingControllerHash() =>
-    r'ec0fd0c92973f4d102730f535341070cc415e3fa';
+    r'0d63fefacc9074f591bd238545756d0b16fe4ae2';
 
 /// See also [NowPlayingController].
 @ProviderFor(NowPlayingController)
@@ -1196,7 +1196,153 @@ class _PlaylistSongsProviderElement
   PlaylistModel get playlist => (origin as PlaylistSongsProvider).playlist;
 }
 
-String _$songsControllerHash() => r'c7756e231494604cce19850615d0ebd985e66852';
+String _$songsSortOrderHash() => r'ea5eba1e5ad405fde06decdacf161b190bc15ac3';
+
+abstract class _$SongsSortOrder extends BuildlessAutoDisposeNotifier<
+    ({SongSortType sortType, OrderType orderType})> {
+  late final String viewKey;
+
+  ({SongSortType sortType, OrderType orderType}) build(
+    String viewKey,
+  );
+}
+
+/// See also [SongsSortOrder].
+@ProviderFor(SongsSortOrder)
+const songsSortOrderProvider = SongsSortOrderFamily();
+
+/// See also [SongsSortOrder].
+class SongsSortOrderFamily
+    extends Family<({SongSortType sortType, OrderType orderType})> {
+  /// See also [SongsSortOrder].
+  const SongsSortOrderFamily();
+
+  /// See also [SongsSortOrder].
+  SongsSortOrderProvider call(
+    String viewKey,
+  ) {
+    return SongsSortOrderProvider(
+      viewKey,
+    );
+  }
+
+  @override
+  SongsSortOrderProvider getProviderOverride(
+    covariant SongsSortOrderProvider provider,
+  ) {
+    return call(
+      provider.viewKey,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'songsSortOrderProvider';
+}
+
+/// See also [SongsSortOrder].
+class SongsSortOrderProvider extends AutoDisposeNotifierProviderImpl<
+    SongsSortOrder, ({SongSortType sortType, OrderType orderType})> {
+  /// See also [SongsSortOrder].
+  SongsSortOrderProvider(
+    String viewKey,
+  ) : this._internal(
+          () => SongsSortOrder()..viewKey = viewKey,
+          from: songsSortOrderProvider,
+          name: r'songsSortOrderProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$songsSortOrderHash,
+          dependencies: SongsSortOrderFamily._dependencies,
+          allTransitiveDependencies:
+              SongsSortOrderFamily._allTransitiveDependencies,
+          viewKey: viewKey,
+        );
+
+  SongsSortOrderProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.viewKey,
+  }) : super.internal();
+
+  final String viewKey;
+
+  @override
+  ({SongSortType sortType, OrderType orderType}) runNotifierBuild(
+    covariant SongsSortOrder notifier,
+  ) {
+    return notifier.build(
+      viewKey,
+    );
+  }
+
+  @override
+  Override overrideWith(SongsSortOrder Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: SongsSortOrderProvider._internal(
+        () => create()..viewKey = viewKey,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        viewKey: viewKey,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeNotifierProviderElement<SongsSortOrder,
+      ({SongSortType sortType, OrderType orderType})> createElement() {
+    return _SongsSortOrderProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SongsSortOrderProvider && other.viewKey == viewKey;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, viewKey.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SongsSortOrderRef on AutoDisposeNotifierProviderRef<
+    ({SongSortType sortType, OrderType orderType})> {
+  /// The parameter `viewKey` of this provider.
+  String get viewKey;
+}
+
+class _SongsSortOrderProviderElement extends AutoDisposeNotifierProviderElement<
+    SongsSortOrder,
+    ({SongSortType sortType, OrderType orderType})> with SongsSortOrderRef {
+  _SongsSortOrderProviderElement(super.provider);
+
+  @override
+  String get viewKey => (origin as SongsSortOrderProvider).viewKey;
+}
+
+String _$songsControllerHash() => r'ba46afd472ba9cfc0b65b6e7bf796d59f1be7ac6';
 
 /// See also [SongsController].
 @ProviderFor(SongsController)

@@ -1,12 +1,32 @@
 part of 'providers.dart';
 
+
+@riverpod
+class SongsSortOrder extends _$SongsSortOrder {
+  @override
+  ({SongSortType sortType, OrderType orderType}) build(String viewKey) {
+    return (
+      sortType: SongSortType.DATE_ADDED,
+      orderType: OrderType.DESC_OR_GREATER,
+    );
+  }
+
+  void sort({SongSortType? sortType, OrderType? orderType}) {
+    state = (
+      sortType: sortType ?? state.sortType,
+      orderType: orderType ?? state.orderType
+    );
+  }
+}
+
 @riverpod
 class SongsController extends _$SongsController {
   @override
   FutureOr<List<SongModel>> build() {
+    final songsSortOrder = ref.watch(songsSortOrderProvider('all_songs'));
     return ref.read(onAudioQueryProvider).querySongs(
-          sortType: SongSortType.DATE_ADDED,
-          orderType: OrderType.DESC_OR_GREATER,
+          sortType: songsSortOrder.sortType,
+          orderType: songsSortOrder.orderType,
         );
   }
 }
