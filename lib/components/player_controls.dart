@@ -2,15 +2,14 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/components/audio_progress_bar.dart';
+import 'package:tunes/components/now_playing_view.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
 class PlayerControls extends StatelessWidget {
-  final VoidCallback? onPlaylistPressed;
   const PlayerControls({
     super.key,
-    this.onPlaylistPressed,
   });
 
   @override
@@ -46,11 +45,7 @@ class PlayerControls extends StatelessWidget {
               onPressed: () {},
               icon: const Icon(FluentIcons.speaker_2_24_regular),
             ),
-            IconButton(
-              disabledColor: context.colorScheme.outline.withOpacity(.5),
-              onPressed: onPlaylistPressed,
-              icon: const Icon(FluentIcons.reading_list_24_regular),
-            ),
+            const NowPlayingBtn(),
           ],
         ),
         // Spacer(),
@@ -58,6 +53,8 @@ class PlayerControls extends StatelessWidget {
     );
   }
 }
+
+
 
 class PlayerProgressBar extends ConsumerWidget {
   const PlayerProgressBar({
