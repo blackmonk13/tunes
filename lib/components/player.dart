@@ -100,7 +100,24 @@ class PlayerView extends HookConsumerWidget {
         ),
         const NowPlayingList(),
       ],
-      stickyActionBar: const MiniPlayer()
+      stickyActionBar: GestureDetector(
+        onTap: () => pageIndex.value = 0,
+        onVerticalDragEnd: (DragEndDetails details) {
+          final primaryVelocity = details.primaryVelocity;
+
+          if (primaryVelocity == null) {
+            return;
+          }
+
+          double velocityThreshold = 500;
+
+          if (primaryVelocity < -velocityThreshold) {
+            // Swipe Up detected
+            pageIndex.value = 0;
+          }
+        },
+        child: const MiniPlayer(),
+      ),
     );
   }
 }
