@@ -254,8 +254,9 @@ class ShuffleBtn extends ConsumerWidget {
                 : FluentIcons.arrow_shuffle_off_24_regular,
             size: size,
           ),
-          onPressed: () {
-            player.shuffle();
+          onPressed: () async {
+            await player.setShuffleModeEnabled(!data);
+            await player.shuffle();
           },
         );
       },
