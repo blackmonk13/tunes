@@ -24,8 +24,6 @@ extension StringExtension on String {
   }
 
   String get toCamelCase => camelCase;
-
-  
 }
 
 BorderRadius get roundedTop {
@@ -36,6 +34,10 @@ BorderRadius get roundedTop {
 }
 
 extension ContextUtils on BuildContext {
+  EdgeInsets get viewInsets {
+    return MediaQuery.of(this).viewInsets;
+  }
+
   double get screenWidth {
     return MediaQuery.of(this).size.width;
   }

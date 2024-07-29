@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tunes/models/filters/filters.dart';
 
 late SharedPreferences prefs;
 
@@ -10,6 +11,7 @@ const mediaPathsPrefsKey = "mediapaths";
 const eulaPrefsKey = "eula_accepted";
 const skipShortTracksPrefsKey = "skip_short_tracks";
 const skipSmallTracksPrefsKey = "skip_small_tracks";
+const filterPathsPrefsKey = "filter_paths";
 
 ThemeMode get themeModePref {
   final themeModeInt = prefs.getInt(themeModePrefsKey);
@@ -24,4 +26,5 @@ ThemeMode get themeModePref {
 Future<bool> setThemeModePref(ThemeMode themeMode) async {
   return prefs.setInt(themeModePrefsKey, themeMode.index);
 }
+
 

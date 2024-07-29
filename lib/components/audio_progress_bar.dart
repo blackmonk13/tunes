@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/functions.dart';
 
 enum DurationDisplay {
   top,
   bottom,
   sides,
+  left,
+  right,
   none,
 }
 
@@ -15,13 +18,31 @@ class AudioProgressBar extends StatelessWidget {
     this.total = Duration.zero,
     this.durationDisplay = DurationDisplay.bottom,
     required this.onSeek,
-    this.textStyle,
+    this.progressTextStyle,
+    this.totalTextStyle,
+    this.enabledThumbRadius = 15.0,
+    this.overlayRadius = 20.0,
+    this.trackHeight = 2.0,
+    this.builder,
+    this.activeTrackColor,
+    this.inactiveTrackColor,
+    this.thumbColor,
+    this.disabledThumbColor,
   });
   final Duration progress;
   final Duration total;
   final ValueChanged<Duration> onSeek;
   final DurationDisplay durationDisplay;
-  final TextStyle? textStyle;
+  final TextStyle? progressTextStyle;
+  final TextStyle? totalTextStyle;
+  final double enabledThumbRadius;
+  final double overlayRadius;
+  final double trackHeight;
+  final Color? activeTrackColor;
+  final Color? inactiveTrackColor;
+  final Color? thumbColor;
+  final Color? disabledThumbColor;
+  final Widget Function(Widget slider, String progress, String total)? builder;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +63,16 @@ class AudioProgressBar extends StatelessWidget {
 
     final slider = SliderTheme(
       data: SliderTheme.of(context).copyWith(
-        trackHeight: 2, // This changes the track height
-        overlayShape: const RoundSliderOverlayShape(
-          overlayRadius: 20.0,
+        trackHeight: trackHeight, // This changes the track height
+        activeTrackColor: activeTrackColor,
+        inactiveTrackColor: inactiveTrackColor,
+        thumbColor: thumbColor,
+        disabledThumbColor: disabledThumbColor,
+        overlayShape: RoundSliderOverlayShape(
+          overlayRadius: overlayRadius,
         ), // This changes the overlay shape
-        thumbShape: const RoundSliderThumbShape(
-          enabledThumbRadius: 15.0,
+        thumbShape: RoundSliderThumbShape(
+          enabledThumbRadius: enabledThumbRadius,
         ), // This changes the thumb shape
       ),
       child: Slider(
@@ -63,13 +88,18 @@ class AudioProgressBar extends StatelessWidget {
       ),
     );
 
+    if (builder != null) {
+      return builder!
+          .call(slider, formatDuration(progress), formatDuration(total));
+    }
+
     final progressText = Padding(
       padding: const EdgeInsets.all(6.0).copyWith(
         right: 16.0,
       ),
       child: Text(
         formatDuration(progress),
-        style: context.textTheme.labelMedium?.merge(textStyle),
+        style: context.textTheme.labelMedium?.merge(progressTextStyle),
       ),
     );
 
@@ -79,7 +109,7 @@ class AudioProgressBar extends StatelessWidget {
       ),
       child: Text(
         formatDuration(total),
-        style: context.textTheme.labelMedium?.merge(textStyle),
+        style: context.textTheme.labelMedium?.merge(totalTextStyle),
       ),
     );
 
@@ -129,18 +159,40 @@ class AudioProgressBar extends StatelessWidget {
           ],
         );
 
+      case DurationDisplay.left:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            slider,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  progressText,
+                  Text(
+                    "/",
+                    style: context.textTheme.labelMedium?.merge(totalTextStyle),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(6.0).copyWith(
+                      left: 8.0,
+                    ),
+                    child: Text(
+                      formatDuration(total),
+                      style:
+                          context.textTheme.labelMedium?.merge(totalTextStyle),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+        );
+
       default:
         return slider;
     }
   }
 }
 
-String formatDuration(Duration duration, {int padding = 2}) {
-  if (duration.inMinutes < 1) {
-    return '00:${duration.inSeconds.toString().padLeft(padding, '0')}';
-  } else if (duration.inMinutes < 60) {
-    return '${duration.inMinutes.toString().padLeft(padding, '0')}:${duration.inSeconds.remainder(60).toString().padLeft(2, '0')}';
-  } else {
-    return '${duration.inHours.toString().padLeft(padding, '0')}:${duration.inMinutes.remainder(60).toString().padLeft(2, '0')}:${duration.inSeconds.remainder(60).toString().padLeft(2, '0')}';
-  }
-}
+

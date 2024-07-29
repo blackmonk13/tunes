@@ -44,3 +44,4 @@ app.*.map.json
 
 # Generated Files
 *.g.dart
+suggest.md

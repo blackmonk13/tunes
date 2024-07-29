@@ -15,48 +15,57 @@ class WithPlayer extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nowPlayingController = ref.watch(nowPlayingControllerProvider);
     final asyncPlayerState = ref.watch(playerStateProvider);
+    final hide = asyncPlayerState.when(
+      data: (data) {
+        final playlistSongs = nowPlayingController.valueOrNull;
+
+        if (playlistSongs == null) {
+          return true;
+        }
+
+        if (playlistSongs.isEmpty) {
+          return true;
+        }
+
+        switch (data.processingState) {
+          case ProcessingState.idle:
+            return false;
+          case ProcessingState.loading:
+            return true;
+          case ProcessingState.buffering:
+            return true;
+          case ProcessingState.ready:
+            if (playlistSongs.isNotEmpty) {
+              return false;
+            }
+            return true;
+          case ProcessingState.completed:
+            return false;
+        }
+      },
+      error: (error, stackTrace) => true,
+      loading: () => true,
+    );
     const hiddenPosition = -72.0;
-    const visiblePosition = 10.0;
+    const visiblePosition = -10.0;
+
     return Stack(
       alignment: Alignment.topCenter,
       children: [
         Positioned.fill(
-          child: child,
+          child: AnimatedPadding(
+            curve: Curves.bounceInOut,
+            duration: const Duration(milliseconds: 300),
+            padding: EdgeInsets.only(
+              bottom: hide ? 0 : 72.0,
+            ),
+            child: child,
+          ),
         ),
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
           curve: Curves.bounceInOut,
-          bottom: asyncPlayerState.when(
-            data: (data) {
-              final playlistSongs = nowPlayingController.valueOrNull;
-
-              if (playlistSongs == null) {
-                return hiddenPosition;
-              }
-
-              if (playlistSongs.isEmpty) {
-                return hiddenPosition;
-              }
-              
-              switch (data.processingState) {
-                case ProcessingState.idle:
-                  return visiblePosition;
-                case ProcessingState.loading:
-                  return hiddenPosition;
-                case ProcessingState.buffering:
-                  return hiddenPosition;
-                case ProcessingState.ready:
-                  if (playlistSongs.isNotEmpty) {
-                    return visiblePosition;
-                  }
-                  return hiddenPosition;
-                case ProcessingState.completed:
-                  return visiblePosition;
-              }
-            },
-            error: (error, stackTrace) => hiddenPosition,
-            loading: () => hiddenPosition,
-          ),
+          bottom: hide ? hiddenPosition : visiblePosition,
           child: const PlayerView(),
         )
       ],

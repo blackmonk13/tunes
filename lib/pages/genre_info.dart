@@ -1,10 +1,12 @@
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:tunes/components/artwork_data_builder.dart';
+import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/functions.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class GenreInfoPage extends ConsumerWidget {
@@ -17,8 +19,6 @@ class GenreInfoPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
-    final asyncGenreSongs = ref.watch(genreSongsProvider(genre));
     return Scaffold(
       body: WithPlayer(
         child: CustomScrollView(
@@ -27,48 +27,46 @@ class GenreInfoPage extends ConsumerWidget {
               pinned: true,
               expandedHeight: context.screenHeight * 0.3,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(genre.genre),
+                title: ArtworkDataBuilder(
+                  id: genre.id,
+                  artworkType: ArtworkType.GENRE,
+                  builder: (image, palette) {
+                    final fgColor = calculateFgColor(palette);
+
+                    return Text(
+                      genre.genre,
+                      style: TextStyle(
+                        color: fgColor,
+                      ),
+                    );
+                  },
+                ),
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        context.colorScheme.background,
-                        context.colorScheme.background.withOpacity(.0),
+                        context.colorScheme.surface,
+                        context.colorScheme.surface.withOpacity(.0),
                       ],
                     ),
                   ),
-                  child: QueryArtworkWidget(
-                    controller: audioQuery,
+                  child: SongArtwork(
                     id: genre.id,
                     type: ArtworkType.GENRE,
-                    quality: 100,
-                    artworkQuality: FilterQuality.high,
                     size: (context.screenHeight * 0.3).toInt(),
-                    artworkHeight: context.screenHeight * 0.3,
-                    artworkWidth: context.screenHeight * 0.3,
-                    artworkBorder: BorderRadius.circular(5.0),
-                    nullArtworkWidget: Container(
-                      decoration: BoxDecoration(
-                        color: context.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(5.0),
-                      ),
-                      width: 50,
-                      height: 50,
-                      child: Icon(
-                        FluentIcons.music_note_2_24_regular,
-                        color: context.colorScheme.onPrimaryContainer,
-                        size: 32.0,
-                      ),
-                    ),
+                    height: context.screenHeight * 0.3,
+                    width: context.screenHeight * 0.3,
+                    borderRadius: BorderRadius.circular(5.0),
                   ),
                 ),
               ),
             ),
             SliverFillRemaining(
-              child: AsyncSongsListView(
-                asyncSongs: asyncGenreSongs,
+              child: SongsListView(
+                queryType: SongQueryType.songsForGenre,
+                query: genre.genre,
               ),
             ),
           ],
@@ -77,3 +75,4 @@ class GenreInfoPage extends ConsumerWidget {
     );
   }
 }
+

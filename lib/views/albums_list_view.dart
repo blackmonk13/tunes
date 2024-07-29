@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/components/song_artwork.dart';
+import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
@@ -11,24 +13,54 @@ import 'package:tunes/pages/album_info.dart';
 class AsyncAlbumsListView extends StatelessWidget {
   final AsyncValue<List<AlbumModel>> asyncAlbums;
   final ScrollController? scrollController;
+  final String searchQuery;
   const AsyncAlbumsListView({
     super.key,
     required this.asyncAlbums,
     this.scrollController,
+    this.searchQuery = "",
   });
 
   @override
   Widget build(BuildContext context) {
     return asyncAlbums.when(
       data: (data) {
-        if (data.isEmpty) {
-          return const Text("No Albums");
+        List<AlbumModel> albums = data;
+
+        if (searchQuery.isNotEmpty) {
+          albums = data.where((el) {
+            for (final e in [el.album, el.artist]) {
+              if (e?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+                  false) {
+                return true;
+              }
+            }
+            return false;
+          }).toList();
+        }
+        if (albums.isEmpty) {
+          return Container(
+            width: context.screenWidth,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Spacer(),
+                Text(
+                  "No albums",
+                  style: context.textTheme.bodyLarge?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+          );
         }
         return ListView.builder(
           controller: scrollController,
-          itemCount: data.length,
+          itemCount: albums.length,
           itemBuilder: (BuildContext context, int index) {
-            final currentAlbum = data[index];
+            final currentAlbum = albums[index];
 
             return AlbumListTile(album: currentAlbum);
           },
@@ -41,8 +73,11 @@ class AsyncAlbumsListView extends StatelessWidget {
         );
       },
       loading: () {
-        return const Center(
-          child: CircularProgressIndicator(),
+        return ListView.builder(
+          itemCount: 10,
+          itemBuilder: (BuildContext context, int index) {
+            return const SongListTileLoading();
+          },
         );
       },
     );
@@ -59,7 +94,7 @@ class AlbumListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
+    ref.watch(onAudioQueryProvider);
 
     return ListTile(
       onTap: () {
@@ -82,38 +117,33 @@ class AlbumListTile extends ConsumerWidget {
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
-      // This Widget will query/load image.
-      // You can use/create your own widget/method using [queryArtwork].
-      leading: QueryArtworkWidget(
-        controller: audioQuery,
+      leading: SongArtwork(
         id: album.id,
         type: ArtworkType.ALBUM,
-        artworkBorder: BorderRadius.circular(20.0),
-        nullArtworkWidget: Container(
-          decoration: BoxDecoration(
-            color: context.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          width: 50,
-          height: 50,
-          child: Icon(
-            FluentIcons.music_note_2_24_regular,
-            color: context.colorScheme.onPrimaryContainer,
-            size: 32.0,
-          ),
-        ),
+        hasBorder: true,
+        borderRadius: BorderRadius.circular(20.0),
+        width: 50,
+        height: 50,
+        size: 50,
       ),
     );
   }
 }
 
 class AlbumsListView extends ConsumerWidget {
-  const AlbumsListView({super.key});
+  const AlbumsListView({
+    super.key,
+    this.searchQuery = "",
+  });
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncAlbums = ref.watch(albumsControllerProvider);
 
-    return AsyncAlbumsListView(asyncAlbums: asyncAlbums);
+    return AsyncAlbumsListView(
+      asyncAlbums: asyncAlbums,
+      searchQuery: searchQuery,
+    );
   }
 }

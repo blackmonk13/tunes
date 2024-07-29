@@ -116,7 +116,13 @@ class NowPlayingController extends _$NowPlayingController {
     final player = ref.read(audioPlayerProvider);
     final playlist = getPlaylist();
 
-    final audioSources = songs.map((song) => createAudioSource(song)).toList();
+    final queued = await future;
+
+    songs.removeWhere((element) => queued.contains(element));
+
+    final audioSources = await Future.wait(songs.map((song) {
+      return createAudioSource(song);
+    }));
 
     if (playlist == null) {
       await createAndLoadPlaylist(
@@ -155,19 +161,26 @@ class NowPlayingController extends _$NowPlayingController {
     final player = ref.read(audioPlayerProvider);
     final playlist = getPlaylist();
 
-    final audioSources = songs.map((song) => createAudioSource(song)).toList();
+    final queued = await future;
 
-    if (playlist == null) {
-      await createAndLoadPlaylist(
-        items: audioSources,
-        initialIndex: startWith == null ? null : songs.indexOf(startWith),
-      );
-      return player.play();
+    songs.removeWhere((element) => queued.contains(element));
+
+    final audioSources = await Future.wait(songs.map((song) {
+      return createAudioSource(song);
+    }));
+
+    if (playlist != null) {
+      await player.stop();
+      await playlist.clear();
     }
 
-    await player.stop();
-    await playlist.clear();
-    return queue(songs, startWith: startWith);
+    await createAndLoadPlaylist(
+      items: audioSources,
+      initialIndex: startWith == null ? null : songs.indexOf(startWith),
+    );
+    await player.setShuffleModeEnabled(true);
+    await player.shuffle();
+    return player.play();
   }
 
   FutureOr<int?> getStartIndex(SongModel? song) async {
@@ -196,7 +209,14 @@ class NowPlayingController extends _$NowPlayingController {
     return startIndex;
   }
 
-  UriAudioSource createAudioSource(SongModel song) {
+  Future<UriAudioSource> createAudioSource(SongModel song) async {
+    final imageFile = await ref.read(artworkFileProvider(
+      song.id,
+      ArtworkType.AUDIO,
+      format: ArtworkFormat.JPEG,
+      size: 200,
+      quality: 100,
+    ).future);
     return AudioSource.uri(
       Uri.parse(song.data),
       tag: MediaItem(
@@ -205,6 +225,7 @@ class NowPlayingController extends _$NowPlayingController {
         artist: song.artist,
         album: song.album,
         genre: song.genre,
+        artUri: imageFile == null ? null : Uri.file(imageFile.path),
       ),
     );
   }
@@ -212,7 +233,6 @@ class NowPlayingController extends _$NowPlayingController {
   ConcatenatingAudioSource? getPlaylist() {
     final player = ref.read(audioPlayerProvider);
     final audioSource = player.audioSource;
-
     if (audioSource == null) {
       return null;
     }
@@ -256,7 +276,7 @@ class NowPlayingController extends _$NowPlayingController {
     int? initialIndex,
     Duration? initialPosition,
   }) async {
-    final player = ref.watch(audioPlayerProvider);
+    final player = ref.read(audioPlayerProvider);
     // Define the playlist
     final playlist = ConcatenatingAudioSource(
       // Start loading next item just before reaching it

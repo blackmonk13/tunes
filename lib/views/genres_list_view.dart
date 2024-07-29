@@ -3,29 +3,61 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
-import '../pages/genre_info.dart';
+import 'package:tunes/pages/genre_info.dart';
 
 class AsyncGenreListView extends StatelessWidget {
   final AsyncValue<List<GenreModel>> asyncGenre;
   const AsyncGenreListView({
     super.key,
     required this.asyncGenre,
+    this.searchQuery = "",
   });
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
     return asyncGenre.when(
       data: (data) {
-        if (data.isEmpty) {
-          return const Text("No Albums");
+        List<GenreModel> genres = data;
+
+        if (searchQuery.isNotEmpty) {
+          genres = data.where((el) {
+            for (final e in [el.genre]) {
+              if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
+                return true;
+              }
+            }
+            return false;
+          }).toList();
         }
+
+        if (genres.isEmpty) {
+          return Container(
+            width: context.screenWidth,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Spacer(),
+                Text(
+                  "No genres",
+                  style: context.textTheme.bodyLarge?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+          );
+        }
+
         return ListView.builder(
-          itemCount: data.length,
+          itemCount: genres.length,
           itemBuilder: (BuildContext context, int index) {
-            final currentGenre = data[index];
+            final currentGenre = genres[index];
 
             return GenreListTile(
               genre: currentGenre,
@@ -40,8 +72,11 @@ class AsyncGenreListView extends StatelessWidget {
         );
       },
       loading: () {
-        return const Center(
-          child: CircularProgressIndicator(),
+        return ListView.builder(
+          itemCount: 10,
+          itemBuilder: (BuildContext context, int index) {
+            return const SongListTileLoading();
+          },
         );
       },
     );
@@ -49,7 +84,11 @@ class AsyncGenreListView extends StatelessWidget {
 }
 
 class GenresListView extends ConsumerWidget {
-  const GenresListView({super.key});
+  const GenresListView({
+    super.key,
+    this.searchQuery = "",
+  });
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,6 +96,7 @@ class GenresListView extends ConsumerWidget {
 
     return AsyncGenreListView(
       asyncGenre: asyncGenre,
+      searchQuery: searchQuery,
     );
   }
 }
