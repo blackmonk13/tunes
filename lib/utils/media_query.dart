@@ -68,7 +68,6 @@ class Playlist {
 
 const id3Mimes = [
   "audio/mpeg", // Standard MIME type for MP3 files.
-  "audio/mp3", // Another common MIME type for MP3 files.
   "audio/x-mpeg", // An older MIME type for MP3 files.
   "audio/x-mp3", // Another variant for MP3 files.
   "audio/mpeg3", // Sometimes used for MP3 files.
