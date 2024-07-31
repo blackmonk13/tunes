@@ -8,6 +8,7 @@ import 'package:tunes/pages/playlist_info.dart';
 
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 
 import 'package:tunes/views/albums_list_view.dart';
 import 'package:tunes/views/artists_list_view.dart';
@@ -27,7 +28,7 @@ class HomePage extends HookConsumerWidget {
     final initialTabIndex = ref.watch(tabIndexProvider);
 
     final tabController = useTabController(
-      initialLength: 5,
+      initialLength: 6,
       initialIndex: initialTabIndex,
     );
 
@@ -130,6 +131,9 @@ class HomePage extends HookConsumerWidget {
                 Tab(
                   text: "Playlists",
                 ),
+                Tab(
+                  text: "Media Query",
+                ),
               ],
             ),
             Expanded(
@@ -152,6 +156,7 @@ class HomePage extends HookConsumerWidget {
                       );
                     },
                   ),
+                  const MediaQueryView()
                 ],
               ),
             ),
