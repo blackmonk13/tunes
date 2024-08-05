@@ -4,9 +4,9 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/artwork_data_builder.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
-import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/functions.dart';
+import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class GenreInfoPage extends ConsumerWidget {
@@ -64,8 +64,8 @@ class GenreInfoPage extends ConsumerWidget {
               ),
             ),
             SliverFillRemaining(
-              child: SongsListView(
-                queryType: SongQueryType.songsForGenre,
+              child: SongsView(
+                queryType: SongQueryType.genre,
                 query: genre.genre,
               ),
             ),
@@ -75,4 +75,3 @@ class GenreInfoPage extends ConsumerWidget {
     );
   }
 }
-

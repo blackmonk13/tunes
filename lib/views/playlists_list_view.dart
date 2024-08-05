@@ -10,6 +10,7 @@ import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 
 class AsyncPlaylistView extends StatelessWidget {
   const AsyncPlaylistView({
@@ -19,20 +20,20 @@ class AsyncPlaylistView extends StatelessWidget {
     this.onNew,
     this.searchQuery = "",
   });
-  final AsyncValue<List<PlaylistModel>> asyncPlaylists;
-  final ValueChanged<PlaylistModel>? onTap;
-  final ValueChanged<PlaylistModel>? onNew;
+  final AsyncValue<List<Playlist>> asyncPlaylists;
+  final ValueChanged<Playlist>? onTap;
+  final ValueChanged<Playlist>? onNew;
   final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
     return asyncPlaylists.when(
       data: (data) {
-        List<PlaylistModel> playlists = data;
+        List<Playlist> playlists = data;
 
         if (searchQuery.isNotEmpty) {
           playlists = data.where((el) {
-            for (final e in [el.playlist]) {
+            for (final e in [el.name]) {
               if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
                 return true;
               }
@@ -64,7 +65,7 @@ class AsyncPlaylistView extends StatelessWidget {
           children: [
             ListTile(
               onTap: () async {
-                final playlist = await showDialog<PlaylistModel>(
+                final playlist = await showDialog<Playlist>(
                   context: context,
                   builder: (context) {
                     return const NewPlaylistdialog();
@@ -126,8 +127,8 @@ class PlaylistsListView extends ConsumerWidget {
     this.onNew,
     this.searchQuery = "",
   });
-  final ValueChanged<PlaylistModel>? onTap;
-  final ValueChanged<PlaylistModel>? onNew;
+  final ValueChanged<Playlist>? onTap;
+  final ValueChanged<Playlist>? onNew;
   final String searchQuery;
 
   @override
@@ -151,8 +152,8 @@ class PlaylistListTile extends ConsumerWidget {
     this.onTap,
   });
 
-  final PlaylistModel playlist;
-  final ValueChanged<PlaylistModel>? onTap;
+  final Playlist playlist;
+  final ValueChanged<Playlist>? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,13 +162,13 @@ class PlaylistListTile extends ConsumerWidget {
         onTap?.call(playlist);
       },
       title: Text(
-        playlist.playlist,
+        playlist.name,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
       ),
       subtitle: Text(
         (() {
-          final songCount = playlist.numOfSongs;
+          final songCount = playlist.songs.length;
 
           if (songCount == 1) {
             return "$songCount song";
@@ -198,6 +199,7 @@ class NewPlaylistdialog extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormBuilderState>());
     return Dialog(
+      backgroundColor: context.colorScheme.outlineVariant,
       shape: RoundedRectangleBorder(
         borderRadius: const BorderRadius.all(
           Radius.circular(
@@ -276,6 +278,7 @@ class NewPlaylistdialog extends HookConsumerWidget {
               const Divider(),
               FormBuilderTextField(
                 name: 'name',
+                keyboardType: TextInputType.name,
                 validator: FormBuilderValidators.compose(
                   [
                     FormBuilderValidators.required(),

@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +27,7 @@ class HomePage extends HookConsumerWidget {
     final initialTabIndex = ref.watch(tabIndexProvider);
 
     final tabController = useTabController(
-      initialLength: 6,
+      initialLength: 5,
       initialIndex: initialTabIndex,
     );
 
@@ -59,6 +58,12 @@ class HomePage extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text("Tunes"),
         actions: [
+          IconButton(
+            onPressed: () {
+              ref.invalidate(indexingControllerProvider);
+            },
+            icon: const Icon(FluentIcons.arrow_reset_24_regular),
+          ),
           IconButton(
             onPressed: () async {
               await showSearch(
@@ -131,16 +136,13 @@ class HomePage extends HookConsumerWidget {
                 Tab(
                   text: "Playlists",
                 ),
-                Tab(
-                  text: "Media Query",
-                ),
               ],
             ),
             Expanded(
               child: TabBarView(
                 controller: tabController,
                 children: [
-                  const SongsListView(),
+                  const SongsView(),
                   const ArtistsListView(),
                   const AlbumsListView(),
                   const GenresListView(),
@@ -156,7 +158,6 @@ class HomePage extends HookConsumerWidget {
                       );
                     },
                   ),
-                  const MediaQueryView()
                 ],
               ),
             ),
@@ -225,7 +226,7 @@ class CustomSearchHintDelegate extends SearchDelegate<String> {
     return TabBarView(
       controller: tabController,
       children: [
-        SongsListView(
+        SongsView(
           searchQuery: query,
         ),
         ArtistsListView(
@@ -259,7 +260,7 @@ class CustomSearchHintDelegate extends SearchDelegate<String> {
     return TabBarView(
       controller: tabController,
       children: [
-        SongsListView(
+        SongsView(
           searchQuery: query,
         ),
         ArtistsListView(

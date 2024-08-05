@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:tunes/components/song_artwork.dart';
 
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 
 class SongListTile extends ConsumerWidget {
-  final SongModel song;
-  final void Function(SongModel song)? onTap;
-  final void Function(SongModel song)? onLongPress;
-  final void Function(SongModel song)? onDoubleTap;
+  final Song song;
+  final void Function(Song song)? onTap;
+  final void Function(Song song)? onLongPress;
+  final void Function(Song song)? onDoubleTap;
   final Color? color;
   final Widget? trailing;
   const SongListTile({
@@ -36,14 +36,12 @@ class SongListTile extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              SongArtwork(
-                id: song.id,
-                type: ArtworkType.AUDIO,
-                borderRadius: BorderRadius.circular(20.0),
-                size: 64,
+              Thumbnail(
+                thumbnail: song.thumbnailMiniPath,
                 width: 50,
                 height: 50,
                 hasBorder: true,
+                borderRadius: BorderRadius.circular(20.0),
               ),
               Expanded(
                 child: Padding(
@@ -58,7 +56,7 @@ class SongListTile extends ConsumerWidget {
                         style: context.textTheme.bodyLarge,
                       ),
                       Text(
-                        song.artist ?? "No Artist",
+                        song.artist,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: (() {
@@ -68,6 +66,7 @@ class SongListTile extends ConsumerWidget {
                           );
                         })(),
                       ),
+                      // Text("${song.thumbnailPath}"),
                     ],
                   ),
                 ),

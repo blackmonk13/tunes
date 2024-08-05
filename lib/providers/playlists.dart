@@ -21,26 +21,25 @@ class PlaylistSortOrder extends _$PlaylistSortOrder {
 @riverpod
 class PlaylistsController extends _$PlaylistsController {
   @override
-  FutureOr<List<PlaylistModel>> build() {
+  FutureOr<List<Playlist>> build() {
     final playlistSortOrder = ref.watch(playlistSortOrderProvider);
-    return ref.read(onAudioQueryProvider).queryPlaylists(
-          sortType: playlistSortOrder.sortType,
-          orderType: playlistSortOrder.orderType,
-        );
+    return ref.watch(isarProvider).requireValue.playlists.where().findAll();
   }
 
-  Future<PlaylistModel?> createPlaylist(
+  Future<Playlist?> createPlaylist(
     String name, {
     String? author,
     String? desc,
   }) async {
-    final created = await ref.read(onAudioQueryProvider).createPlaylist(
-          name,
-          author: author,
-          desc: desc,
-        );
+    final isar = ref.read(isarProvider).requireValue;
 
-    if (!created) {
+    final playlist = Playlist()..name = name;
+    int? newId;
+    await isar.writeTxn(() async {
+      newId = await isar.playlists.put(playlist);
+    });
+
+    if (newId == null) {
       return null;
     }
 
@@ -51,7 +50,7 @@ class PlaylistsController extends _$PlaylistsController {
     }
 
     final index = playlists.indexWhere((element) {
-      return element.playlist == name;
+      return element.name == name;
     });
 
     if (index == -1) {
@@ -62,32 +61,20 @@ class PlaylistsController extends _$PlaylistsController {
   }
 
   Future<bool> removePlaylist(int playlistId) async {
-    final removed =
-        await ref.read(onAudioQueryProvider).removePlaylist(playlistId);
+    final isar = ref.read(isarProvider).requireValue;
 
-    if (!removed) {
-      return false;
-    }
-
-    ref.invalidateSelf();
-    final playlists = await future;
-
-    final index = playlists.indexWhere((element) {
-      return element.id == playlistId;
+    return isar.writeTxn(() async {
+      return isar.playlists.delete(playlistId);
     });
-
-    if (index == -1) {
-      return true;
-    }
-
-    return false;
   }
 
-  Future<bool> addToPlaylist(int playlistId, int audioId) async {
-    final added = await ref.read(onAudioQueryProvider).addToPlaylist(
-          playlistId,
-          audioId,
-        );
+  Future<bool> addToPlaylist(Playlist playlist, Song song) async {
+    final isar = ref.read(isarProvider).requireValue;
+    final added = playlist.songs.add(song);
+
+    await isar.writeTxn(() async {
+      await playlist.songs.save();
+    });
 
     if (!added) {
       return false;
@@ -98,11 +85,14 @@ class PlaylistsController extends _$PlaylistsController {
     return added;
   }
 
-  Future<bool> removeFromPlaylist(int playlistId, int audioId) async {
-    final removed = await ref.read(onAudioQueryProvider).removeFromPlaylist(
-          playlistId,
-          audioId,
-        );
+  Future<bool> removeFromPlaylist(Playlist playlist, Song song) async {
+
+    final isar = ref.read(isarProvider).requireValue;
+    final removed = playlist.songs.remove(song);
+
+    await isar.writeTxn(() async {
+      await playlist.songs.save();
+    });
 
     if (!removed) {
       return false;
@@ -128,79 +118,48 @@ class PlaylistSongs extends _$PlaylistSongs {
 }
 
 @riverpod
+Stream<void> playlistsWatcher(PlaylistsWatcherRef ref) {
+  final isar = ref.watch(isarProvider).requireValue;
+  return isar.playlists.watchLazy(fireImmediately: true);
+}
+
+@riverpod
 class FavoritesPlaylist extends _$FavoritesPlaylist {
   @override
-  FutureOr<PlaylistModel?> build() async {
-    final fav = await getFavorite();
+  FutureOr<Playlist> build() async {
+    ref.watch(playlistsWatcherProvider);
+    final isar = ref.watch(isarProvider).requireValue;
 
-    if (fav != null) {
-      return fav;
+    Playlist? favorites = await isar.playlists
+        .where()
+        .filter()
+        .nameEqualTo(favsPlaylistName)
+        .findFirst();
+    if (favorites == null) {
+      favorites = Playlist()..name = favsPlaylistName;
+      await isar.writeTxn(() async {
+        await isar.playlists.put(favorites!);
+      });
     }
 
-    final created = await ref
-        .read(playlistsControllerProvider.notifier)
-        .createPlaylist(favsPlaylistName);
-
-    return created;
+    return favorites;
   }
 
-  Future<PlaylistModel?> getFavorite() async {
-    final playlists = await ref.watch(playlistsControllerProvider.future);
-    if (playlists.isEmpty) {
-      return null;
-    }
-
-    final index = playlists.indexWhere((element) {
-      return element.playlist == favsPlaylistName;
-    });
-
-    if (index == -1) {
-      return null;
-    }
-
-    return playlists.elementAt(index);
-  }
-
-  Future<bool> toggleFavorite(SongModel song, {bool? favorite}) async {
+  Future<bool> toggleFavorite(Song song) async {
+    final isar = ref.read(isarProvider).requireValue;
     final favlist = await future;
 
-    if (favlist == null) {
-      return false;
+    bool toggled;
+    if (favlist.songs.contains(song)) {
+      toggled = favlist.songs.remove(song);
+    } else {
+      toggled = favlist.songs.add(song);
     }
 
-    if (favorite != null) {
-      if (favorite) {
-        return ref
-            .read(playlistsControllerProvider.notifier)
-            .removeFromPlaylist(
-              favlist.id,
-              song.id,
-            );
-      }
+    await isar.writeTxn(() async {
+      await favlist.songs.save();
+    });
 
-      return ref.read(playlistsControllerProvider.notifier).addToPlaylist(
-            favlist.id,
-            song.id,
-          );
-    }
-
-    final favsongs = await ref.read(songsControllerProvider(
-      query: favlist.playlist,
-      queryType: SongQueryType.songsForPlaylist,
-    ).future);
-
-    final exists = favsongs.contains(song);
-
-    if (exists) {
-      return ref.read(playlistsControllerProvider.notifier).removeFromPlaylist(
-            favlist.id,
-            song.id,
-          );
-    }
-
-    return ref.read(playlistsControllerProvider.notifier).addToPlaylist(
-          favlist.id,
-          song.id,
-        );
+    return toggled;
   }
 }

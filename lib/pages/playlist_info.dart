@@ -4,10 +4,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/artwork_data_builder.dart';
 import 'package:tunes/components/song_artwork.dart';
+import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/components/with_player.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/functions.dart';
+import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class PlaylistInfoPage extends ConsumerWidget {
@@ -16,7 +18,7 @@ class PlaylistInfoPage extends ConsumerWidget {
     required this.playlist,
   });
 
-  final PlaylistModel playlist;
+  final Playlist playlist;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,7 +37,7 @@ class PlaylistInfoPage extends ConsumerWidget {
                     final fgColor = calculateFgColor(palette);
 
                     return Text(
-                      playlist.playlist,
+                      playlist.name,
                       style: TextStyle(
                         color: fgColor,
                       ),
@@ -65,14 +67,56 @@ class PlaylistInfoPage extends ConsumerWidget {
               ),
             ),
             SliverFillRemaining(
-              // FIXME:
-              child: SongsListView(
-                query: playlist.playlist,
-                queryType: SongQueryType.songsForPlaylist,
-                onDismiss: (song, songs, direction) async {
-                  await ref
-                      .read(playlistsControllerProvider.notifier)
-                      .removeFromPlaylist(playlist.id, song.id);
+              child: ListView.builder(
+                itemCount: playlist.songs.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final song = playlist.songs.elementAt(index);
+                  return Dismissible(
+                    key: Key(song.filePath),
+                    onDismissed: (direction) async {
+                      await ref
+                          .read(playlistsControllerProvider.notifier)
+                          .removeFromPlaylist(playlist, song);
+                    },
+                    child: SongListTile(
+                      song: song,
+                      onTap: (song) async {
+                        return ref
+                            .read(nowPlayingControllerProvider.notifier)
+                            .queue(
+                          [song],
+                          startWith: song,
+                        );
+                      },
+                      trailing: IconButton(
+                        icon: const Icon(FluentIcons.more_vertical_24_regular),
+                        onPressed: () async {
+                          await showModalBottomSheet<void>(
+                            context: context,
+                            backgroundColor: context.colorScheme.outlineVariant,
+                            showDragHandle: true,
+                            constraints: BoxConstraints(
+                              minWidth: context.shortestSide,
+                              maxWidth: context.shortestSide,
+                              minHeight: 350.0,
+                              maxHeight: 350.0,
+                            ),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20.0),
+                              ),
+                            ),
+                            builder: (context) {
+                              return SongTileOptions(
+                                song: song,
+                                songs: [song],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  );
                 },
               ),
             ),

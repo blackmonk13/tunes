@@ -1,7 +1,6 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/artwork_data_builder.dart';
 import 'package:tunes/components/mini_player.dart';
 import 'package:tunes/providers/providers.dart';
@@ -9,8 +8,6 @@ import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/functions.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
-import 'artwork_gradient.dart';
-import 'default_backdrop.dart';
 import 'player_details_and_controls.dart';
 import 'song_artwork.dart';
 
@@ -48,7 +45,7 @@ class PlayerView extends HookConsumerWidget {
   ) {
     return showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
+      // backgroundColor: Colors.transparent,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -69,14 +66,10 @@ class PlayerPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncCurrentSong = ref.watch(currentSongInfoProvider);
-    final artworkSize = context.screenHeight;
     final song = asyncCurrentSong.valueOrNull;
 
     return Stack(
       children: [
-        const Positioned.fill(
-          child: DefaultBackdrop(),
-        ),
         Positioned(
           top: 0,
           width: context.shortestSide,
@@ -86,60 +79,60 @@ class PlayerPage extends ConsumerWidget {
                   width: context.shortestSide,
                   height: context.shortestSide,
                 )
-              : SongArtwork(
-                  id: song.id,
-                  type: ArtworkType.AUDIO,
-                  size: context.shortestSide.toInt(),
-                  width: context.shortestSide,
-                  height: context.shortestSide,
+              : Hero(
+                  tag: "player_img",
+                  child: Thumbnail(
+                    thumbnail: song.thumbnailPath,
+                    width: context.shortestSide,
+                    height: context.shortestSide,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
         ),
         Positioned.fill(
-          child: AnimatedCrossFade(
-            firstChild: const DefaultBackdrop(),
-            secondChild: song == null
-                ? const DefaultBackdrop()
-                : ArtworkGradient(
+          child: ThumbnailDataBuilder(
+            thumbnail: song?.thumbnailPath,
+            builder: (image, palette) {
+              final bgColor =
+                  palette.dominantColor?.color ?? context.colorScheme.surface;
+              final foregroundColor = calculateFgColor(palette);
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [
+                      .3,
+                      .35,
+                      .4,
+                    ],
+                    colors: [
+                      Colors.transparent,
+                      bgColor.withOpacity(.4),
+                      bgColor,
+                    ],
+                  ),
+                ),
+                child: AnimatedCrossFade(
+                  firstChild: PlayerDetailsAndControls(
                     song: song,
                   ),
-            crossFadeState: song == null
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            duration: kThemeAnimationDuration,
-          ),
-        ),
-        Positioned.fill(
-          child: Container(
-            color: Colors.transparent,
-            child: AnimatedCrossFade(
-              firstChild: PlayerDetailsAndControls(
-                song: song,
-              ),
-              secondChild: song == null
-                  ? PlayerDetailsAndControls(
-                      song: song,
-                    )
-                  : ArtworkDataBuilder(
-                      id: song.id,
-                      artworkType: ArtworkType.AUDIO,
-                      nullWidget: PlayerDetailsAndControls(
-                        song: song,
-                      ),
-                      builder: (image, palette) {
-                        final foregroundColor = calculateFgColor(palette);
-
-                        return PlayerDetailsAndControls(
+                  secondChild: song == null
+                      ? PlayerDetailsAndControls(
+                          song: song,
+                        )
+                      : PlayerDetailsAndControls(
                           song: song,
                           fgColor: foregroundColor,
                           bgColor: palette.dominantColor?.color,
-                        );
-                      },
-                    ),
-              crossFadeState: song == null
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              duration: kThemeAnimationDuration,
-            ),
+                        ),
+                  crossFadeState: song == null
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  duration: kThemeAnimationDuration,
+                ),
+              );
+            },
           ),
         ),
         Positioned(
@@ -150,7 +143,7 @@ class PlayerPage extends ConsumerWidget {
               if (song == null) return;
               await showModalBottomSheet<void>(
                 context: context,
-                backgroundColor: context.colorScheme.surfaceContainerHigh,
+                backgroundColor: context.colorScheme.outlineVariant,
                 showDragHandle: true,
                 constraints: BoxConstraints(
                   minWidth: context.shortestSide,
@@ -184,22 +177,4 @@ class PlayerPage extends ConsumerWidget {
     );
   }
 
-  Widget _nullArtworkWidget(double artworkSize) {
-    return Builder(
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: context.colorScheme.primaryContainer,
-          ),
-          width: artworkSize,
-          height: artworkSize,
-          child: Icon(
-            FluentIcons.music_note_2_24_regular,
-            color: context.colorScheme.onPrimaryContainer,
-            size: 72.0,
-          ),
-        );
-      },
-    );
-  }
 }

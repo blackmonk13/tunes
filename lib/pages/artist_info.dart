@@ -1,4 +1,3 @@
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/albums_list_view.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
@@ -43,8 +43,8 @@ class ArtistInfoPage extends HookConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          context.colorScheme.background,
-                          context.colorScheme.background.withOpacity(.0),
+                          context.colorScheme.surface,
+                          context.colorScheme.surface.withOpacity(.0),
                         ],
                       ),
                     ),
@@ -84,9 +84,9 @@ class ArtistInfoPage extends HookConsumerWidget {
               SliverFillRemaining(
                 child: TabBarView(
                   children: [
-                    SongsListView(
+                    SongsView(
                       query: artist.artist,
-                      queryType: SongQueryType.songsForArtist,
+                      queryType: SongQueryType.artist,
                       scrollController: scrollController,
                     ),
                     AsyncAlbumsListView(

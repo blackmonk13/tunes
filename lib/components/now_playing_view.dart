@@ -10,9 +10,9 @@ import 'package:tunes/components/common/arc_menu.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/mini_progress.dart';
 import 'package:tunes/components/player_btns.dart';
+import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
-import 'package:tunes/views/songs_list_view.dart';
 
 class NowPlayingBtn extends StatelessWidget {
   const NowPlayingBtn({
@@ -125,32 +125,33 @@ class NowPlayingView extends HookConsumerWidget {
                   height: 1.2,
                 ),
                 Expanded(
-                  child: (() {
-                    final songs = nowPlayingController.valueOrNull;
-                    final error = nowPlayingController.error;
-                    final stackTrace = nowPlayingController.stackTrace;
-
-                    if (error != null) {
+                  child: nowPlayingController.when(
+                    skipLoadingOnReload: true,
+                    data: (data) {
+                      return ListView.builder(
+                        controller: scrollController,
+                        itemCount: data.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final song = data.elementAt(index);
+                          return SongListTile(song: song);
+                        },
+                      );
+                    },
+                    error: (error, stackTrace) {
                       return AsyncErrorView(
                         error: error,
                         stackTrace: stackTrace,
                       );
-                    }
-
-                    if (songs == null && error == null) {
+                    },
+                    loading: () {
                       return const Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2.0,
                           strokeCap: StrokeCap.round,
                         ),
                       );
-                    }
-
-                    return SongsList(
-                      songs: songs ?? [],
-                      scrollController: scrollController,
-                    );
-                  })(),
+                    },
+                  ),
                 ),
               ],
             ),

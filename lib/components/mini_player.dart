@@ -1,10 +1,8 @@
 import 'dart:ui';
 
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/mini_progress.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/providers/providers.dart';
@@ -24,57 +22,34 @@ class MiniPlayer extends StatelessWidget {
       width: context.shortestSide - 16.0,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20.0),
+        borderRadius: BorderRadius.circular(30.0),
+        color: context.colorScheme.outlineVariant,
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(30.0),
-                    topRight: Radius.circular(30.0),
-                  ),
-                  color: context.colorScheme.surface.withOpacity(0.5),
-                  border: Border.all(
-                    color: context.colorScheme.outline.withOpacity(.4),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+      child: const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            NowPlayingInfo(),
+            SizedBox.square(
+              dimension: 60.0,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  NowPlayingInfo(),
-                  SizedBox.square(
-                    dimension: 60.0,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned.fill(
-                          child: Padding(
-                            padding: EdgeInsets.all(6.0),
-                            child: MiniProgress(),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: PlayPauseBtn(),
-                        ),
-                      ],
+                  Positioned.fill(
+                    child: Padding(
+                      padding: EdgeInsets.all(6.0),
+                      child: MiniProgress(),
                     ),
+                  ),
+                  Positioned.fill(
+                    child: PlayPauseBtn(),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -107,35 +82,15 @@ class NowPlayingInfo extends ConsumerWidget {
     return Expanded(
       child: Row(
         children: [
-          SongArtwork(
-            id: currentSong.id,
-            type: ArtworkType.AUDIO,
-            size: artworkSize.toInt(),
-            width: artworkSize,
-            height: artworkSize,
-            borderRadius: borderRadius,
+          Hero(
+            tag: "player_img",
+            child: Thumbnail(
+              thumbnail: currentSong.thumbnailMiniPath,
+              width: artworkSize,
+              height: artworkSize,
+              borderRadius: borderRadius,
+            ),
           ),
-          // QueryArtworkWidget(
-          //   controller: audioQuery,
-          //   id: currentSong.id,
-          //   type: ArtworkType.AUDIO,
-          //   artworkBorder: borderRadius,
-          //   artworkHeight: artworkSize,
-          //   artworkWidth: artworkSize,
-          //   nullArtworkWidget: Container(
-          //     decoration: BoxDecoration(
-          //       color: context.colorScheme.primaryContainer,
-          //       borderRadius: borderRadius,
-          //     ),
-          //     width: artworkSize,
-          //     height: artworkSize,
-          //     child: Icon(
-          //       FluentIcons.music_note_2_24_regular,
-          //       color: context.colorScheme.onPrimaryContainer,
-          //       size: 32.0,
-          //     ),
-          //   ),
-          // ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(left: 12.0),
@@ -150,7 +105,7 @@ class NowPlayingInfo extends ConsumerWidget {
                     style: context.textTheme.bodyLarge,
                   ),
                   Text(
-                    currentSong.artist ?? "No Artist",
+                    currentSong.artist,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.textTheme.labelSmall?.copyWith(

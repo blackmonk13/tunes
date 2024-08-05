@@ -1,6 +1,7 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:isar/isar.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/options_view.dart';
@@ -11,115 +12,29 @@ import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/components/song_list_tile.dart';
 
 import 'package:tunes/components/sort_order_view.dart';
+import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/playlists_list_view.dart';
 
-class AsyncSongsListView extends ConsumerWidget {
+class SongsList extends ConsumerWidget {
   final SongQueryType queryType;
   final String? query;
+  final String? searchQuery;
   final bool withHeader;
   final ScrollController? scrollController;
-  final void Function(SongModel song, List<SongModel> songs)? onTap;
-  final void Function(SongModel song, List<SongModel> songs)? onLongPress;
-  final void Function(SongModel song, List<SongModel> songs)? onDoubleTap;
-  final Widget Function(SongModel song, List<SongModel> songs)? trailing;
+  final void Function(Song song)? onTap;
+  final void Function(Song song)? onLongPress;
+  final void Function(Song song)? onDoubleTap;
+  final Widget Function(Song song)? trailing;
   final void Function(
-    SongModel song,
-    List<SongModel> songs,
-    DismissDirection direction,
-  )? onDismiss;
-  final String searchQuery;
-
-  const AsyncSongsListView({
-    super.key,
-    this.queryType = SongQueryType.allSongs,
-    this.query,
-    this.scrollController,
-    this.withHeader = true,
-    this.onTap,
-    this.onLongPress,
-    this.onDoubleTap,
-    this.trailing,
-    this.onDismiss,
-    this.searchQuery = "",
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncSongs = ref.watch(
-      songsControllerProvider(
-        queryType: queryType,
-        query: query,
-      ),
-    );
-    return RefreshIndicator(
-      child: asyncSongs.when(
-        skipLoadingOnReload: true,
-        data: (data) {
-          List<SongModel> songs = data;
-
-          if (searchQuery.isNotEmpty) {
-            songs = data.where((song) {
-              for (final e in [song.title, song.album, song.artist]) {
-                if (e?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-                    false) {
-                  return true;
-                }
-              }
-              return false;
-            }).toList();
-          }
-          return SongsList(
-            songs: songs,
-            queryType: queryType,
-            scrollController: scrollController,
-            onTap: onTap,
-            onLongPress: onLongPress,
-            onDoubleTap: onDoubleTap,
-            trailing: trailing,
-            onDismiss: onDismiss,
-          );
-        },
-        error: (error, stackTrace) {
-          return AsyncErrorView(
-            error: error,
-            stackTrace: stackTrace,
-          );
-        },
-        loading: () {
-          return ListView.builder(
-            itemCount: 10,
-            itemBuilder: (BuildContext context, int index) {
-              return const SongListTileLoading();
-            },
-          );
-        },
-      ),
-      onRefresh: () => ref.refresh(songsControllerProvider(
-        queryType: queryType,
-        query: query,
-      ).future),
-    );
-  }
-}
-
-class SongsList extends ConsumerWidget {
-  final List<SongModel> songs;
-  final SongQueryType queryType;
-  final bool withHeader;
-  final ScrollController? scrollController;
-  final void Function(SongModel song, List<SongModel> songs)? onTap;
-  final void Function(SongModel song, List<SongModel> songs)? onLongPress;
-  final void Function(SongModel song, List<SongModel> songs)? onDoubleTap;
-  final Widget Function(SongModel song, List<SongModel> songs)? trailing;
-  final void Function(
-    SongModel song,
-    List<SongModel> songs,
+    Song song,
+    List<Song> songs,
     DismissDirection direction,
   )? onDismiss;
   const SongsList({
     super.key,
-    required this.songs,
-    this.queryType = SongQueryType.allSongs,
+    this.queryType = SongQueryType.all,
+    this.query,
+    this.searchQuery,
     this.withHeader = true,
     this.scrollController,
     this.onTap,
@@ -133,57 +48,45 @@ class SongsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final songsSortOrder = ref.watch(songsSortOrderProvider(queryType));
 
-    if (songs.isEmpty) {
-      return Container(
-        width: context.screenWidth,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Spacer(),
-            Text(
-              "No songs",
-              style: context.textTheme.bodyLarge?.copyWith(
-                color: context.colorScheme.outline,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-      );
-    }
-
     if (!withHeader) {
-      return _songListView(
-        songs,
+      return SongsListView(
+        query: query,
+        searchQuery: searchQuery,
+        queryType: queryType,
+        scrollController: scrollController,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        onDoubleTap: onDoubleTap,
+        trailing: trailing,
       );
     }
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              PlayAllBtn(
-                songs: songs,
-              ),
+              // PlayAllBtn(
+              //   songs: songs,
+              // ),
               TextButton.icon(
                 onPressed: () async {
                   await showModalBottomSheet<void>(
                     context: context,
-                    backgroundColor: Colors.transparent,
-                    constraints: BoxConstraints(
-                      minWidth: context.shortestSide,
-                      maxWidth: context.shortestSide,
-                      minHeight: 350.0,
-                      maxHeight: 350.0,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: const BorderRadius.vertical(
+                    backgroundColor: context.colorScheme.outlineVariant,
+                    showDragHandle: true,
+                    // constraints: BoxConstraints(
+                    //   minWidth: context.shortestSide,
+                    //   maxWidth: context.shortestSide,
+                    //   minHeight: 350.0,
+                    //   maxHeight: 350.0,
+                    // ),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
                         top: Radius.circular(20.0),
-                      ),
-                      side: BorderSide(
-                        color: context.colorScheme.outline.withOpacity(.3),
                       ),
                     ),
                     builder: (BuildContext context) {
@@ -196,9 +99,9 @@ class SongsList extends ConsumerWidget {
                 icon: Icon(
                   (() {
                     switch (songsSortOrder.orderType) {
-                      case OrderType.ASC_OR_SMALLER:
+                      case Sort.asc:
                         return FluentIcons.text_sort_ascending_24_regular;
-                      case OrderType.DESC_OR_GREATER:
+                      case Sort.desc:
                         return FluentIcons.text_sort_descending_24_regular;
 
                       default:
@@ -220,64 +123,138 @@ class SongsList extends ConsumerWidget {
           height: 1.5,
         ),
         Expanded(
-          child: _songListView(
-            songs,
+          child: SongsListView(
+            query: query,
+            searchQuery: searchQuery,
+            queryType: queryType,
+            scrollController: scrollController,
+            onTap: onTap,
+            onLongPress: onLongPress,
+            onDoubleTap: onDoubleTap,
+            trailing: trailing,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _songListView(
-    List<SongModel> songsList,
-  ) {
-    return ListView.builder(
-      controller: scrollController,
-      itemCount: songsList.length,
-      itemBuilder: (BuildContext context, int index) {
-        final currentSong = songsList[index];
+class SongsListView extends ConsumerWidget {
+  const SongsListView({
+    super.key,
+    this.onTap,
+    this.onLongPress,
+    this.onDoubleTap,
+    this.scrollController,
+    this.trailing,
+    this.queryType = SongQueryType.all,
+    this.query,
+    this.searchQuery,
+  });
 
-        final songListTile = SongListTile(
-          song: currentSong,
-          onTap: (song) {
-            onTap?.call(song, songsList);
-          },
-          onDoubleTap: (song) {
-            onDoubleTap?.call(song, songsList);
-          },
-          onLongPress: (song) {
-            onLongPress?.call(song, songsList);
-          },
-          trailing: trailing?.call(currentSong, songsList),
-        );
-        if (onDismiss == null) {
-          return songListTile;
+  final ScrollController? scrollController;
+  final SongQueryType queryType;
+  final String? query;
+  final String? searchQuery;
+  final void Function(Song song)? onTap;
+  final void Function(Song song)? onLongPress;
+  final void Function(Song song)? onDoubleTap;
+  final Widget Function(Song song)? trailing;
+
+  static const pageSize = 100;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final songsCountAsyncValue = ref.watch(songsCountProvider(
+      query: query,
+      searchQuery: searchQuery,
+      queryType: queryType,
+    ));
+
+    return songsCountAsyncValue.when(
+      data: (itemCount) {
+        if (itemCount == 0) {
+          return Container(
+            width: context.screenWidth,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Spacer(),
+                Text(
+                  "No songs",
+                  style: context.textTheme.bodyLarge?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+          );
         }
-        return Dismissible(
-          key: Key(currentSong.id.toString()),
-          onDismissed: (direction) {
-            onDismiss?.call(currentSong, songsList, direction);
+        return ListView.builder(
+          itemCount: itemCount,
+          itemBuilder: (BuildContext context, int index) {
+            final page = index ~/ pageSize;
+            final offset = page * pageSize;
+            final indexInPage = index % pageSize;
+            final songsQueryAsyncValue = ref.watch(songsQueryProvider(
+              pageSize,
+              offset,
+              query: query,
+              searchQuery: searchQuery,
+              queryType: queryType,
+            ));
+            return songsQueryAsyncValue.when(
+              data: (data) {
+                final song = data.elementAt(indexInPage);
+                return SongListTile(
+                  song: song,
+                  onTap: onTap,
+                  onDoubleTap: onDoubleTap,
+                  onLongPress: onLongPress,
+                  trailing: trailing?.call(song),
+                );
+              },
+              error: (error, stackTrace) {
+                return ListTile(
+                  leading: const Icon(FluentIcons.warning_24_regular),
+                  title: const Text("Error"),
+                  subtitle: Text(error.toString()),
+                );
+              },
+              loading: () {
+                return const SongListTileLoading();
+              },
+            );
           },
-          child: songListTile,
         );
+      },
+      error: (error, stackTrace) {
+        return AsyncErrorView(
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
+      loading: () {
+        return const CircularProgressIndicator();
       },
     );
   }
 }
 
-class SongsListView extends ConsumerWidget {
+class SongsView extends ConsumerWidget {
   final SongQueryType queryType;
   final String? query;
   final ScrollController? scrollController;
   final void Function(
-    SongModel song,
-    List<SongModel> songs,
+    Song song,
+    List<Song> songs,
     DismissDirection direction,
   )? onDismiss;
   final String searchQuery;
-  const SongsListView({
+  const SongsView({
     super.key,
-    this.queryType = SongQueryType.allSongs,
+    this.queryType = SongQueryType.all,
     this.query,
     this.scrollController,
     this.onDismiss,
@@ -286,28 +263,24 @@ class SongsListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AsyncSongsListView(
-      queryType: queryType,
+    return SongsList(
       query: query,
-      searchQuery: searchQuery,
+      queryType: queryType,
       scrollController: scrollController,
-      onTap: (song, songsList) async {
+      searchQuery: searchQuery,
+      onTap: (song) async {
         return ref.read(nowPlayingControllerProvider.notifier).queue(
           [song],
           startWith: song,
         );
       },
-      onDoubleTap: (song, songs) async {
-        await ref.read(favoritesPlaylistProvider.notifier).toggleFavorite(song);
-      },
-      onDismiss: onDismiss,
-      trailing: (song, songs) {
+      trailing: (song) {
         return IconButton(
           icon: const Icon(FluentIcons.more_vertical_24_regular),
           onPressed: () async {
             await showModalBottomSheet<void>(
               context: context,
-              backgroundColor: context.colorScheme.surfaceContainerHigh,
+              backgroundColor: context.colorScheme.outlineVariant,
               showDragHandle: true,
               constraints: BoxConstraints(
                 minWidth: context.shortestSide,
@@ -315,18 +288,15 @@ class SongsListView extends ConsumerWidget {
                 minHeight: 350.0,
                 maxHeight: 350.0,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: const BorderRadius.vertical(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
                   top: Radius.circular(20.0),
-                ),
-                side: BorderSide(
-                  color: context.colorScheme.outline.withOpacity(.3),
                 ),
               ),
               builder: (context) {
                 return SongTileOptions(
                   song: song,
-                  songs: songs,
+                  songs: [song],
                 );
               },
             );
@@ -344,8 +314,8 @@ class SongTileOptions extends ConsumerWidget {
     required this.songs,
     this.queue = true,
   });
-  final SongModel song;
-  final List<SongModel> songs;
+  final Song song;
+  final List<Song> songs;
   final bool queue;
 
   @override
@@ -459,7 +429,7 @@ class PlayAllBtn extends ConsumerWidget {
     final nowPlayingController = ref.watch(nowPlayingControllerProvider);
     return TextButton.icon(
       onPressed: () async {
-        await ref.read(nowPlayingControllerProvider.notifier).playAll(songs);
+        // await ref.read(nowPlayingControllerProvider.notifier).playAll(songs);
       },
       icon: SizedBox.square(
         dimension: 32.0,
@@ -513,20 +483,20 @@ class AddToPlaylistView extends ConsumerWidget {
     super.key,
     required this.song,
   });
-  final SongModel song;
+  final Song song;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Future<void> onAddToPlaylist(PlaylistModel value) async {
+    Future<void> onAddToPlaylist(Playlist value) async {
       final added =
           await ref.read(playlistsControllerProvider.notifier).addToPlaylist(
-                value.id,
-                song.id,
+                value,
+                song,
               );
       if (added) {
         if (context.mounted) {
           context.showSnackBar(
-            message: "${song.title} has been added to ${value.playlist}",
+            message: "${song.title} has been added to ${value.name}",
           );
           Navigator.of(context).maybePop();
         }
@@ -534,7 +504,7 @@ class AddToPlaylistView extends ConsumerWidget {
       }
       if (context.mounted) {
         context.showErrorSnackBar(
-          message: "${song.title} could not be added to ${value.playlist}",
+          message: "${song.title} could not be added to ${value.name}",
         );
         Navigator.of(context).maybePop();
       }

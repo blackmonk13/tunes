@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/artwork_data_builder.dart';
-import 'package:tunes/components/player.dart';
 import 'package:tunes/utils/extensions.dart';
 
 import 'default_backdrop.dart';

@@ -1,64 +1,25 @@
 part of 'providers.dart';
 
-enum SongQueryType {
-  allSongs,
-  songsForArtist,
-  songsForAlbum,
-  songsForGenre,
-  songsForPlaylist,
-}
+
 
 @riverpod
 class SongsSortOrder extends _$SongsSortOrder {
   @override
-  ({SongSortType sortType, OrderType orderType}) build(
-      SongQueryType queryType) {
+  ({SongsSortType sortType, Sort orderType}) build(
+    SongQueryType queryType,
+  ) {
     return (
-      sortType: SongSortType.DATE_ADDED,
-      orderType: OrderType.DESC_OR_GREATER,
+      sortType: SongsSortType.modified,
+      orderType: Sort.desc,
     );
   }
 
-  void sort({SongSortType? sortType, OrderType? orderType}) {
+  void sort({SongsSortType? sortType, Sort? orderType}) {
     state = (
       sortType: sortType ?? state.sortType,
       orderType: orderType ?? state.orderType
     );
   }
-}
-
-List<SongModel> sortSongs(
-  List<SongModel> songs,
-  ({OrderType orderType, SongSortType sortType}) songsSortOrder,
-) {
-  songs.sort((a, b) {
-    switch (songsSortOrder.sortType) {
-      case SongSortType.TITLE:
-        return a.title.compareTo(b.title);
-      case SongSortType.ARTIST:
-        return (a.artist ?? "Unknown Artist")
-            .compareTo(b.artist ?? "Unknown Artist");
-      case SongSortType.ALBUM:
-        return (a.album ?? "Unknown Album")
-            .compareTo(b.album ?? "Unknown Album");
-      case SongSortType.DURATION:
-        return (a.duration ?? 0).compareTo(b.duration ?? 0);
-      case SongSortType.DATE_ADDED:
-        return (a.dateAdded ?? 0).compareTo(b.dateAdded ?? 0);
-      case SongSortType.SIZE:
-        return a.size.compareTo(b.size);
-      case SongSortType.DISPLAY_NAME:
-        return a.displayName.compareTo(b.displayName);
-      default:
-        return 0; // Default: no sorting
-    }
-  });
-
-  if (songsSortOrder.orderType == OrderType.DESC_OR_GREATER) {
-    songs = songs.reversed.toList();
-  }
-
-  return songs;
 }
 
 @Riverpod(keepAlive: true)
@@ -147,106 +108,14 @@ class SongsFilterConfigs extends _$SongsFilterConfigs {
 }
 
 @riverpod
-FutureOr<List<SongModel>> querySongs(QuerySongsRef ref) async {
-  final songs = await ref.read(onAudioQueryProvider).querySongs();
-  final filterConfigs = ref.watch(songsFilterConfigsProvider);
-
-  if (filterConfigs.filterPaths.isEmpty) {
-    return songs;
-  }
-
-  List<SongModel> filteredSongs = songs.where(
-    (song) {
-      // Apply path filters
-      final pathMatch = filterConfigs.filterPaths.any(
-        (filter) {
-          if (!filter.enabled) {
-            return false;
-          }
-          return filter.include
-              ? song.data.contains(filter.path)
-              : !song.data.contains(filter.path);
-        },
-      );
-      return pathMatch;
-    },
-  ).toList();
-
-  return filteredSongs;
-}
-
-@riverpod
-class SongsController extends _$SongsController {
-  @override
-  FutureOr<List<SongModel>> build({
-    SongQueryType queryType = SongQueryType.allSongs,
-    String? query,
-  }) async {
-    final songsSortOrder = ref.watch(
-      songsSortOrderProvider(
-        queryType,
-      ),
-    );
-
-    List<SongModel> songs;
-
-    if (queryType == SongQueryType.songsForPlaylist && query != null) {
-      songs = await ref.read(onAudioQueryProvider).queryAudiosFrom(
-            AudiosFromType.PLAYLIST,
-            query,
-            sortType: SongSortType.DATE_ADDED,
-            orderType: OrderType.DESC_OR_GREATER,
-          );
-      return sortSongs(songs, songsSortOrder);
-    } else {
-      songs = await ref.watch(querySongsProvider.future);
-    }
-
-    if (queryType == SongQueryType.allSongs || query == null) {
-      return sortSongs(songs, songsSortOrder);
-    }
-
-    songs = songs.where((song) {
-      switch (queryType) {
-        case SongQueryType.songsForGenre:
-          return song.genre?.toLowerCase().trim() == query.toLowerCase().trim();
-        case SongQueryType.songsForAlbum:
-          return song.album?.toLowerCase().trim() == query.toLowerCase().trim();
-        case SongQueryType.songsForArtist:
-          final artists = song.artist?.toLowerCase().trim().split(',') ?? [];
-          final queryArtists = query.toLowerCase().trim().split(',');
-          if (artists.isEmpty || queryArtists.isEmpty) {
-            return false;
-          }
-          return artists.any((artist) {
-            return queryArtists.contains(artist);
-          });
-        default:
-          return true;
-      }
-    }).toList();
-
-    return sortSongs(songs, songsSortOrder);
-  }
-}
-
-@riverpod
-FutureOr<Map<int, SongModel>> mappedSongs(MappedSongsRef ref) async {
-  final songs = await ref.watch(querySongsProvider.future);
-
-  return {for (var song in songs) song.id: song};
-}
-
-@riverpod
-FutureOr<SongModel?> songWithId(SongWithIdRef ref, String id) async {
+FutureOr<Song?> songWithId(SongWithIdRef ref, String id) async {
   final intId = int.parse(id);
-  final songsMap = await ref.watch(mappedSongsProvider.future);
 
-  return songsMap[intId];
+  return ref.watch(isarProvider).requireValue.songs.get(intId);
 }
 
 @riverpod
-FutureOr<SongModel?> currentSongInfo(CurrentSongInfoRef ref) async {
+FutureOr<Song?> currentSongInfo(CurrentSongInfoRef ref) async {
   final currentIndex = await ref.watch(playerCurrentIndexProvider.future);
   final sequence = await ref.watch(playlistSequenceProvider.future);
 
@@ -278,16 +147,16 @@ FutureOr<SongModel?> currentSongInfo(CurrentSongInfoRef ref) async {
 @riverpod
 class MetadataController extends _$MetadataController {
   @override
-  FutureOr<bool?> build(SongModel song) {
+  FutureOr<bool?> build(Song song) {
     return null;
   }
 
-  Future<bool> encodeSongMetadata(Map<String, dynamic> fields) async {
+  Future<bool> encode(Map<String, dynamic> fields) async {
     bool isEncoded = false;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // `song.data` should be a path to the file
-      final songFile = File(song.data);
+      final songFile = File(song.filePath);
 
       // Check if the file actually exists
       if (!await songFile.exists()) {
@@ -296,87 +165,25 @@ class MetadataController extends _$MetadataController {
         throw Exception('File not found');
       }
 
-      // Read the file as bytes
-      final bytes = await songFile.readAsBytes();
+      final mimeType = lookupMimeType(song.filePath);
+      // TODO: Handle Picture for id3 and cover for mp4
+      final isId3 = id3Mimes.contains(mimeType);
+      final handler = AudioQuery.createCodecHandler(songFile.path);
 
-      // Initialize the encoder with the bytes
-      final encoder = ID3Encoder(bytes);
-
-      // Create the metadata body
-      final metadata = MetadataV2p4Body(
-        title: fields['title'] as String?,
-        artist: fields['artist'] as String?,
-        album: fields['album'] as String?,
-      );
-
-      // Encode the metadata
-      final encodedBytes = await encoder.encodeAsync(metadata);
-
-      // Create Decoder
-      final decoder = ID3Decoder(encodedBytes);
-
-      // Decode the newly encoded metadata
-      final decoded = await decoder.decodeAsync();
-
-      debugPrint(decoded.toString());
-
-      if (decoded.isEmpty) {
+      if (handler == null) {
         isEncoded = false;
-        throw Exception("Failed to decode the encoded metadata");
+        return false;
       }
-
-      final updatedSongFile = await songFile.writeAsBytes(encodedBytes);
-
-      if (!await updatedSongFile.exists()) {
-        isEncoded = false;
-        throw Exception("Failed to update the song file");
-      }
-
-      // Update audio query
-      final isUpdated =
-          await ref.read(onAudioQueryProvider).scanMedia(updatedSongFile.path);
-
-      if (isUpdated) {
-        isEncoded = true;
-        ref.invalidate(querySongsProvider);
-      }
-
-      return isUpdated;
-    });
-
-    return isEncoded;
-  }
-
-  Future<bool> encodeMp4(Map<String, dynamic> fields) async {
-    bool isEncoded = false;
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      // `song.data` should be a path to the file
-      final songFile = File(song.data);
-
-      // Check if the file actually exists
-      if (!await songFile.exists()) {
-        debugPrint("File does not exist");
-        isEncoded = false;
-        throw Exception('File not found');
-      }
-
-      final handler = MP4Handler(songFile.path);
 
       handler.updateMetadata(fields);
 
       await handler.applyMetadataChanges();
 
-      // Update audio query
-      final isUpdated =
-          await ref.read(onAudioQueryProvider).scanMedia(songFile.path);
+      // TODO: Reindex file
 
-      if (isUpdated) {
-        isEncoded = true;
-        ref.invalidate(querySongsProvider);
-      }
+      isEncoded = true;
 
-      return isUpdated;
+      return true;
     });
 
     return isEncoded;
@@ -408,6 +215,30 @@ FutureOr<({Uint8List image, PaletteGenerator palette})?> artworkData(
     MemoryImage(imageData),
   );
   return (image: imageData, palette: palette);
+}
+
+@Riverpod(keepAlive: true)
+FutureOr<({FileImage image, PaletteGenerator palette})?> thumbnailData(
+  ThumbnailDataRef ref,
+  String? thumbnail,
+) async {
+  if (thumbnail == null) {
+    return null;
+  }
+
+  final thumbFile = File(thumbnail);
+
+  if (!await thumbFile.exists()) {
+    return null;
+  }
+
+  final thumbFileImage = FileImage(thumbFile);
+
+  final palette = await PaletteGenerator.fromImageProvider(
+    thumbFileImage,
+  );
+
+  return (image: thumbFileImage, palette: palette);
 }
 
 @riverpod

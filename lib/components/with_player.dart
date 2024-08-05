@@ -4,6 +4,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:tunes/components/player.dart';
 import 'package:tunes/providers/providers.dart';
 
+
 class WithPlayer extends HookConsumerWidget {
   final Widget child;
   const WithPlayer({
@@ -47,7 +48,7 @@ class WithPlayer extends HookConsumerWidget {
       loading: () => true,
     );
     const hiddenPosition = -72.0;
-    const visiblePosition = -10.0;
+    const visiblePosition = 0.0;
 
     return Stack(
       alignment: Alignment.topCenter,
@@ -57,7 +58,8 @@ class WithPlayer extends HookConsumerWidget {
             curve: Curves.bounceInOut,
             duration: const Duration(milliseconds: 300),
             padding: EdgeInsets.only(
-              bottom: hide ? 0 : 72.0,
+              bottom: hide ? 0 : hiddenPosition.abs(),
+              // bottom: 72.0,
             ),
             child: child,
           ),
@@ -66,6 +68,7 @@ class WithPlayer extends HookConsumerWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.bounceInOut,
           bottom: hide ? hiddenPosition : visiblePosition,
+          // bottom: visiblePosition,
           child: const PlayerView(),
         )
       ],

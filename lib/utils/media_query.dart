@@ -4,17 +4,14 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:isar/isar.dart';
+import 'package:image/image.dart' as img;
+import 'package:logger/logger.dart';
 import 'package:mime/mime.dart';
 import 'package:mpeg_codec/mpeg_codec.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:tunes/components/common/error_view.dart';
-import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/models/filters/filters.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:watcher/watcher.dart';
@@ -37,13 +34,20 @@ class Song {
   @Index(type: IndexType.value)
   late String genre;
 
-  @Index(type: IndexType.value)
+  @Index(unique: true, type: IndexType.value)
   late String filePath;
 
   @Index(type: IndexType.value)
   late int lastModified;
 
+  @Index(type: IndexType.value)
+  late int duration;
+
+  @Index(type: IndexType.value)
+  late int size;
+
   String? thumbnailPath;
+  String? thumbnailMiniPath;
 
   Song({
     required this.title,
@@ -52,7 +56,10 @@ class Song {
     required this.genre,
     required this.filePath,
     required this.lastModified,
+    required this.duration,
+    required this.size,
     this.thumbnailPath,
+    this.thumbnailMiniPath,
   });
 }
 
@@ -60,7 +67,7 @@ class Song {
 class Playlist {
   Id id = Isar.autoIncrement;
 
-  @Index(type: IndexType.value)
+  @Index(unique: true, type: IndexType.value)
   late String name;
 
   final songs = IsarLinks<Song>();
@@ -102,46 +109,69 @@ bool shouldInclude(String filePath, Set<PathFilter> filters) {
   return mostSpecificFilter?.include ?? true;
 }
 
-class MediaQuery {
+enum SongsSortType {
+  title,
+  artist,
+  album,
+  genre,
+  modified,
+  duration,
+  size,
+}
+
+enum SongQueryType {
+  all,
+  artist,
+  album,
+  genre,
+  playlist,
+}
+
+class AudioQuery {
   late Isar _isar;
   late Directory _thumbnailDirectory;
+  final Logger _logger = Logger();
   final List<StreamSubscription<WatchEvent>> _watchers = [];
+
   final _indexingProgressController = StreamController<int>.broadcast();
   final _indexingErrorsController = StreamController<List<String>>.broadcast();
 
   Stream<int> get indexingProgress => _indexingProgressController.stream;
   Stream<List<String>> get indexingErrors => _indexingErrorsController.stream;
+  IsarCollection<Song> get songs => _isar.songs;
 
-  Future<void> initialize(
-    Set<PathFilter> filterPaths,
-  ) async {
-    final dir = await getApplicationSupportDirectory();
-    _isar = await Isar.open(
-      [SongSchema],
-      directory: dir.path,
-    );
+  AudioQuery(Isar isar, Directory thumbnailDirectory) {
+    _isar = isar;
+    _thumbnailDirectory = thumbnailDirectory;
+  }
 
-    _thumbnailDirectory = Directory(path.join(dir.path, '.thumbnails'));
-    if (!await _thumbnailDirectory.exists()) {
-      await _thumbnailDirectory.create(recursive: true);
-    }
-
+  Future<void> index(Set<PathFilter> filterPaths) async {
+    _logger.d("Initialized indexing");
     await _indexMedia(filterPaths);
     _setupWatchers(filterPaths);
   }
 
   Future<void> _indexMedia(Set<PathFilter> paths) async {
+    _logger.d("Now Indexing");
     final receivePort = ReceivePort();
-    await Isolate.spawn(_indexMediaIsolate, [paths, receivePort.sendPort]);
 
-    List<Map<String, dynamic>> batch = [];
+    // Get existing file paths and last modified times
+    final existingFiles = await _getExistingFilesInfo();
+    _logger.d("Got existing files");
+
+    await Isolate.spawn(_indexMediaIsolate, [
+      paths,
+      existingFiles,
+      receivePort.sendPort,
+    ]);
+
+    List<Metadata> batch = [];
     int processedFiles = 0;
 
     await for (var message in receivePort) {
-      if (message is Map<String, dynamic>) {
+      if (message is Metadata) {
         batch.add(message);
         if (batch.length >= 100) {
-          // Process in batches of 100
           await _addOrUpdateSongs(batch);
           processedFiles += batch.length;
           _indexingProgressController.add(processedFiles);
@@ -160,26 +190,56 @@ class MediaQuery {
     _indexingProgressController.close();
   }
 
+  Future<Map<String, int>> _getExistingFilesInfo() async {
+    return _isar.txn(() async {
+      try {
+        final songs = await _isar.songs.where().findAll();
+        return {
+          for (var element in songs) element.filePath: element.lastModified
+        };
+      } catch (e) {
+        _logger.e(e);
+        return {};
+      }
+    });
+  }
+
   static void _indexMediaIsolate(List<dynamic> args) async {
-    Set<PathFilter> filterPaths = args.first;
-    SendPort sendPort = args.last;
+    Set<PathFilter> filterPaths = args[0];
+    Map<String, int> existingFiles = args[1];
+    SendPort sendPort = args[2];
 
     for (final filterPath in filterPaths) {
       if (filterPath.enabled && filterPath.include) {
         final directory = Directory(filterPath.path);
         await for (final entity in directory.list(recursive: true)) {
           if (entity is File && shouldInclude(entity.path, filterPaths)) {
-            final metadata = await _extractMetadata(entity.path);
-            if (metadata != null) {
-              metadata['filePath'] = entity.path;
-              metadata['lastModified'] = await entity
-                  .lastModified()
-                  .then((date) => date.millisecondsSinceEpoch);
-              sendPort.send(metadata);
+            final lastModified = await entity.lastModified();
+            final lastModifiedMillis = lastModified.millisecondsSinceEpoch;
+
+            // Check if the file has been modified since last indexing
+            if (!existingFiles.containsKey(entity.path) ||
+                existingFiles[entity.path]! < lastModifiedMillis) {
+              final metadata = await _extractMetadata(entity.path);
+              if (metadata != null) {
+                metadata.set('lastModified', lastModifiedMillis);
+                sendPort.send(metadata);
+              }
             }
+
+            // Remove the file from existingFiles to track deletions
+            existingFiles.remove(entity.path);
           }
         }
       }
+    }
+
+    // Handle deleted files
+    for (final deletedFilePath in existingFiles.keys) {
+      final metadata = Metadata();
+      metadata.set('filePath', deletedFilePath);
+      metadata.set('deleted', true);
+      sendPort.send(metadata);
     }
 
     sendPort.send('DONE');
@@ -191,12 +251,12 @@ class MediaQuery {
   }) async {
     for (int i = 0; i < maxRetries; i++) {
       try {
-        var metadata = await _extractMetadata(filePath);
+        final metadata = await _extractMetadata(filePath);
         if (metadata != null) {
-          metadata['filePath'] = filePath;
-          metadata['lastModified'] = await File(filePath)
+          final lastModified = await File(filePath)
               .lastModified()
               .then((date) => date.millisecondsSinceEpoch);
+          metadata.set('lastModified', lastModified);
           await _addOrUpdateSong(metadata);
           break;
         }
@@ -215,26 +275,27 @@ class MediaQuery {
     }
   }
 
-  static Future<Map<String, dynamic>?> _extractMetadata(String filePath) async {
+  static Future<Metadata?> _extractMetadata(String filePath) async {
     final mimeType = lookupMimeType(filePath);
-    final handler = _createMetadataHandler(filePath, mimeType);
+    final handler = createCodecHandler(filePath);
 
     if (handler == null) return null;
 
     final metadata = handler.metadata;
-    return {
-      'title': metadata.get('title') ?? path.basenameWithoutExtension(filePath),
-      'artist': metadata.get('artist') ?? 'Unknown Artist',
-      'album': metadata.get('album') ?? 'Unknown Album',
-      'genre': metadata.get('genre') ?? 'Unknown Genre',
-      'filePath': filePath,
-    };
+    metadata.set(
+      'title',
+      metadata.get('title') ?? path.basenameWithoutExtension(filePath),
+    );
+    metadata.set('artist', metadata.get('artist') ?? 'Unknown Artist');
+    metadata.set('album', metadata.get('album') ?? 'Unknown Album');
+    metadata.set('genre', metadata.get('genre') ?? 'Unknown Genre');
+    return metadata;
   }
 
-  static CodecHandler? _createMetadataHandler(
+  static CodecHandler? createCodecHandler(
     String filePath,
-    String? mimeType,
   ) {
+    final mimeType = lookupMimeType(filePath);
     if (id3Mimes.contains(mimeType)) {
       return ID3Handler(filePath);
     } else if (mp4Mimes.contains(mimeType)) {
@@ -247,39 +308,48 @@ class MediaQuery {
   static String? _ensureString(dynamic value) {
     if (value == null) return null;
     if (value is String) return value;
-    if (value is List) return value.join(', ');
+    if (value is List) return value.join('');
     return value.toString();
   }
 
-  Future<void> _addOrUpdateSong(Map<String, dynamic> metadata) async {
+  Future<void> _addOrUpdateSong(Metadata metadata) async {
     await _isar.writeTxn(() async {
-      String? thumbnailPath = await _saveThumbnail(metadata);
+      final thumbnailPaths = await _saveThumbnail(metadata);
 
       Song? existingSong = await _isar.songs
           .filter()
-          .filePathEqualTo(metadata['filePath'])
+          .filePathEqualTo(metadata.get('filePath'))
           .findFirst();
 
       if (existingSong != null) {
-        if (existingSong.lastModified != metadata['lastModified']) {
+        if (existingSong.lastModified != metadata.get('lastModified')) {
           existingSong
-            ..title = _ensureString(metadata['title']) ?? existingSong.title
-            ..artist = _ensureString(metadata['artist']) ?? existingSong.artist
-            ..album = _ensureString(metadata['album']) ?? existingSong.album
-            ..genre = _ensureString(metadata['genre']) ?? existingSong.genre
-            ..lastModified = metadata['lastModified']
-            ..thumbnailPath = thumbnailPath ?? existingSong.thumbnailPath;
+            ..title = _ensureString(metadata.get('title')) ?? existingSong.title
+            ..artist =
+                _ensureString(metadata.get('artist')) ?? existingSong.artist
+            ..album = _ensureString(metadata.get('album')) ?? existingSong.album
+            ..genre = _ensureString(metadata.get('genre')) ?? existingSong.genre
+            ..lastModified = metadata.get('lastModified')
+            ..duration = metadata.get('duration') ?? existingSong.duration
+            ..size = metadata.get('size') ?? existingSong.size
+            ..thumbnailPath =
+                thumbnailPaths.original ?? existingSong.thumbnailPath
+            ..thumbnailMiniPath =
+                thumbnailPaths.mini ?? existingSong.thumbnailMiniPath;
           await _isar.songs.put(existingSong);
         }
       } else {
         Song newSong = Song(
-          title: _ensureString(metadata['title']) ?? 'Unknown Title',
-          artist: _ensureString(metadata['artist']) ?? 'Unknown Artist',
-          album: _ensureString(metadata['album']) ?? 'Unknown Album',
-          genre: _ensureString(metadata['genre']) ?? 'Unknown Genre',
-          filePath: metadata['filePath'],
-          lastModified: metadata['lastModified'],
-          thumbnailPath: thumbnailPath,
+          title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
+          artist: _ensureString(metadata.get('artist')) ?? 'Unknown Artist',
+          album: _ensureString(metadata.get('album')) ?? 'Unknown Album',
+          genre: _ensureString(metadata.get('genre')) ?? 'Unknown Genre',
+          filePath: metadata.get('filePath'),
+          lastModified: metadata.get('lastModified'),
+          duration: metadata.get('duration') ?? 0,
+          size: metadata.get('size') ?? 0,
+          thumbnailPath: thumbnailPaths.original,
+          thumbnailMiniPath: thumbnailPaths.mini,
         );
         await _isar.songs.put(newSong);
       }
@@ -287,40 +357,57 @@ class MediaQuery {
   }
 
   Future<void> _addOrUpdateSongs(
-    List<Map<String, dynamic>> metadataList,
+    List<Metadata> metadataList,
   ) async {
     await _isar.writeTxn(() async {
       for (var metadata in metadataList) {
-        String? thumbnailPath = await _saveThumbnail(metadata);
-
-        Song? existingSong = await _isar.songs
-            .filter()
-            .filePathEqualTo(metadata['filePath'])
-            .findFirst();
-
-        if (existingSong != null) {
-          if (existingSong.lastModified != metadata['lastModified']) {
-            existingSong
-              ..title = _ensureString(metadata['title']) ?? existingSong.title
-              ..artist =
-                  _ensureString(metadata['artist']) ?? existingSong.artist
-              ..album = _ensureString(metadata['album']) ?? existingSong.album
-              ..genre = _ensureString(metadata['genre']) ?? existingSong.genre
-              ..lastModified = metadata['lastModified']
-              ..thumbnailPath = thumbnailPath ?? existingSong.thumbnailPath;
-            await _isar.songs.put(existingSong);
-          }
+        if (metadata.get('deleted') == true) {
+          // Remove the song if it's been deleted
+          await _isar.songs
+              .filter()
+              .filePathEqualTo(metadata.get('filePath'))
+              .deleteAll();
         } else {
-          Song newSong = Song(
-            title: _ensureString(metadata['title']) ?? 'Unknown Title',
-            artist: _ensureString(metadata['artist']) ?? 'Unknown Artist',
-            album: _ensureString(metadata['album']) ?? 'Unknown Album',
-            genre: _ensureString(metadata['genre']) ?? 'Unknown Genre',
-            filePath: metadata['filePath'],
-            lastModified: metadata['lastModified'],
-            thumbnailPath: thumbnailPath,
-          );
-          await _isar.songs.put(newSong);
+          final thumbnailPaths = await _saveThumbnail(metadata);
+
+          Song? existingSong = await _isar.songs
+              .filter()
+              .filePathEqualTo(metadata.get('filePath'))
+              .findFirst();
+
+          if (existingSong != null) {
+            existingSong
+              ..title =
+                  _ensureString(metadata.get('title')) ?? existingSong.title
+              ..artist =
+                  _ensureString(metadata.get('artist')) ?? existingSong.artist
+              ..album =
+                  _ensureString(metadata.get('album')) ?? existingSong.album
+              ..genre =
+                  _ensureString(metadata.get('genre')) ?? existingSong.genre
+              ..lastModified = metadata.get('lastModified')
+              ..duration = metadata.get('duration') ?? existingSong.duration
+              ..size = metadata.get('size') ?? existingSong.size
+              ..thumbnailPath =
+                  thumbnailPaths.original ?? existingSong.thumbnailPath
+              ..thumbnailMiniPath =
+                  thumbnailPaths.mini ?? existingSong.thumbnailMiniPath;
+            await _isar.songs.put(existingSong);
+          } else {
+            Song newSong = Song(
+              title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
+              artist: _ensureString(metadata.get('artist')) ?? 'Unknown Artist',
+              album: _ensureString(metadata.get('album')) ?? 'Unknown Album',
+              genre: _ensureString(metadata.get('genre')) ?? 'Unknown Genre',
+              filePath: metadata.get('filePath'),
+              lastModified: metadata.get('lastModified'),
+              duration: metadata.get('duration') ?? 0,
+              size: metadata.get('size') ?? 0,
+              thumbnailPath: thumbnailPaths.original,
+              thumbnailMiniPath: thumbnailPaths.mini,
+            );
+            await _isar.songs.put(newSong);
+          }
         }
       }
     });
@@ -352,7 +439,7 @@ class MediaQuery {
     });
   }
 
-  Future<void> cleanupNonExistentEntries() async {
+  Future<void> _cleanupNonExistentEntries() async {
     await _isar.writeTxn(() async {
       final allSongs = await _isar.songs.where().findAll();
       for (final song in allSongs) {
@@ -363,34 +450,137 @@ class MediaQuery {
     });
   }
 
-  Future<String?> _saveThumbnail(Map<String, dynamic> metadata) async {
+  Future<({String? original, String? mini})> _saveThumbnail(
+    Metadata metadata,
+  ) async {
     Uint8List? imageData;
-    if (metadata['cover'] is Uint8List) {
-      imageData = metadata['cover'];
-    } else if (metadata['picture'] is Map<String, dynamic>) {
-      imageData = metadata['picture']['data'];
+    if (metadata.get('cover') is Uint8List) {
+      imageData = metadata.get('cover');
+    } else if (metadata.get('picture') is Map<String, dynamic>) {
+      imageData = metadata.get('picture')['data'];
     }
 
-    if (imageData != null) {
-      final hash = sha256.convert(imageData).toString();
-      final thumbnailPath = path.join(_thumbnailDirectory.path, '$hash.jpg');
-      final thumbnailFile = File(thumbnailPath);
-      if (!await thumbnailFile.exists()) {
-        await thumbnailFile.writeAsBytes(imageData);
+    if (imageData == null) {
+      return (original: null, mini: null);
+    }
+
+    final hash = sha256.convert(imageData).toString();
+    final originalPath = path.join(_thumbnailDirectory.path, '$hash.png');
+    final miniPath = path.join(_thumbnailDirectory.path, '${hash}_mini.png');
+    final originalFile = File(originalPath);
+    final miniFile = File(miniPath);
+
+    if (!await originalFile.exists() || !await miniFile.exists()) {
+      // Decode the image
+      img.Image? image = img.decodeImage(imageData);
+      if (image == null) {
+        _logger.e('Invalid image data');
+        return (original: null, mini: null);
       }
-      return thumbnailPath;
+
+      // Save original image
+      if (!await originalFile.exists()) {
+        await originalFile.writeAsBytes(imageData);
+      }
+
+      // Create and save mini version
+      if (!await miniFile.exists()) {
+        img.Image miniImage = img.copyResize(
+          image,
+          width: 75,
+          height: 75,
+        );
+        await miniFile.writeAsBytes(
+          Uint8List.fromList(img.encodePng(miniImage)),
+        );
+      }
     }
 
-    return null;
+    return (original: originalPath, mini: miniPath);
   }
 
-  Future<int> songsCount() async {
-    return _isar.songs.count();
+  Query<Song> querySongs({
+    int? limit,
+    int? offset,
+    Sort sort = Sort.desc,
+    SongsSortType sortType = SongsSortType.title,
+    SongQueryType queryType = SongQueryType.all,
+    String? query,
+    String? searchQuery,
+  }) {
+    return _isar.songs.buildQuery(
+      filter: FilterGroup.and(
+        [
+          if (searchQuery != null)
+            FilterGroup.or(
+              [
+                'title',
+                'artist',
+                'album',
+                'genre',
+              ].map((e) {
+                return FilterCondition.contains(
+                  property: e,
+                  value: searchQuery,
+                  caseSensitive: false,
+                );
+              }).toList(),
+            ),
+          if (![
+                SongQueryType.all,
+                SongQueryType.playlist,
+              ].contains(queryType) &&
+              query != null)
+            FilterCondition.contains(
+              property: queryType.name,
+              value: query,
+              caseSensitive: false,
+            ),
+        ],
+      ),
+      sortBy: [
+        SortProperty(
+          property: sortType == SongsSortType.modified
+              ? 'lastModified'
+              : sortType.name,
+          sort: sort,
+        ),
+      ],
+      offset: offset,
+      limit: limit,
+    );
   }
 
-  Future<List<Song>> getSongs(int limit, int offset) {
-    final query = _isar.songs.where();
-    return query.offset(offset).limit(limit).findAll();
+  Future<int> songsCount({
+    SongQueryType queryType = SongQueryType.all,
+    String? query,
+    String? searchQuery,
+  }) {
+    return querySongs(
+      queryType: queryType,
+      query: query,
+      searchQuery: searchQuery,
+    ).count();
+  }
+
+  Future<List<Song>> getSongs(
+    int limit,
+    int offset, {
+    Sort sort = Sort.desc,
+    SongsSortType sortType = SongsSortType.title,
+    SongQueryType queryType = SongQueryType.all,
+    String? query,
+    String? searchQuery,
+  }) {
+    return querySongs(
+      limit: limit,
+      offset: offset,
+      sort: sort,
+      sortType: sortType,
+      queryType: queryType,
+      query: query,
+      searchQuery: searchQuery,
+    ).findAll();
   }
 
   Future<List<String>> getAlbums() async {
@@ -409,7 +599,6 @@ class MediaQuery {
     for (var watcher in _watchers) {
       await watcher.cancel();
     }
-    await _isar.close();
     if (!_indexingProgressController.isClosed) {
       await _indexingProgressController.close();
     }
@@ -420,33 +609,45 @@ class MediaQuery {
 }
 
 @Riverpod(keepAlive: true)
-MediaQuery mediaQuery(MediaQueryRef ref) {
-  final mq = MediaQuery();
+FutureOr<Isar> isar(IsarRef ref) async {
+  final dir = await getApplicationSupportDirectory();
+  final isar = await Isar.open(
+    [SongSchema, PlaylistSchema],
+    directory: dir.path,
+    inspector: false,
+  );
+  ref.onDispose(() => isar.close());
+  return isar;
+}
+
+@Riverpod(keepAlive: true)
+FutureOr<Directory> thumbnailDirectory(ThumbnailDirectoryRef ref) async {
+  final dir = await getApplicationSupportDirectory();
+
+  final thumbnailDirectory = Directory(path.join(dir.path, '.thumbnails'));
+  if (!await thumbnailDirectory.exists()) {
+    await thumbnailDirectory.create(recursive: true);
+  }
+  return thumbnailDirectory;
+}
+
+@Riverpod(keepAlive: true)
+AudioQuery mediaQuery(MediaQueryRef ref) {
+  final isar = ref.watch(isarProvider).requireValue;
+  final dir = ref.watch(thumbnailDirectoryProvider).requireValue;
+  final mq = AudioQuery(isar, dir);
   ref.onDispose(() => mq.dispose());
   return mq;
 }
 
-@riverpod
-FutureOr<int> songsCount(SongsCountRef ref) {
-  return ref.watch(mediaQueryProvider).songsCount();
-}
-
-@riverpod
-class SongsQuery extends _$SongsQuery {
-  @override
-  FutureOr<List<Song>> build(int limit, int offset) {
-    return ref.watch(mediaQueryProvider).getSongs(limit, offset);
-  }
-}
-
 @Riverpod(keepAlive: true)
-class MediaQueryController extends _$MediaQueryController {
+class IndexingController extends _$IndexingController {
   @override
-  FutureOr<void> build() {
+  FutureOr<void> build() async {
     final mQuery = ref.watch(mediaQueryProvider);
     final filterConfigs = ref.watch(songsFilterConfigsProvider);
 
-    return mQuery.initialize(filterConfigs.filterPaths);
+    return mQuery.index(filterConfigs.filterPaths);
   }
 }
 
@@ -455,102 +656,65 @@ Stream<int> indexingProgress(IndexingProgressRef ref) {
   return ref.watch(mediaQueryProvider).indexingProgress;
 }
 
-class MediaQueryView extends ConsumerWidget {
-  const MediaQueryView({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mediaQueryControllerAsyncValue =
-        ref.watch(mediaQueryControllerProvider);
-
-    return mediaQueryControllerAsyncValue.when(
-      data: (data) {
-        return const MediaQueryListView();
-      },
-      error: (error, stackTrace) {
-        return AsyncErrorView(error: error, stackTrace: stackTrace);
-      },
-      loading: () => const MediaQueryViewLoading(),
-    );
-  }
+@riverpod
+Stream<void> songsWatcher(
+  SongsWatcherRef ref, {
+  SongQueryType queryType = SongQueryType.all,
+  String? query,
+  String? searchQuery,
+}) {
+  return ref
+      .watch(mediaQueryProvider)
+      .querySongs(
+        queryType: queryType,
+        query: query,
+        searchQuery: searchQuery,
+      )
+      .watchLazy();
 }
 
-class MediaQueryListView extends ConsumerWidget {
-  const MediaQueryListView({super.key});
-
-  static const pageSize = 20;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final songsCountAsyncValue = ref.watch(songsCountProvider);
-
-    return songsCountAsyncValue.when(
-      data: (itemCount) {
-        return ListView.builder(
-          itemCount: itemCount,
-          itemBuilder: (BuildContext context, int index) {
-            final page = index ~/ pageSize;
-            final offset = page * pageSize;
-            final indexInPage = index % pageSize;
-            final songsQueryAsyncValue =
-                ref.watch(songsQueryProvider(pageSize, offset));
-            return songsQueryAsyncValue.when(
-              data: (data) {
-                final song = data.elementAt(indexInPage);
-                return ListTile(
-                  leading: Text(song.id.toString()),
-                  title: Text(song.title),
-                  subtitle: Text(
-                      'index: $index, page: $page, indexInPage: $indexInPage, ${offset}'),
-                );
-              },
-              error: (error, stackTrace) {
-                return ListTile(
-                  leading: const Icon(FluentIcons.warning_24_regular),
-                  title: const Text("Error"),
-                  subtitle: Text(error.toString()),
-                );
-              },
-              loading: () {
-                return const SongListTileLoading();
-              },
-            );
-          },
-        );
-      },
-      error: (error, stackTrace) {
-        return AsyncErrorView(
-          error: error,
-          stackTrace: stackTrace,
-        );
-      },
-      loading: () {
-        return const CircularProgressIndicator();
-      },
-    );
-  }
+@riverpod
+FutureOr<int> songsCount(
+  SongsCountRef ref, {
+  SongQueryType queryType = SongQueryType.all,
+  String? query,
+  String? searchQuery,
+}) {
+  ref.watch(songsWatcherProvider(
+    queryType: queryType,
+    query: query,
+    searchQuery: searchQuery,
+  ));
+  return ref.watch(mediaQueryProvider).songsCount(
+        queryType: queryType,
+        query: query,
+        searchQuery: searchQuery,
+      );
 }
 
-class MediaQueryViewLoading extends ConsumerWidget {
-  const MediaQueryViewLoading({super.key});
-
+@riverpod
+class SongsQuery extends _$SongsQuery {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final indexingProgressAsyncValue = ref.watch(indexingProgressProvider);
-
-    return Column(
-      children: <Widget>[
-        const CircularProgressIndicator(),
-        indexingProgressAsyncValue.when(
-          data: (data) {
-            return Text(data.toString());
-          },
-          error: (error, stackTrace) => const SizedBox.shrink(),
-          loading: () => const SizedBox.shrink(),
-        ),
-      ],
+  FutureOr<List<Song>> build(
+    int limit,
+    int offset, {
+    SongQueryType queryType = SongQueryType.all,
+    String? query,
+    String? searchQuery,
+  }) {
+    final songsSortOrder = ref.watch(
+      songsSortOrderProvider(
+        SongQueryType.all,
+      ),
     );
+    return ref.watch(mediaQueryProvider).getSongs(
+          limit,
+          offset,
+          sort: songsSortOrder.orderType,
+          sortType: songsSortOrder.sortType,
+          queryType: queryType,
+          query: query,
+          searchQuery: searchQuery,
+        );
   }
 }

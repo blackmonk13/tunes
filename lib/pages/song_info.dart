@@ -1,10 +1,11 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MediaQuery;
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mime/mime.dart';
 import 'package:mpeg_codec/mpeg_codec.dart' hide formatDuration;
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/dialog_form.dart';
@@ -12,9 +13,10 @@ import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/functions.dart';
+import 'package:tunes/utils/media_query.dart';
 
 class SongInfo extends HookConsumerWidget {
-  final SongModel song;
+  final Song song;
   const SongInfo({
     super.key,
     required this.song,
@@ -45,7 +47,8 @@ class SongInfo extends HookConsumerWidget {
     //   }
     // });
 
-    final supported = ['mp3', 'm4a'].contains(song.fileExtension);
+    // final supported = ['mp3', 'm4a'].contains(song.fileExtension);
+    final supported = true;
 
     final fields = [
       (
@@ -66,27 +69,25 @@ class SongInfo extends HookConsumerWidget {
         value: song.album,
         editable: true && supported,
       ),
-      if (song.genre != null)
-        (
-          title: 'Genre',
-          name: 'genre',
-          value: song.genre,
-          editable: false,
-        ),
-      if (song.track != null)
-        (
-          title: 'Track',
-          name: 'track',
-          value: song.track,
-          editable: false,
-        ),
-      if (song.duration != null)
-        (
-          title: 'Duration',
-          name: 'duration',
-          value: formatDuration(Duration(milliseconds: song.duration ?? 0)),
-          editable: false,
-        ),
+      (
+        title: 'Genre',
+        name: 'genre',
+        value: song.genre,
+        editable: true,
+      ),
+      // if (song.track != null)
+      //   (
+      //     title: 'Track',
+      //     name: 'track',
+      //     value: song.track,
+      //     editable: false,
+      //   ),
+      (
+        title: 'Duration',
+        name: 'duration',
+        value: formatDuration(Duration(milliseconds: song.duration)),
+        editable: false,
+      ),
       (
         title: 'File Size',
         name: 'size',
@@ -96,10 +97,10 @@ class SongInfo extends HookConsumerWidget {
       (
         title: 'File Path',
         name: 'path',
-        value: song.data,
+        value: song.filePath,
         editable: false,
       ),
-      ...mp4Fields
+      ...metaFields
     ];
 
     return Scaffold(
@@ -108,13 +109,15 @@ class SongInfo extends HookConsumerWidget {
           SliverAppBar(
             expandedHeight: 300,
             flexibleSpace: FlexibleSpaceBar(
-              background: SongArtwork(
-                id: song.id,
-                type: ArtworkType.AUDIO,
+              background: Thumbnail(
+                thumbnail: song.thumbnailPath,
                 width: context.shortestSide,
-                height: 300,
-                size: 300,
-                borderRadius: BorderRadius.circular(20.0),
+                height: context.shortestSide,
+                filterQuality: FilterQuality.high,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20.0),
+                  bottomRight: Radius.circular(20.0),
+                ),
               ),
             ),
           ),
@@ -139,20 +142,25 @@ class SongInfo extends HookConsumerWidget {
     );
   }
 
-  List<({bool editable, String name, String title, Object? value})>
-      get mp4Fields {
-    if (song.fileExtension != 'm4a') {
-      return [];
-    }
-
+  List<
+      ({
+        bool editable,
+        String name,
+        String title,
+        Object? value,
+      })> get metaFields {
     try {
-      final handler = MP4Handler(song.data);
+      final mimeType = lookupMimeType(song.filePath);
+      final handler = AudioQuery.createCodecHandler(song.filePath);
+      if (handler == null) {
+        return [];
+      }
       final metadata = handler.metadata;
-      handler.close();
+
       return metadata
           .asMap()
           .entries
-          .where((e) => e.key != 'cover')
+          .where((e) => !['cover', 'picture'].contains(e.key))
           .map((entry) {
         return (
           title: camelToSentence(entry.key),
@@ -177,7 +185,7 @@ class SongInfoTile extends HookConsumerWidget {
     this.editable = false,
   });
 
-  final SongModel song;
+  final Song song;
   final String title;
   final String name;
   final String value;
@@ -228,12 +236,9 @@ class SongInfoTile extends HookConsumerWidget {
                                 return ListTile(title: Text(country));
                               },
                               suggestionsCallback: (query) async {
-                                final allSongs = await ref
-                                    .read(songsControllerProvider().future);
-                                final allItems = allSongs
-                                    .map((e) => e.album ?? "Unknown")
-                                    .toSet()
-                                    .toList();
+                                final allItems = await ref
+                                    .watch(mediaQueryProvider)
+                                    .getArtists();
                                 if (query.isNotEmpty) {
                                   var lowercaseQuery = query.toLowerCase();
 
@@ -267,12 +272,45 @@ class SongInfoTile extends HookConsumerWidget {
                                 return ListTile(title: Text(country));
                               },
                               suggestionsCallback: (query) async {
-                                final allSongs = await ref
-                                    .read(songsControllerProvider().future);
-                                final allItems = allSongs
-                                    .map((e) => e.artist ?? "Unknown")
-                                    .toSet()
-                                    .toList();
+                                final allItems = await ref
+                                    .watch(mediaQueryProvider)
+                                    .getArtists();
+
+                                if (query.isNotEmpty) {
+                                  var lowercaseQuery = query.toLowerCase();
+
+                                  return allItems.where((item) {
+                                    return item
+                                        .toLowerCase()
+                                        .contains(lowercaseQuery);
+                                  }).toList(growable: false)
+                                    ..sort((a, b) => a
+                                        .toLowerCase()
+                                        .indexOf(lowercaseQuery)
+                                        .compareTo(b
+                                            .toLowerCase()
+                                            .indexOf(lowercaseQuery)));
+                                } else {
+                                  return allItems;
+                                }
+                              },
+                            );
+                          case 'genre':
+                            return FormBuilderTypeAhead(
+                              name: name,
+                              initialValue: value,
+                              focusNode: focusNode,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                filled: false,
+                                enabledBorder: InputBorder.none,
+                              ),
+                              itemBuilder: (context, country) {
+                                return ListTile(title: Text(country));
+                              },
+                              suggestionsCallback: (query) async {
+                                const allItems = genres;
+
                                 if (query.isNotEmpty) {
                                   var lowercaseQuery = query.toLowerCase();
 
@@ -318,17 +356,9 @@ class SongInfoTile extends HookConsumerWidget {
                 return;
               }
 
-              bool result;
-
-              if (song.fileExtension == 'm4a') {
-                result = await ref
-                    .read(metadataControllerProvider(song).notifier)
-                    .encodeMp4(values);
-              } else {
-                result = await ref
-                    .read(metadataControllerProvider(song).notifier)
-                    .encodeSongMetadata(values);
-              }
+              bool result = await ref
+                  .read(metadataControllerProvider(song).notifier)
+                  .encode(values);
 
               if (result) {
                 if (context.mounted) {

@@ -1,11 +1,10 @@
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
-import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class AlbumInfoPage extends HookConsumerWidget {
@@ -17,7 +16,6 @@ class AlbumInfoPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     return Scaffold(
       body: WithPlayer(
         child: CustomScrollView(
@@ -33,8 +31,8 @@ class AlbumInfoPage extends HookConsumerWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        context.colorScheme.background,
-                        context.colorScheme.background.withOpacity(.0),
+                        context.colorScheme.surface,
+                        context.colorScheme.surface.withOpacity(.0),
                       ],
                     ),
                   ),
@@ -50,8 +48,8 @@ class AlbumInfoPage extends HookConsumerWidget {
               ),
             ),
             SliverFillRemaining(
-              child: SongsListView(
-                queryType: SongQueryType.songsForAlbum,
+              child: SongsView(
+                queryType: SongQueryType.album,
                 query: album.album,
               ),
             ),

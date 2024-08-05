@@ -10,6 +10,7 @@ import 'package:tunes/components/player_controls.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/constants.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart';
 
 class PlayerDetailsAndControls extends ConsumerWidget {
   const PlayerDetailsAndControls({
@@ -18,7 +19,7 @@ class PlayerDetailsAndControls extends ConsumerWidget {
     this.fgColor,
     this.bgColor,
   });
-  final SongModel? song;
+  final Song? song;
   final Color? fgColor;
   final Color? bgColor;
 
@@ -42,6 +43,12 @@ class PlayerDetailsAndControls extends ConsumerWidget {
               color: fgColor,
             ),
           ),
+          // DetailsText(
+          //   text: song?.album,
+          //   style: context.textTheme.headlineSmall?.copyWith(
+          //     color: fgColor,
+          //   ),
+          // ),
         ],
         PlayerProgressBar(
           color: fgColor,
@@ -113,8 +120,9 @@ class PlayerDetailsAndControls extends ConsumerWidget {
                   backgroundColor: Colors.transparent,
                   isScrollControlled: true,
                   useSafeArea: true,
-                  constraints:
-                      BoxConstraints(maxHeight: context.screenHeight * .7),
+                  constraints: BoxConstraints(
+                    maxHeight: context.screenHeight * .7,
+                  ),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20.0),
@@ -174,21 +182,17 @@ class FavoriteBtn extends ConsumerWidget {
     this.fgColor,
     this.bgColor,
   });
-  final SongModel? song;
+  final Song? song;
   final Color? fgColor;
   final Color? bgColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(favoritesPlaylistProvider);
-    final asyncFavs = ref.watch(songsControllerProvider(
-      query: favsPlaylistName,
-      queryType: SongQueryType.songsForPlaylist,
-    ));
+    final asyncPlaylist = ref.watch(favoritesPlaylistProvider);
 
-    return asyncFavs.when(
+    return asyncPlaylist.when(
       data: (data) {
-        final songIsLiked = data.where((e) => e.id == song?.id).isNotEmpty;
+        final songIsLiked = data.songs.contains(song);
         return LikeButton(
           size: 42,
           isLiked: songIsLiked,
@@ -205,15 +209,14 @@ class FavoriteBtn extends ConsumerWidget {
                 )
                 .toggleFavorite(
                   song!,
-                  favorite: !isLiked,
                 );
 
-            if (liked) {
-              ref.invalidate(songsControllerProvider(
-                query: favsPlaylistName,
-                queryType: SongQueryType.songsForPlaylist,
-              ));
-            }
+            // if (liked) {
+            //   ref.invalidate(songsControllerProvider(
+            //     query: favsPlaylistName,
+            //     queryType: SongQueryType.songsForPlaylist,
+            //   ));
+            // }
 
             return liked;
           },

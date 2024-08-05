@@ -1,6 +1,6 @@
 part of 'providers.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 FutureOr<bool> appPermissions(AppPermissionsRef ref) async {
   Map<Permission, PermissionStatus> statuses = await [
     Permission.audio,
@@ -102,7 +102,7 @@ Stream<bool> playerShuffleModeEnabled(PlayerShuffleModeEnabledRef ref) {
 @Riverpod(keepAlive: true)
 class NowPlayingController extends _$NowPlayingController {
   @override
-  FutureOr<List<SongModel>> build() async {
+  FutureOr<List<Song>> build() async {
     final audioSequence = await ref.watch(playlistSequenceProvider.future);
 
     if (audioSequence == null) {
@@ -112,7 +112,7 @@ class NowPlayingController extends _$NowPlayingController {
     return getPlaylistSongs(audioSequence);
   }
 
-  Future<void> queue(List<SongModel> songs, {SongModel? startWith}) async {
+  Future<void> queue(List<Song> songs, {Song? startWith}) async {
     final player = ref.read(audioPlayerProvider);
     final playlist = getPlaylist();
 
@@ -157,7 +157,7 @@ class NowPlayingController extends _$NowPlayingController {
     return player.play();
   }
 
-  Future<void> playAll(List<SongModel> songs, {SongModel? startWith}) async {
+  Future<void> playAll(List<Song> songs, {Song? startWith}) async {
     final player = ref.read(audioPlayerProvider);
     final playlist = getPlaylist();
 
@@ -183,7 +183,7 @@ class NowPlayingController extends _$NowPlayingController {
     return player.play();
   }
 
-  FutureOr<int?> getStartIndex(SongModel? song) async {
+  FutureOr<int?> getStartIndex(Song? song) async {
     if (song == null) {
       return null;
     }
@@ -209,23 +209,17 @@ class NowPlayingController extends _$NowPlayingController {
     return startIndex;
   }
 
-  Future<UriAudioSource> createAudioSource(SongModel song) async {
-    final imageFile = await ref.read(artworkFileProvider(
-      song.id,
-      ArtworkType.AUDIO,
-      format: ArtworkFormat.JPEG,
-      size: 200,
-      quality: 100,
-    ).future);
+  Future<UriAudioSource> createAudioSource(Song song) async {
     return AudioSource.uri(
-      Uri.parse(song.data),
+      Uri.parse(song.filePath),
       tag: MediaItem(
         id: song.id.toString(),
         title: song.title,
         artist: song.artist,
         album: song.album,
         genre: song.genre,
-        artUri: imageFile == null ? null : Uri.file(imageFile.path),
+        artUri:
+            song.thumbnailPath == null ? null : Uri.file(song.thumbnailPath!),
       ),
     );
   }
@@ -244,7 +238,7 @@ class NowPlayingController extends _$NowPlayingController {
     return audioSource;
   }
 
-  FutureOr<List<SongModel>> getPlaylistSongs(
+  FutureOr<List<Song>> getPlaylistSongs(
     List<IndexedAudioSource> sequence,
   ) async {
     if (sequence.isEmpty) {
@@ -262,13 +256,10 @@ class NowPlayingController extends _$NowPlayingController {
     );
 
     final intIds = songIds.map(int.parse).toList();
-
-    final mappedSongs = await ref.read(mappedSongsProvider.future);
-
     final foundSongs =
-        intIds.map((id) => mappedSongs[id]).whereType<SongModel>().toList();
+        await ref.read(isarProvider).requireValue.songs.getAll(intIds);
 
-    return foundSongs;
+    return foundSongs.where((e) => e != null).map((e) => e!).toList();
   }
 
   FutureOr<ConcatenatingAudioSource> createAndLoadPlaylist({
@@ -295,4 +286,21 @@ class NowPlayingController extends _$NowPlayingController {
 
     return playlist;
   }
+}
+
+@Riverpod(keepAlive: true)
+Future<void> appStartup(AppStartupRef ref) async {
+  ref.onDispose(() {
+    // ensure we invalidate all the providers we depend on
+    ref.invalidate(appPermissionsProvider);
+    ref.invalidate(mediaQueryProvider);
+    ref.invalidate(indexingControllerProvider);
+    ref.invalidate(isarProvider);
+    ref.invalidate(thumbnailDirectoryProvider);
+  });
+  // all asynchronous app initialization code should belong here:
+  await ref.watch(appPermissionsProvider.future);
+  await ref.watch(isarProvider.future);
+  await ref.watch(thumbnailDirectoryProvider.future);
+  ref.watch(indexingControllerProvider.future);
 }
