@@ -47,6 +47,11 @@ class SongsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final songsSortOrder = ref.watch(songsSortOrderProvider(queryType));
+    final songsCountAsyncValue = ref.watch(songsCountProvider(
+      query: query,
+      searchQuery: searchQuery,
+      queryType: queryType,
+    ));
 
     if (!withHeader) {
       return SongsListView(
@@ -72,6 +77,24 @@ class SongsList extends ConsumerWidget {
               // PlayAllBtn(
               //   songs: songs,
               // ),
+              Text(
+                (() {
+                  final songCount = songsCountAsyncValue.valueOrNull;
+
+                  if (songCount == 1) {
+                    return "$songCount song";
+                  }
+                  return "${songCount ?? 0} songs";
+                })(),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: (() {
+                  final textTheme = context.textTheme.labelSmall;
+                  return textTheme?.copyWith(
+                    color: textTheme.color?.withOpacity(.7),
+                  );
+                })(),
+              ),
               TextButton.icon(
                 onPressed: () async {
                   await showModalBottomSheet<void>(
@@ -236,7 +259,12 @@ class SongsListView extends ConsumerWidget {
         );
       },
       loading: () {
-        return const CircularProgressIndicator();
+        return ListView.builder(
+          itemCount: 10,
+          itemBuilder: (BuildContext context, int index) {
+            return const SongListTileLoading();
+          },
+        );
       },
     );
   }
@@ -251,14 +279,14 @@ class SongsView extends ConsumerWidget {
     List<Song> songs,
     DismissDirection direction,
   )? onDismiss;
-  final String searchQuery;
+  final String? searchQuery;
   const SongsView({
     super.key,
     this.queryType = SongQueryType.all,
     this.query,
     this.scrollController,
     this.onDismiss,
-    this.searchQuery = "",
+    this.searchQuery,
   });
 
   @override

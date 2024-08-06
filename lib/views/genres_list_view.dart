@@ -1,41 +1,52 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
-import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
 import 'package:tunes/pages/genre_info.dart';
+import 'package:tunes/utils/media_query.dart';
 
-class AsyncGenreListView extends StatelessWidget {
-  final AsyncValue<List<GenreModel>> asyncGenre;
-  const AsyncGenreListView({
+class GenresView extends HookConsumerWidget {
+  const GenresView({
     super.key,
-    required this.asyncGenre,
-    this.searchQuery = "",
+    this.searchQuery,
   });
-  final String searchQuery;
+  final String? searchQuery;
 
   @override
-  Widget build(BuildContext context) {
-    return asyncGenre.when(
-      data: (data) {
-        List<GenreModel> genres = data;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scrollController = useScrollController();
+    return GenresListView(
+      searchQuery: searchQuery,
+      scrollController: scrollController,
+    );
+  }
+}
 
-        if (searchQuery.isNotEmpty) {
-          genres = data.where((el) {
-            for (final e in [el.genre]) {
-              if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
-                return true;
-              }
-            }
-            return false;
-          }).toList();
-        }
+class GenresListView extends ConsumerWidget {
+  const GenresListView({
+    super.key,
+    this.scrollController,
+    this.searchQuery,
+  });
 
-        if (genres.isEmpty) {
+  final ScrollController? scrollController;
+  final String? searchQuery;
+
+  static const pageSize = 100;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncCount = ref.watch(genresCountProvider(
+      searchQuery: searchQuery,
+    ));
+    return asyncCount.when(
+      data: (itemCount) {
+        if (itemCount == 0) {
           return Container(
             width: context.screenWidth,
             padding: const EdgeInsets.all(16.0),
@@ -43,7 +54,7 @@ class AsyncGenreListView extends StatelessWidget {
               children: [
                 const Spacer(),
                 Text(
-                  "No genres",
+                  "No albums",
                   style: context.textTheme.bodyLarge?.copyWith(
                     color: context.colorScheme.outline,
                   ),
@@ -53,14 +64,34 @@ class AsyncGenreListView extends StatelessWidget {
             ),
           );
         }
-
         return ListView.builder(
-          itemCount: genres.length,
+          itemCount: itemCount,
           itemBuilder: (BuildContext context, int index) {
-            final currentGenre = genres[index];
-
-            return GenreListTile(
-              genre: currentGenre,
+            final page = index ~/ pageSize;
+            final offset = page * pageSize;
+            final indexInPage = index % pageSize;
+            final asyncQueryValue = ref.watch(genresQueryProvider(
+              pageSize,
+              offset,
+              searchQuery: searchQuery,
+            ));
+            return asyncQueryValue.when(
+              data: (data) {
+                final item = data.elementAt(indexInPage);
+                return GenreListTile(
+                  genre: item,
+                );
+              },
+              error: (error, stackTrace) {
+                return ListTile(
+                  leading: const Icon(FluentIcons.warning_24_regular),
+                  title: const Text("Error"),
+                  subtitle: Text(error.toString()),
+                );
+              },
+              loading: () {
+                return const SongListTileLoading();
+              },
             );
           },
         );
@@ -83,35 +114,16 @@ class AsyncGenreListView extends StatelessWidget {
   }
 }
 
-class GenresListView extends ConsumerWidget {
-  const GenresListView({
-    super.key,
-    this.searchQuery = "",
-  });
-  final String searchQuery;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncGenre = ref.watch(genresControllerProvider);
-
-    return AsyncGenreListView(
-      asyncGenre: asyncGenre,
-      searchQuery: searchQuery,
-    );
-  }
-}
-
 class GenreListTile extends ConsumerWidget {
   const GenreListTile({
     super.key,
     required this.genre,
   });
 
-  final GenreModel genre;
+  final Genre genre;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
     return ListTile(
       onTap: () {
         // Navigate to song info page
@@ -124,13 +136,14 @@ class GenreListTile extends ConsumerWidget {
         );
       },
       title: Text(
-        genre.genre,
+        genre.name,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
+        style: context.textTheme.bodyLarge,
       ),
       subtitle: Text(
         (() {
-          final songCount = genre.numOfSongs;
+          final songCount = genre.songs.length;
 
           if (songCount == 1) {
             return "$songCount song";
@@ -139,27 +152,19 @@ class GenreListTile extends ConsumerWidget {
         })(),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
+        style: (() {
+          final textTheme = context.textTheme.labelSmall;
+          return textTheme?.copyWith(
+            color: textTheme.color?.withOpacity(.7),
+          );
+        })(),
       ),
-      // This Widget will query/load image.
-      // You can use/create your own widget/method using [queryArtwork].
-      leading: QueryArtworkWidget(
-        controller: audioQuery,
-        id: genre.id,
-        type: ArtworkType.GENRE,
-        artworkBorder: BorderRadius.circular(20.0),
-        nullArtworkWidget: Container(
-          decoration: BoxDecoration(
-            color: context.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          width: 50,
-          height: 50,
-          child: Icon(
-            FluentIcons.music_note_2_24_regular,
-            color: context.colorScheme.onPrimaryContainer,
-            size: 32.0,
-          ),
-        ),
+      leading: Thumbnail(
+        thumbnail: genre.songs.first.thumbnailMiniPath,
+        hasBorder: true,
+        borderRadius: BorderRadius.circular(20.0),
+        width: 50,
+        height: 50,
       ),
     );
   }

@@ -5,9 +5,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:mpeg_codec/mpeg_codec.dart' hide formatDuration;
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/dialog_form.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/providers/providers.dart';
@@ -60,19 +60,19 @@ class SongInfo extends HookConsumerWidget {
       (
         title: 'Artist',
         name: 'artist',
-        value: song.artist,
+        value: song.artist.value?.name,
         editable: true && supported,
       ),
       (
         title: 'Album',
         name: 'album',
-        value: song.album,
+        value: song.album.value?.title,
         editable: true && supported,
       ),
       (
         title: 'Genre',
         name: 'genre',
-        value: song.genre,
+        value: song.genre.value?.name,
         editable: true,
       ),
       // if (song.track != null)
@@ -237,8 +237,13 @@ class SongInfoTile extends HookConsumerWidget {
                               },
                               suggestionsCallback: (query) async {
                                 final allItems = await ref
-                                    .watch(mediaQueryProvider)
-                                    .getArtists();
+                                    .watch(isarProvider)
+                                    .requireValue
+                                    .albums
+                                    .where()
+                                    .titleProperty()
+                                    .findAll();
+
                                 if (query.isNotEmpty) {
                                   var lowercaseQuery = query.toLowerCase();
 
@@ -273,8 +278,12 @@ class SongInfoTile extends HookConsumerWidget {
                               },
                               suggestionsCallback: (query) async {
                                 final allItems = await ref
-                                    .watch(mediaQueryProvider)
-                                    .getArtists();
+                                    .watch(isarProvider)
+                                    .requireValue
+                                    .artists
+                                    .where()
+                                    .nameProperty()
+                                    .findAll();
 
                                 if (query.isNotEmpty) {
                                   var lowercaseQuery = query.toLowerCase();

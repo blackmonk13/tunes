@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
 import 'package:tunes/utils/extensions.dart';
@@ -8,7 +7,7 @@ import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class AlbumInfoPage extends HookConsumerWidget {
-  final AlbumModel album;
+  final Album album;
   const AlbumInfoPage({
     super.key,
     required this.album,
@@ -24,7 +23,7 @@ class AlbumInfoPage extends HookConsumerWidget {
               pinned: true,
               expandedHeight: context.screenHeight * 0.3,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(album.album),
+                title: Text(album.title),
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -36,10 +35,9 @@ class AlbumInfoPage extends HookConsumerWidget {
                       ],
                     ),
                   ),
-                  child: SongArtwork(
-                    id: album.id,
-                    type: ArtworkType.ALBUM,
-                    size: (context.screenHeight * 0.3).toInt(),
+                  child: Thumbnail(
+                    thumbnail:
+                        album.artworkPath ?? album.songs.first.thumbnailPath,
                     height: context.screenHeight * 0.3,
                     width: context.screenHeight * 0.3,
                     borderRadius: BorderRadius.circular(5.0),
@@ -50,7 +48,7 @@ class AlbumInfoPage extends HookConsumerWidget {
             SliverFillRemaining(
               child: SongsView(
                 queryType: SongQueryType.album,
-                query: album.album,
+                query: album.title,
               ),
             ),
           ],

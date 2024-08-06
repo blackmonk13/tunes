@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -105,7 +104,7 @@ class NowPlayingInfo extends ConsumerWidget {
                     style: context.textTheme.bodyLarge,
                   ),
                   Text(
-                    currentSong.artist,
+                    currentSong.artist.value?.name ?? 'Unknown',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.textTheme.labelSmall?.copyWith(

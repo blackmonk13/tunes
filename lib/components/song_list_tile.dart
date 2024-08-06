@@ -56,7 +56,7 @@ class SongListTile extends ConsumerWidget {
                         style: context.textTheme.bodyLarge,
                       ),
                       Text(
-                        song.artist,
+                        song.artist.value?.name ?? 'Unknown',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: (() {

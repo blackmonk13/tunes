@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/artwork_data_builder.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
@@ -15,7 +14,7 @@ class GenreInfoPage extends ConsumerWidget {
     required this.genre,
   });
 
-  final GenreModel genre;
+  final Genre genre;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,14 +26,13 @@ class GenreInfoPage extends ConsumerWidget {
               pinned: true,
               expandedHeight: context.screenHeight * 0.3,
               flexibleSpace: FlexibleSpaceBar(
-                title: ArtworkDataBuilder(
-                  id: genre.id,
-                  artworkType: ArtworkType.GENRE,
+                title: ThumbnailDataBuilder(
+                  thumbnail: genre.songs.first.thumbnailPath,
                   builder: (image, palette) {
                     final fgColor = calculateFgColor(palette);
 
                     return Text(
-                      genre.genre,
+                      genre.name,
                       style: TextStyle(
                         color: fgColor,
                       ),
@@ -52,10 +50,8 @@ class GenreInfoPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  child: SongArtwork(
-                    id: genre.id,
-                    type: ArtworkType.GENRE,
-                    size: (context.screenHeight * 0.3).toInt(),
+                  child: Thumbnail(
+                    thumbnail: genre.songs.first.thumbnailPath,
                     height: context.screenHeight * 0.3,
                     width: context.screenHeight * 0.3,
                     borderRadius: BorderRadius.circular(5.0),
@@ -66,7 +62,7 @@ class GenreInfoPage extends ConsumerWidget {
             SliverFillRemaining(
               child: SongsView(
                 queryType: SongQueryType.genre,
-                query: genre.genre,
+                query: genre.name,
               ),
             ),
           ],

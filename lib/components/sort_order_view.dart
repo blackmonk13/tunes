@@ -22,6 +22,7 @@ class SortOrderView extends ConsumerWidget {
     );
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -31,7 +32,7 @@ class SortOrderView extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Sort Order",
+                "Sort",
                 style: context.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -72,7 +73,7 @@ class SortOrderView extends ConsumerWidget {
                                 case Sort.desc:
                                   return FluentIcons
                                       .text_sort_descending_24_regular;
-    
+
                                 default:
                                   return FluentIcons
                                       .text_sort_descending_24_regular;
@@ -106,7 +107,11 @@ class SortOrderView extends ConsumerWidget {
           height: 1,
         ),
         ...SongsSortType.values
-            // .where((e) => e != SongSortType.DISPLAY_NAME)
+            .where((e) => ![
+                  SongsSortType.artist,
+                  SongsSortType.album,
+                  SongsSortType.genre,
+                ].contains(e))
             .map(
           (sortType) {
             return RadioListTile<SongsSortType>(

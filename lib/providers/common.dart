@@ -19,17 +19,26 @@ FutureOr<bool> appPermissions(AppPermissionsRef ref) async {
 class ThemeController extends _$ThemeController {
   @override
   ThemeMode build() {
-    return themeModePref;
+    final sharedPrefs = ref.watch(sharedPreferencesProvider).requireValue;
+    final themeModeInt = sharedPrefs.getInt(themeModePrefsKey);
+
+    if (themeModeInt == null) {
+      return ThemeMode.system;
+    }
+
+    return ThemeMode.values.elementAtOrNull(themeModeInt) ?? ThemeMode.system;
   }
 
   Future<bool> setTheme(ThemeMode themeMode) async {
-    return setThemeModePref(themeMode);
+    final sharedPrefs = ref.read(sharedPreferencesProvider).requireValue;
+    return sharedPrefs.setInt(themeModePrefsKey, themeMode.index);
   }
 }
 
 @Riverpod(keepAlive: true)
 bool eulaAccepted(EulaAcceptedRef ref) {
-  return prefs.getBool(eulaPrefsKey) ?? false;
+  final sharedPrefs = ref.watch(sharedPreferencesProvider).requireValue;
+  return sharedPrefs.getBool(eulaPrefsKey) ?? false;
 }
 
 @Riverpod(keepAlive: true)
@@ -215,11 +224,14 @@ class NowPlayingController extends _$NowPlayingController {
       tag: MediaItem(
         id: song.id.toString(),
         title: song.title,
-        artist: song.artist,
-        album: song.album,
-        genre: song.genre,
-        artUri:
-            song.thumbnailPath == null ? null : Uri.file(song.thumbnailPath!),
+        artist: song.artist.value?.name,
+        album: song.album.value?.title,
+        genre: song.genre.value?.name,
+        artUri: song.thumbnailPath == null
+            ? null
+            : Uri.file(
+                song.thumbnailPath!,
+              ),
       ),
     );
   }
@@ -293,14 +305,54 @@ Future<void> appStartup(AppStartupRef ref) async {
   ref.onDispose(() {
     // ensure we invalidate all the providers we depend on
     ref.invalidate(appPermissionsProvider);
+    ref.invalidate(sharedPreferencesProvider);
     ref.invalidate(mediaQueryProvider);
     ref.invalidate(indexingControllerProvider);
     ref.invalidate(isarProvider);
     ref.invalidate(thumbnailDirectoryProvider);
   });
   // all asynchronous app initialization code should belong here:
+  await ref.watch(sharedPreferencesProvider.future);
   await ref.watch(appPermissionsProvider.future);
   await ref.watch(isarProvider.future);
   await ref.watch(thumbnailDirectoryProvider.future);
   ref.watch(indexingControllerProvider.future);
+}
+
+@riverpod
+class SearchHistory extends _$SearchHistory {
+  @override
+  List<String> build() {
+    final sharedPrefs = ref.watch(sharedPreferencesProvider).requireValue;
+    final searchHist = sharedPrefs.getStringList(searchHistoryPrefsKey);
+    return searchHist ?? [];
+  }
+
+  Future<bool> add(String item) async {
+    final sharedPrefs = ref.read(sharedPreferencesProvider).requireValue;
+    final added = await sharedPrefs.setStringList(
+      searchHistoryPrefsKey,
+      [...state, item],
+    );
+
+    if (added) {
+      ref.invalidateSelf();
+    }
+
+    return added;
+  }
+
+  Future<bool> clear() async {
+    final sharedPrefs = ref.read(sharedPreferencesProvider).requireValue;
+    final cleared = await sharedPrefs.setStringList(
+      searchHistoryPrefsKey,
+      [],
+    );
+
+    if (cleared) {
+      ref.invalidateSelf();
+    }
+
+    return cleared;
+  }
 }

@@ -110,7 +110,7 @@ extension ContextUtils on BuildContext {
             ),
           ],
         ),
-        backgroundColor: backgroundColor ?? colorScheme.background,
+        backgroundColor: backgroundColor ?? colorScheme.surface,
       ),
     );
   }

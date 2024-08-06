@@ -25,14 +25,14 @@ class Song {
   @Index(type: IndexType.value)
   late String title;
 
-  @Index(type: IndexType.value)
-  late String artist;
+  @Index()
+  final artist = IsarLink<Artist>();
 
-  @Index(type: IndexType.value)
-  late String album;
+  @Index()
+  final album = IsarLink<Album>();
 
-  @Index(type: IndexType.value)
-  late String genre;
+  @Index()
+  final genre = IsarLink<Genre>();
 
   @Index(unique: true, type: IndexType.value)
   late String filePath;
@@ -51,9 +51,6 @@ class Song {
 
   Song({
     required this.title,
-    required this.artist,
-    required this.album,
-    required this.genre,
     required this.filePath,
     required this.lastModified,
     required this.duration,
@@ -67,8 +64,61 @@ class Song {
 class Playlist {
   Id id = Isar.autoIncrement;
 
-  @Index(unique: true, type: IndexType.value)
+  @Index(unique: true, caseSensitive: false, type: IndexType.value)
   late String name;
+
+  final songs = IsarLinks<Song>();
+}
+
+@collection
+class Artist {
+  Id id = Isar.autoIncrement;
+
+  @Index(
+    // unique: true,
+    caseSensitive: false,
+    type: IndexType.value,
+  )
+  late String name;
+
+  String? description;
+  String? artworkPath;
+
+  final songs = IsarLinks<Song>();
+  final albums = IsarLinks<Album>();
+}
+
+@collection
+class Album {
+  Id id = Isar.autoIncrement;
+
+  @Index(
+    // unique: true,
+    caseSensitive: false,
+    type: IndexType.value,
+  )
+  late String title;
+
+  final artist = IsarLink<Artist>();
+  String? description;
+  String? artworkPath;
+  int? releaseYear;
+
+  final songs = IsarLinks<Song>();
+}
+
+@collection
+class Genre {
+  Id id = Isar.autoIncrement;
+
+  @Index(
+    // unique: true,
+    caseSensitive: false,
+    type: IndexType.value,
+  )
+  late String name;
+
+  String? description;
 
   final songs = IsarLinks<Song>();
 }
@@ -276,7 +326,6 @@ class AudioQuery {
   }
 
   static Future<Metadata?> _extractMetadata(String filePath) async {
-    final mimeType = lookupMimeType(filePath);
     final handler = createCodecHandler(filePath);
 
     if (handler == null) return null;
@@ -316,98 +365,118 @@ class AudioQuery {
     await _isar.writeTxn(() async {
       final thumbnailPaths = await _saveThumbnail(metadata);
 
-      Song? existingSong = await _isar.songs
-          .filter()
-          .filePathEqualTo(metadata.get('filePath'))
-          .findFirst();
+      final artistName =
+          _ensureString(metadata.get('artist')) ?? 'Unknown Artist';
+      final albumTitle =
+          _ensureString(metadata.get('album')) ?? 'Unknown Album';
+      final genreName = _ensureString(metadata.get('genre')) ?? 'Unknown Genre';
 
-      if (existingSong != null) {
-        if (existingSong.lastModified != metadata.get('lastModified')) {
-          existingSong
-            ..title = _ensureString(metadata.get('title')) ?? existingSong.title
-            ..artist =
-                _ensureString(metadata.get('artist')) ?? existingSong.artist
-            ..album = _ensureString(metadata.get('album')) ?? existingSong.album
-            ..genre = _ensureString(metadata.get('genre')) ?? existingSong.genre
-            ..lastModified = metadata.get('lastModified')
-            ..duration = metadata.get('duration') ?? existingSong.duration
-            ..size = metadata.get('size') ?? existingSong.size
-            ..thumbnailPath =
-                thumbnailPaths.original ?? existingSong.thumbnailPath
-            ..thumbnailMiniPath =
-                thumbnailPaths.mini ?? existingSong.thumbnailMiniPath;
-          await _isar.songs.put(existingSong);
-        }
-      } else {
-        Song newSong = Song(
-          title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
-          artist: _ensureString(metadata.get('artist')) ?? 'Unknown Artist',
-          album: _ensureString(metadata.get('album')) ?? 'Unknown Album',
-          genre: _ensureString(metadata.get('genre')) ?? 'Unknown Genre',
-          filePath: metadata.get('filePath'),
-          lastModified: metadata.get('lastModified'),
-          duration: metadata.get('duration') ?? 0,
-          size: metadata.get('size') ?? 0,
-          thumbnailPath: thumbnailPaths.original,
-          thumbnailMiniPath: thumbnailPaths.mini,
-        );
-        await _isar.songs.put(newSong);
-      }
+      final artist = await _getOrCreateArtist(artistName);
+      final album = await _getOrCreateAlbum(albumTitle, artist);
+      final genre = await _getOrCreateGenre(genreName);
+
+      Song song = await _isar.songs
+              .filter()
+              .filePathEqualTo(metadata.get('filePath'))
+              .findFirst() ??
+          Song(
+            title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
+            filePath: metadata.get('filePath'),
+            lastModified: metadata.get('lastModified'),
+            duration: metadata.get('duration') ?? 0,
+            size: metadata.get('size') ?? 0,
+            thumbnailPath: thumbnailPaths.original,
+            thumbnailMiniPath: thumbnailPaths.mini,
+          );
+
+      song
+        ..title = _ensureString(metadata.get('title')) ?? song.title
+        ..lastModified = metadata.get('lastModified')
+        ..duration = metadata.get('duration') ?? song.duration
+        ..size = metadata.get('size') ?? song.size
+        ..thumbnailPath = thumbnailPaths.original ?? song.thumbnailPath
+        ..thumbnailMiniPath = thumbnailPaths.mini ?? song.thumbnailMiniPath;
+
+      song.artist.value = artist;
+      song.album.value = album;
+      song.genre.value = genre;
+
+      await _isar.songs.put(song);
+      await song.artist.save();
+      await song.album.save();
+      await song.genre.save();
+
+      artist.songs.add(song);
+      artist.albums.add(album);
+      album.songs.add(song);
+      genre.songs.add(song);
+
+      await artist.songs.save();
+      await artist.albums.save();
+      await album.songs.save();
+      await genre.songs.save();
     });
   }
 
-  Future<void> _addOrUpdateSongs(
-    List<Metadata> metadataList,
-  ) async {
+  Future<void> _addOrUpdateSongs(List<Metadata> metadataList) async {
     await _isar.writeTxn(() async {
       for (var metadata in metadataList) {
         if (metadata.get('deleted') == true) {
-          // Remove the song if it's been deleted
-          await _isar.songs
-              .filter()
-              .filePathEqualTo(metadata.get('filePath'))
-              .deleteAll();
+          await _removeSong(metadata.get('filePath'));
         } else {
           final thumbnailPaths = await _saveThumbnail(metadata);
 
-          Song? existingSong = await _isar.songs
-              .filter()
-              .filePathEqualTo(metadata.get('filePath'))
-              .findFirst();
+          final artistName =
+              _ensureString(metadata.get('artist')) ?? 'Unknown Artist';
+          final albumTitle =
+              _ensureString(metadata.get('album')) ?? 'Unknown Album';
+          final genreName =
+              _ensureString(metadata.get('genre')) ?? 'Unknown Genre';
 
-          if (existingSong != null) {
-            existingSong
-              ..title =
-                  _ensureString(metadata.get('title')) ?? existingSong.title
-              ..artist =
-                  _ensureString(metadata.get('artist')) ?? existingSong.artist
-              ..album =
-                  _ensureString(metadata.get('album')) ?? existingSong.album
-              ..genre =
-                  _ensureString(metadata.get('genre')) ?? existingSong.genre
-              ..lastModified = metadata.get('lastModified')
-              ..duration = metadata.get('duration') ?? existingSong.duration
-              ..size = metadata.get('size') ?? existingSong.size
-              ..thumbnailPath =
-                  thumbnailPaths.original ?? existingSong.thumbnailPath
-              ..thumbnailMiniPath =
-                  thumbnailPaths.mini ?? existingSong.thumbnailMiniPath;
-            await _isar.songs.put(existingSong);
-          } else {
-            Song newSong = Song(
-              title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
-              artist: _ensureString(metadata.get('artist')) ?? 'Unknown Artist',
-              album: _ensureString(metadata.get('album')) ?? 'Unknown Album',
-              genre: _ensureString(metadata.get('genre')) ?? 'Unknown Genre',
-              filePath: metadata.get('filePath'),
-              lastModified: metadata.get('lastModified'),
-              duration: metadata.get('duration') ?? 0,
-              size: metadata.get('size') ?? 0,
-              thumbnailPath: thumbnailPaths.original,
-              thumbnailMiniPath: thumbnailPaths.mini,
-            );
-            await _isar.songs.put(newSong);
-          }
+          final artist = await _getOrCreateArtist(artistName);
+          final album = await _getOrCreateAlbum(albumTitle, artist);
+          final genre = await _getOrCreateGenre(genreName);
+
+          Song song = await _isar.songs
+                  .filter()
+                  .filePathEqualTo(metadata.get('filePath'))
+                  .findFirst() ??
+              Song(
+                title: _ensureString(metadata.get('title')) ?? 'Unknown Title',
+                filePath: metadata.get('filePath'),
+                lastModified: metadata.get('lastModified'),
+                duration: metadata.get('duration') ?? 0,
+                size: metadata.get('size') ?? 0,
+                thumbnailPath: thumbnailPaths.original,
+                thumbnailMiniPath: thumbnailPaths.mini,
+              );
+
+          song
+            ..title = _ensureString(metadata.get('title')) ?? song.title
+            ..lastModified = metadata.get('lastModified')
+            ..duration = metadata.get('duration') ?? song.duration
+            ..size = metadata.get('size') ?? song.size
+            ..thumbnailPath = thumbnailPaths.original ?? song.thumbnailPath
+            ..thumbnailMiniPath = thumbnailPaths.mini ?? song.thumbnailMiniPath;
+
+          song.artist.value = artist;
+          song.album.value = album;
+          song.genre.value = genre;
+
+          await _isar.songs.put(song);
+          await song.artist.save();
+          await song.album.save();
+          await song.genre.save();
+
+          artist.songs.add(song);
+          artist.albums.add(album);
+          album.songs.add(song);
+          genre.songs.add(song);
+
+          await artist.songs.save();
+          await artist.albums.save();
+          await album.songs.save();
+          await genre.songs.save();
         }
       }
     });
@@ -433,21 +502,61 @@ class AudioQuery {
     }
   }
 
-  Future<void> _removeSong(String filePath) async {
-    await _isar.writeTxn(() async {
-      await _isar.songs.filter().filePathEqualTo(filePath).deleteAll();
-    });
+  Future<Artist> _getOrCreateArtist(String name) async {
+    var artist = await _isar.artists.filter().nameEqualTo(name).findFirst();
+    if (artist == null) {
+      artist = Artist()..name = name;
+      await _isar.artists.put(artist);
+    }
+    return artist;
   }
 
-  Future<void> _cleanupNonExistentEntries() async {
-    await _isar.writeTxn(() async {
-      final allSongs = await _isar.songs.where().findAll();
-      for (final song in allSongs) {
-        if (!File(song.filePath).existsSync()) {
-          await _isar.songs.delete(song.id);
+  Future<Album> _getOrCreateAlbum(String title, Artist artist) async {
+    var album = await _isar.albums.filter().titleEqualTo(title).findFirst();
+    if (album == null) {
+      album = Album()
+        ..title = title
+        ..artist.value = artist;
+      await _isar.albums.put(album);
+      await album.artist.save();
+    }
+    return album;
+  }
+
+  Future<Genre> _getOrCreateGenre(String name) async {
+    var genre = await _isar.genres.filter().nameEqualTo(name).findFirst();
+    if (genre == null) {
+      genre = Genre()..name = name;
+      await _isar.genres.put(genre);
+    }
+    return genre;
+  }
+
+  Future<void> _removeSong(String filePath) async {
+    final song =
+        await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
+    if (song != null) {
+      await _isar.writeTxn(() async {
+        await song.artist.load();
+        await song.album.load();
+        await song.genre.load();
+
+        if (song.artist.value != null) {
+          song.artist.value!.songs.remove(song);
+          await song.artist.value!.songs.save();
         }
-      }
-    });
+        if (song.album.value != null) {
+          song.album.value!.songs.remove(song);
+          await song.album.value!.songs.save();
+        }
+        if (song.genre.value != null) {
+          song.genre.value!.songs.remove(song);
+          await song.genre.value!.songs.save();
+        }
+
+        await _isar.songs.delete(song.id);
+      });
+    }
   }
 
   Future<({String? original, String? mini})> _saveThumbnail(
@@ -508,91 +617,202 @@ class AudioQuery {
     String? query,
     String? searchQuery,
   }) {
-    return _isar.songs.buildQuery(
-      filter: FilterGroup.and(
-        [
-          if (searchQuery != null)
-            FilterGroup.or(
-              [
-                'title',
-                'artist',
-                'album',
-                'genre',
-              ].map((e) {
-                return FilterCondition.contains(
-                  property: e,
-                  value: searchQuery,
+    final withSearchQuery = searchQuery != null && searchQuery.isNotEmpty;
+    final withQueryType = ![
+          SongQueryType.all,
+          SongQueryType.playlist,
+        ].contains(queryType) &&
+        query != null;
+
+    return _isar.songs
+        .where()
+        .optional(
+          withQueryType || withSearchQuery,
+          (q) {
+            return q
+                .filter()
+                .optional(withQueryType, (qt) {
+                  switch (queryType) {
+                    case SongQueryType.album:
+                      return qt.album((qal) => qal.titleEqualTo(query!));
+                    case SongQueryType.artist:
+                      return qt.artist((qar) => qar.nameEqualTo(query!));
+                    case SongQueryType.genre:
+                      return qt.genre((qg) => qg.nameEqualTo(query!));
+                    default:
+                      return qt.filePathIsNotEmpty();
+                  }
+                })
+                .and()
+                .optional(
+                  withSearchQuery,
+                  (sq) {
+                    return sq
+                        .titleContains(
+                          searchQuery!,
+                          caseSensitive: false,
+                        )
+                        .or()
+                        .artist(
+                          (qar) {
+                            return qar
+                                .nameContains(searchQuery)
+                                .or()
+                                .descriptionContains(searchQuery);
+                          },
+                        )
+                        .or()
+                        .album(
+                          (qal) {
+                            return qal
+                                .titleContains(
+                                  searchQuery,
+                                  caseSensitive: false,
+                                )
+                                .or()
+                                .descriptionContains(searchQuery)
+                                .or()
+                                .artist(
+                              (qalar) {
+                                return qalar
+                                    .nameContains(searchQuery)
+                                    .or()
+                                    .descriptionContains(searchQuery);
+                              },
+                            );
+                          },
+                        );
+                  },
+                );
+          },
+        )
+        .optional(true, (qs) {
+          switch (sort) {
+            case Sort.asc:
+              switch (sortType) {
+                case SongsSortType.title:
+                  return qs.sortByTitle();
+                case SongsSortType.duration:
+                  return qs.sortByDuration();
+                case SongsSortType.size:
+                  return qs.sortBySize();
+                case SongsSortType.modified:
+                default:
+                  return qs.sortByLastModified();
+              }
+            case Sort.desc:
+              switch (sortType) {
+                case SongsSortType.title:
+                  return qs.sortByTitleDesc();
+                case SongsSortType.duration:
+                  return qs.sortByDurationDesc();
+                case SongsSortType.size:
+                  return qs.sortBySizeDesc();
+                case SongsSortType.modified:
+                default:
+                  return qs.sortByLastModifiedDesc();
+              }
+          }
+        })
+        .optional(offset != null, (q) => q.offset(offset!))
+        .optional(limit != null, (q) => q.limit(limit!))
+        .build();
+  }
+
+  Query<Album> queryAlbums({
+    int? limit,
+    int? offset,
+    Sort sort = Sort.desc,
+    String? artist,
+    String? searchQuery,
+  }) {
+    final withSearchQuery = searchQuery != null;
+    return _isar.albums
+        .where()
+        .optional(
+          withSearchQuery,
+          (q) {
+            return q.filter().optional(
+              withSearchQuery,
+              (sq) {
+                return sq
+                    .titleContains(
+                      searchQuery!,
+                      caseSensitive: false,
+                    )
+                    .or()
+                    .artist(
+                  (qar) {
+                    return qar
+                        .nameContains(searchQuery)
+                        .or()
+                        .descriptionContains(searchQuery);
+                  },
+                );
+              },
+            );
+          },
+        )
+        .optional(offset != null, (q) => q.offset(offset!))
+        .optional(limit != null, (q) => q.limit(limit!))
+        .build();
+  }
+
+  Query<Artist> queryArtists({
+    int? limit,
+    int? offset,
+    Sort sort = Sort.desc,
+    String? searchQuery,
+  }) {
+    final withSearchQuery = searchQuery != null;
+    return _isar.artists
+        .where()
+        .optional(
+          withSearchQuery,
+          (q) {
+            return q.filter().optional(
+              withSearchQuery,
+              (sq) {
+                return sq.nameContains(
+                  searchQuery!,
                   caseSensitive: false,
                 );
-              }).toList(),
-            ),
-          if (![
-                SongQueryType.all,
-                SongQueryType.playlist,
-              ].contains(queryType) &&
-              query != null)
-            FilterCondition.contains(
-              property: queryType.name,
-              value: query,
-              caseSensitive: false,
-            ),
-        ],
-      ),
-      sortBy: [
-        SortProperty(
-          property: sortType == SongsSortType.modified
-              ? 'lastModified'
-              : sortType.name,
-          sort: sort,
-        ),
-      ],
-      offset: offset,
-      limit: limit,
-    );
+              },
+            );
+          },
+        )
+        .optional(offset != null, (q) => q.offset(offset!))
+        .optional(limit != null, (q) => q.limit(limit!))
+        .build();
   }
 
-  Future<int> songsCount({
-    SongQueryType queryType = SongQueryType.all,
-    String? query,
-    String? searchQuery,
-  }) {
-    return querySongs(
-      queryType: queryType,
-      query: query,
-      searchQuery: searchQuery,
-    ).count();
-  }
-
-  Future<List<Song>> getSongs(
-    int limit,
-    int offset, {
+  Query<Genre> queryGenres({
+    int? limit,
+    int? offset,
     Sort sort = Sort.desc,
-    SongsSortType sortType = SongsSortType.title,
-    SongQueryType queryType = SongQueryType.all,
-    String? query,
+    String? artist,
     String? searchQuery,
   }) {
-    return querySongs(
-      limit: limit,
-      offset: offset,
-      sort: sort,
-      sortType: sortType,
-      queryType: queryType,
-      query: query,
-      searchQuery: searchQuery,
-    ).findAll();
-  }
-
-  Future<List<String>> getAlbums() async {
-    return _isar.songs.where().albumProperty().findAll();
-  }
-
-  Future<List<String>> getArtists() async {
-    return _isar.songs.where().artistProperty().findAll();
-  }
-
-  Future<List<String>> getGenres() async {
-    return _isar.songs.where().genreProperty().findAll();
+    final withSearchQuery = searchQuery != null;
+    return _isar.genres
+        .where()
+        .optional(
+          withSearchQuery,
+          (q) {
+            return q.filter().optional(
+              withSearchQuery,
+              (sq) {
+                return sq.nameContains(
+                  searchQuery!,
+                  caseSensitive: false,
+                );
+              },
+            );
+          },
+        )
+        .optional(offset != null, (q) => q.offset(offset!))
+        .optional(limit != null, (q) => q.limit(limit!))
+        .build();
   }
 
   Future<void> dispose() async {
@@ -612,7 +832,7 @@ class AudioQuery {
 FutureOr<Isar> isar(IsarRef ref) async {
   final dir = await getApplicationSupportDirectory();
   final isar = await Isar.open(
-    [SongSchema, PlaylistSchema],
+    [SongSchema, ArtistSchema, AlbumSchema, GenreSchema, PlaylistSchema],
     directory: dir.path,
     inspector: false,
   );
@@ -685,11 +905,14 @@ FutureOr<int> songsCount(
     query: query,
     searchQuery: searchQuery,
   ));
-  return ref.watch(mediaQueryProvider).songsCount(
+  return ref
+      .watch(mediaQueryProvider)
+      .querySongs(
         queryType: queryType,
         query: query,
         searchQuery: searchQuery,
-      );
+      )
+      .count();
 }
 
 @riverpod
@@ -707,14 +930,169 @@ class SongsQuery extends _$SongsQuery {
         SongQueryType.all,
       ),
     );
-    return ref.watch(mediaQueryProvider).getSongs(
-          limit,
-          offset,
+    return ref
+        .watch(mediaQueryProvider)
+        .querySongs(
+          limit: limit,
+          offset: offset,
           sort: songsSortOrder.orderType,
           sortType: songsSortOrder.sortType,
           queryType: queryType,
           query: query,
           searchQuery: searchQuery,
-        );
+        )
+        .findAll();
+  }
+}
+
+@riverpod
+Stream<void> albumsWatcher(
+  AlbumsWatcherRef ref, {
+  String? searchQuery,
+}) {
+  return ref
+      .watch(mediaQueryProvider)
+      .queryAlbums(
+        searchQuery: searchQuery,
+      )
+      .watchLazy();
+}
+
+@riverpod
+FutureOr<int> albumsCount(
+  AlbumsCountRef ref, {
+  String? searchQuery,
+}) {
+  ref.watch(albumsWatcherProvider(
+    searchQuery: searchQuery,
+  ));
+  return ref
+      .watch(mediaQueryProvider)
+      .queryAlbums(
+        searchQuery: searchQuery,
+      )
+      .count();
+}
+
+@riverpod
+class AlbumsQuery extends _$AlbumsQuery {
+  @override
+  FutureOr<List<Album>> build(
+    int limit,
+    int offset, {
+    SongQueryType queryType = SongQueryType.all,
+    String? query,
+    String? searchQuery,
+  }) {
+    // final songsSortOrder = ref.watch(
+    //   songsSortOrderProvider(
+    //     SongQueryType.all,
+    //   ),
+    // );
+    return ref
+        .watch(mediaQueryProvider)
+        .queryAlbums(
+          limit: limit,
+          offset: offset,
+          // sort: songsSortOrder.orderType,
+          searchQuery: searchQuery,
+        )
+        .findAll();
+  }
+}
+
+@riverpod
+Stream<void> artistsWatcher(
+  ArtistsWatcherRef ref, {
+  String? searchQuery,
+}) {
+  return ref
+      .watch(mediaQueryProvider)
+      .queryArtists(
+        searchQuery: searchQuery,
+      )
+      .watchLazy();
+}
+
+@riverpod
+FutureOr<int> artistsCount(
+  ArtistsCountRef ref, {
+  String? searchQuery,
+}) {
+  ref.watch(artistsWatcherProvider(
+    searchQuery: searchQuery,
+  ));
+  return ref
+      .watch(mediaQueryProvider)
+      .queryArtists(
+        searchQuery: searchQuery,
+      )
+      .count();
+}
+
+@riverpod
+class ArtistsQuery extends _$ArtistsQuery {
+  @override
+  FutureOr<List<Artist>> build(
+    int limit,
+    int offset, {
+    String? searchQuery,
+  }) {
+    return ref
+        .watch(mediaQueryProvider)
+        .queryArtists(
+          limit: limit,
+          offset: offset,
+          searchQuery: searchQuery,
+        )
+        .findAll();
+  }
+}
+
+@riverpod
+Stream<void> genresWatcher(
+  GenresWatcherRef ref, {
+  String? searchQuery,
+}) {
+  return ref
+      .watch(mediaQueryProvider)
+      .queryGenres(
+        searchQuery: searchQuery,
+      )
+      .watchLazy();
+}
+
+@riverpod
+FutureOr<int> genresCount(
+  GenresCountRef ref, {
+  String? searchQuery,
+}) {
+  ref.watch(genresWatcherProvider(
+    searchQuery: searchQuery,
+  ));
+  return ref
+      .watch(mediaQueryProvider)
+      .queryGenres(
+        searchQuery: searchQuery,
+      )
+      .count();
+}
+
+@riverpod
+class GenresQuery extends _$GenresQuery {
+  @override
+  FutureOr<List<Genre>> build(
+    int limit,
+    int offset, {
+    String? searchQuery,
+  }) {
+    return ref
+        .watch(mediaQueryProvider)
+        .queryGenres(
+          limit: limit,
+          offset: offset,
+          searchQuery: searchQuery,
+        )
+        .findAll();
   }
 }

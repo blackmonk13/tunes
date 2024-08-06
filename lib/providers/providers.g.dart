@@ -21,7 +21,7 @@ final appPermissionsProvider = FutureProvider<bool>.internal(
 );
 
 typedef AppPermissionsRef = FutureProviderRef<bool>;
-String _$eulaAcceptedHash() => r'868ef218cd63943f016b8b03d2e52eeba74cdc04';
+String _$eulaAcceptedHash() => r'cbe415528e220918bae4605cdbfc7141810bca4b';
 
 /// See also [eulaAccepted].
 @ProviderFor(eulaAccepted)
@@ -185,7 +185,7 @@ final playerShuffleModeEnabledProvider = StreamProvider<bool>.internal(
 );
 
 typedef PlayerShuffleModeEnabledRef = StreamProviderRef<bool>;
-String _$appStartupHash() => r'a6f73d05d1edaebc064f2d030bdabf37bbfa3af1';
+String _$appStartupHash() => r'a9bdb12b534b0776217cc57dd1c788c1e2f2b23b';
 
 /// See also [appStartup].
 @ProviderFor(appStartup)
@@ -1496,7 +1496,7 @@ class _ArtistAlbumsProviderElement
   ArtistModel get artist => (origin as ArtistAlbumsProvider).artist;
 }
 
-String _$themeControllerHash() => r'ed3704ac6ef32325f1fa9ef3a8e6f248fa0c7e21';
+String _$themeControllerHash() => r'ffd9c2285caba34adfb4ad6a3a677282b0a28858';
 
 /// See also [ThemeController].
 @ProviderFor(ThemeController)
@@ -1527,7 +1527,7 @@ final tabIndexProvider = NotifierProvider<TabIndex, int>.internal(
 
 typedef _$TabIndex = Notifier<int>;
 String _$nowPlayingControllerHash() =>
-    r'2efdda5b4f340cf0a0c38207e882705ccc4f3553';
+    r'9020baf82fcafc818da88b52f628c919130e71aa';
 
 /// See also [NowPlayingController].
 @ProviderFor(NowPlayingController)
@@ -1543,6 +1543,22 @@ final nowPlayingControllerProvider =
 );
 
 typedef _$NowPlayingController = AsyncNotifier<List<Song>>;
+String _$searchHistoryHash() => r'8da0eb55345dac7efe3809815d96a3ea89d23da4';
+
+/// See also [SearchHistory].
+@ProviderFor(SearchHistory)
+final searchHistoryProvider =
+    AutoDisposeNotifierProvider<SearchHistory, List<String>>.internal(
+  SearchHistory.new,
+  name: r'searchHistoryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$searchHistoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
 String _$genresControllerHash() => r'60933916d0a498d194a169d5231886910c0b618c';
 
 /// See also [GenresController].
@@ -1897,7 +1913,7 @@ final favoritesPlaylistProvider =
 );
 
 typedef _$FavoritesPlaylist = AutoDisposeAsyncNotifier<Playlist>;
-String _$songsSortOrderHash() => r'95c924d4df34fadc4d096a9aed17160ce5ab6d64';
+String _$songsSortOrderHash() => r'4301a44cc2f04ab2a143635a14ddd78fd29b3d15';
 
 abstract class _$SongsSortOrder extends BuildlessAutoDisposeNotifier<
     ({SongsSortType sortType, Sort orderType})> {

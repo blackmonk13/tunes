@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/sliver.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/with_player.dart';
-import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/views/albums_list_view.dart';
@@ -17,12 +15,10 @@ class ArtistInfoPage extends HookConsumerWidget {
     required this.artist,
   });
 
-  final ArtistModel artist;
+  final Artist artist;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncArtistAlbums = ref.watch(artistAlbumsProvider(artist));
-
     final scrollController = useScrollController();
 
     return DefaultTabController(
@@ -36,7 +32,7 @@ class ArtistInfoPage extends HookConsumerWidget {
                 pinned: true,
                 expandedHeight: context.screenHeight * 0.3,
                 flexibleSpace: FlexibleSpaceBar(
-                  title: Text(artist.artist),
+                  title: Text(artist.name),
                   background: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -48,10 +44,9 @@ class ArtistInfoPage extends HookConsumerWidget {
                         ],
                       ),
                     ),
-                    child: SongArtwork(
-                      id: artist.id,
-                      type: ArtworkType.ARTIST,
-                      size: (context.screenHeight * 0.3).toInt(),
+                    child: Thumbnail(
+                      thumbnail: artist.artworkPath ??
+                          artist.songs.first.thumbnailPath,
                       height: context.screenHeight * 0.3,
                       width: context.screenHeight * 0.3,
                       borderRadius: BorderRadius.circular(5.0),
@@ -85,13 +80,12 @@ class ArtistInfoPage extends HookConsumerWidget {
                 child: TabBarView(
                   children: [
                     SongsView(
-                      query: artist.artist,
+                      query: artist.name,
                       queryType: SongQueryType.artist,
                       scrollController: scrollController,
                     ),
-                    AsyncAlbumsListView(
+                    AlbumsListView(
                       scrollController: scrollController,
-                      asyncAlbums: asyncArtistAlbums,
                     ),
                   ],
                 ),

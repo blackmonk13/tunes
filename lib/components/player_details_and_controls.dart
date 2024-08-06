@@ -1,14 +1,12 @@
-import 'dart:ui';
+
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:like_button/like_button.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/now_playing_view.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/components/player_controls.dart';
 import 'package:tunes/providers/providers.dart';
-import 'package:tunes/utils/constants.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
 
@@ -38,7 +36,7 @@ class PlayerDetailsAndControls extends ConsumerWidget {
             ),
           ),
           DetailsText(
-            text: song?.artist,
+            text: song?.artist.value?.name,
             style: context.textTheme.headlineSmall?.copyWith(
               color: fgColor,
             ),

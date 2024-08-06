@@ -45,3 +45,6 @@ app.*.map.json
 # Generated Files
 *.g.dart
 suggest.md
+.vscode/comments.json
+suggestions.md
+notes.md

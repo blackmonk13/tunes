@@ -30,6 +30,7 @@ class SongsFilterConfigs extends _$SongsFilterConfigs {
   }
 
   Set<PathFilter> get _prefsFilterPaths {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
     final filterPathsJsonList = prefs.getStringList(filterPathsPrefsKey);
 
     if (filterPathsJsonList == null) {
@@ -44,6 +45,7 @@ class SongsFilterConfigs extends _$SongsFilterConfigs {
   }
 
   Future<bool> addPath(PathFilter value) async {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
     final filterPaths = state.filterPaths;
     final added = filterPaths.add(value);
 
@@ -66,6 +68,7 @@ class SongsFilterConfigs extends _$SongsFilterConfigs {
   }
 
   Future<bool> updatePath(PathFilter previous, PathFilter next) async {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
     final filterPaths = state.filterPaths;
     final updated = filterPaths.map((filter) {
       return filter == previous ? next : filter;
@@ -86,6 +89,7 @@ class SongsFilterConfigs extends _$SongsFilterConfigs {
   }
 
   Future<bool> removePath(PathFilter value) async {
+    final prefs = ref.watch(sharedPreferencesProvider).requireValue;
     final filterPaths = state.filterPaths;
     final removed = filterPaths.remove(value);
 

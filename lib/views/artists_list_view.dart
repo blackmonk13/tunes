@@ -1,5 +1,6 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
@@ -9,34 +10,101 @@ import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
 import 'package:tunes/pages/artist_info.dart';
+import 'package:tunes/utils/media_query.dart';
+
+class ArtistListTile extends StatelessWidget {
+  const ArtistListTile({
+    super.key,
+    required this.artist,
+  });
+
+  final Artist artist;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: () {
+        // Navigate to song info page
+        Navigator.of(context).push(
+          routeTo(
+            page: ArtistInfoPage(
+              artist: artist,
+            ),
+          ),
+        );
+      },
+      title: Text(
+        artist.name,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 3,
+        style: context.textTheme.bodyLarge,
+      ),
+      subtitle: Text(
+        (() {
+          final songCount = artist.songs.length;
+
+          if (songCount == 1) {
+            return "$songCount song";
+          }
+          return "$songCount songs";
+        })(),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: (() {
+          final textTheme = context.textTheme.labelSmall;
+          return textTheme?.copyWith(
+            color: textTheme.color?.withOpacity(.7),
+          );
+        })(),
+      ),
+      leading: Thumbnail(
+        thumbnail: artist.artworkPath ?? artist.songs.first.thumbnailMiniPath,
+        borderRadius: BorderRadius.circular(20.0),
+        width: 50,
+        height: 50,
+        hasBorder: true,
+      ),
+    );
+  }
+}
+
+class ArtistsView extends HookConsumerWidget {
+  const ArtistsView({
+    super.key,
+    this.searchQuery,
+  });
+  final String? searchQuery;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scrollController = useScrollController();
+    return ArtistsListView(
+      searchQuery: searchQuery,
+      scrollController: scrollController,
+    );
+  }
+}
 
 class ArtistsListView extends ConsumerWidget {
   const ArtistsListView({
     super.key,
-    this.searchQuery = "",
+    this.scrollController,
+    this.searchQuery,
   });
-  final String searchQuery;
+
+  final ScrollController? scrollController;
+  final String? searchQuery;
+
+  static const pageSize = 100;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncArtists = ref.watch(artistsControllerProvider);
-
-    return asyncArtists.when(
-      data: (data) {
-        List<ArtistModel> artists = data;
-
-        if (searchQuery.isNotEmpty) {
-          artists = data.where((el) {
-            for (final e in [el.artist]) {
-              if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
-                return true;
-              }
-            }
-            return false;
-          }).toList();
-        }
-
-        if (artists.isEmpty) {
+    final asyncCount = ref.watch(artistsCountProvider(
+      searchQuery: searchQuery,
+    ));
+    return asyncCount.when(
+      data: (itemCount) {
+        if (itemCount == 0) {
           return Container(
             width: context.screenWidth,
             padding: const EdgeInsets.all(16.0),
@@ -44,7 +112,7 @@ class ArtistsListView extends ConsumerWidget {
               children: [
                 const Spacer(),
                 Text(
-                  "No artists",
+                  "No albums",
                   style: context.textTheme.bodyLarge?.copyWith(
                     color: context.colorScheme.outline,
                   ),
@@ -55,51 +123,33 @@ class ArtistsListView extends ConsumerWidget {
           );
         }
         return ListView.builder(
-          itemCount: artists.length,
+          itemCount: itemCount,
           itemBuilder: (BuildContext context, int index) {
-            final currentArtist = artists[index];
-
-            return ListTile(
-              onTap: () {
-                // Navigate to song info page
-                Navigator.of(context).push(
-                  routeTo(
-                    page: ArtistInfoPage(
-                      artist: currentArtist,
-                    ),
-                  ),
+            final page = index ~/ pageSize;
+            final offset = page * pageSize;
+            final indexInPage = index % pageSize;
+            final asyncQueryValue = ref.watch(artistsQueryProvider(
+              pageSize,
+              offset,
+              searchQuery: searchQuery,
+            ));
+            return asyncQueryValue.when(
+              data: (data) {
+                final item = data.elementAt(indexInPage);
+                return ArtistListTile(
+                  artist: item,
                 );
               },
-              title: Text(
-                currentArtist.artist,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 3,
-              ),
-              subtitle: Text(
-                (() {
-                  final songCount = currentArtist.numberOfTracks;
-
-                  if (songCount == null) {
-                    return "";
-                  }
-
-                  if (songCount == 1) {
-                    return "$songCount song";
-                  }
-                  return "$songCount songs";
-                })(),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              leading: SongArtwork(
-                id: currentArtist.id,
-                type: ArtworkType.ARTIST,
-                borderRadius: BorderRadius.circular(20.0),
-                width: 50,
-                height: 50,
-                size: 50,
-                hasBorder: true,
-              ),
+              error: (error, stackTrace) {
+                return ListTile(
+                  leading: const Icon(FluentIcons.warning_24_regular),
+                  title: const Text("Error"),
+                  subtitle: Text(error.toString()),
+                );
+              },
+              loading: () {
+                return const SongListTileLoading();
+              },
             );
           },
         );
