@@ -252,7 +252,7 @@ class FilterView extends HookConsumerWidget {
                           suffix: GestureDetector(
                             onTap: () async {
                               String? selectedDirectory =
-                                  await FilePicker.platform.getDirectoryPath();
+                                  await FilePicker.getDirectoryPath();
 
                               if (selectedDirectory == null) {
                                 // User canceled the picker
