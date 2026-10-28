@@ -95,13 +95,6 @@ Future<List<Song>> nowPlayingSongs(NowPlayingSongsRef ref) async {
 class PlaybackController extends _$PlaybackController {
   AudioPlayer get _player => ref.read(audioPlayerProvider);
 
-  /// Read from the player each time: the cached source goes stale whenever the
-  /// player's audio source is replaced.
-  ConcatenatingAudioSource? get _playlist {
-    final audioSource = _player.audioSource;
-    return audioSource is ConcatenatingAudioSource ? audioSource : null;
-  }
-
   @override
   FutureOr<List<int>> build() async {
     final sequence = await ref.watch(playlistSequenceProvider.future);
@@ -110,49 +103,29 @@ class PlaybackController extends _$PlaybackController {
   }
 
   List<int> getQueueItemIds() {
-    final shuffleIndices = _playlist?.shuffleIndices ?? [];
-    final sequence = _playlist?.sequence;
+    final sequence = _player.sequence;
 
-    if (sequence == null) return [];
-
-    return shuffleIndices
-        .map((index) => sequence[index])
-        .map((source) => source.tag as MediaItem)
-        .map((item) => int.parse(item.id))
+    return _player.shuffleIndices
+        .map((index) => songIdOf(sequence[index]))
         .toList();
   }
 
-  Future<void> initializePlaylist() async {
-    if (_playlist == null) {
-      await _player.setAudioSource(
-        ConcatenatingAudioSource(
-          useLazyPreparation: true,
-          shuffleOrder: DefaultShuffleOrder(),
-          children: [],
-        ),
-      );
-    }
-  }
-
   Future<void> playSong(Song song) async {
-    await initializePlaylist();
     final source = songToAudioSource(song);
-    await _playlist!.clear();
-    await _playlist!.add(source);
+    await _player.clearAudioSources();
+    await _player.addAudioSource(source);
     await _player.seek(Duration.zero, index: 0);
     await _player.play();
   }
 
   Future<void> addToQueue(Song song) async {
-    await initializePlaylist();
     final source = songToAudioSource(song);
-    await _playlist!.add(source);
+    await _player.addAudioSource(source);
   }
 
   Future<void> addMultipleToQueue(List<Song> songs) async {
-    await initializePlaylist();
-    final sources = await songs.map(songToAudioSource).toList();
-    await _playlist!.addAll(sources);
+    final sources = songs.map(songToAudioSource).toList();
+    await _player.addAudioSources(sources);
   }
 
   Future<void> addMultipleToQueueAndShuffle(List<Song> songs) async {
@@ -161,7 +134,6 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> addAndPlay(Song song) async {
-    await initializePlaylist();
     final source = songToAudioSource(song);
     final existingIndex = _findSongIndex(song);
 
@@ -171,33 +143,34 @@ class PlaybackController extends _$PlaybackController {
         await _player.seek(Duration.zero, index: existingIndex);
       } else if (existingIndex < (_player.currentIndex ?? -1)) {
         // If it's already been played, move it to be the next item
-        await _playlist!.removeAt(existingIndex);
-        await _playlist!.insert((_player.currentIndex ?? -1) + 1, source);
+        await _player.removeAudioSourceAt(existingIndex);
+        await _player.insertAudioSource(
+            (_player.currentIndex ?? -1) + 1, source);
         await _player.seekToNext();
       } else {
         // If it's not been played yet, move it to be the next item
-        await _playlist!.removeAt(existingIndex);
-        await _playlist!.insert((_player.currentIndex ?? -1) + 1, source);
+        await _player.removeAudioSourceAt(existingIndex);
+        await _player.insertAudioSource(
+            (_player.currentIndex ?? -1) + 1, source);
         await _player.seekToNext();
       }
     } else {
       // If it's not in the queue, add it and play
-      final index = _playlist!.length;
-      await _playlist!.add(source);
+      final index = _player.audioSources.length;
+      await _player.addAudioSource(source);
       await _player.seek(Duration.zero, index: index);
     }
     await _player.play();
   }
 
   Future<void> addMultipleAndPlay(List<Song> songs, {Song? startWith}) async {
-    await initializePlaylist();
-    final sources = await songs.map(songToAudioSource).toList();
-    final startIndex = _playlist!.length;
+    final sources = songs.map(songToAudioSource).toList();
+    final startIndex = _player.audioSources.length;
 
     // Remove any existing instances of these songs
     await _removeExistingSongs(songs);
 
-    await _playlist!.addAll(sources);
+    await _player.addAudioSources(sources);
 
     if (startWith != null) {
       final startWithIndex = songs.indexWhere((s) => s.id == startWith.id);
@@ -213,14 +186,13 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> addAndPlayNext(Song song) async {
-    await initializePlaylist();
     final source = songToAudioSource(song);
     final currentIndex = _player.currentIndex;
     if (currentIndex != null) {
-      await _playlist!.insert(currentIndex + 1, source);
+      await _player.insertAudioSource(currentIndex + 1, source);
       await _player.seekToNext();
     } else {
-      await _playlist!.add(source);
+      await _player.addAudioSource(source);
       await _player.seek(Duration.zero, index: 0);
     }
     await _player.play();
@@ -228,14 +200,13 @@ class PlaybackController extends _$PlaybackController {
 
   Future<void> addMultipleAndPlayNext(List<Song> songs,
       {Song? startWith}) async {
-    await initializePlaylist();
-    final sources = await songs.map(songToAudioSource).toList();
+    final sources = songs.map(songToAudioSource).toList();
     final currentIndex = _player.currentIndex ?? -1;
 
     // Remove any existing instances of these songs
     await _removeExistingSongs(songs);
 
-    await _playlist!.insertAll(currentIndex + 1, sources);
+    await _player.insertAudioSources(currentIndex + 1, sources);
 
     if (startWith != null) {
       final startWithIndex = songs.indexWhere((s) => s.id == startWith.id);
@@ -253,10 +224,9 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> replaceQueue(List<Song> songs, {Song? startWith}) async {
-    await initializePlaylist();
-    final sources = await songs.map(songToAudioSource).toList();
-    await _playlist!.clear();
-    await _playlist!.addAll(sources);
+    final sources = songs.map(songToAudioSource).toList();
+    await _player.clearAudioSources();
+    await _player.addAudioSources(sources);
 
     if (startWith != null) {
       final startWithIndex = songs.indexWhere((s) => s.id == startWith.id);
@@ -275,7 +245,7 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> removeFromQueue(int index) async {
-    await _playlist?.removeAt(index);
+    await _player.removeAudioSourceAt(index);
   }
 
   Future<void> removeMultipleFromQueue(List<int> indices) async {
@@ -287,35 +257,22 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> removeSongFromQueue(Song song) async {
-    final index = _playlist?.children.indexWhere((source) {
-      final isource = source as IndexedAudioSource;
-      final mediaItem = isource.tag as MediaItem?;
-      return mediaItem?.id == song.id.toString();
-    });
-    if (index != null && index != -1) {
+    final index = _findSongIndex(song);
+    if (index != -1) {
       await removeFromQueue(index);
     }
   }
 
   Future<void> removeMultipleSongsFromQueue(List<Song> songs) async {
-    final indices = songs
-        .map((song) {
-          return _playlist?.children.indexWhere((source) {
-            final isource = source as IndexedAudioSource;
-            final mediaItem = isource.tag as MediaItem?;
-            return mediaItem?.id == song.id.toString();
-          });
-        })
-        .where((index) => index != null && index != -1)
-        .cast<int>()
-        .toList();
+    final indices =
+        songs.map(_findSongIndex).where((index) => index != -1).toList();
 
     await removeMultipleFromQueue(indices);
   }
 
   Future<void> clearQueue() async {
     await _player.stop();
-    await _playlist?.clear();
+    await _player.clearAudioSources();
   }
 
   Future<void> skipToQueueItem(int index) async {
@@ -323,24 +280,22 @@ class PlaybackController extends _$PlaybackController {
   }
 
   Future<void> insertSongNext(Song song) async {
-    await initializePlaylist();
     final source = songToAudioSource(song);
     final currentIndex = _player.currentIndex;
     if (currentIndex != null) {
-      await _playlist!.insert(currentIndex + 1, source);
+      await _player.insertAudioSource(currentIndex + 1, source);
     } else {
-      await _playlist!.add(source);
+      await _player.addAudioSource(source);
     }
   }
 
   Future<void> insertMultipleSongsNext(List<Song> songs) async {
-    await initializePlaylist();
-    final sources = await songs.map(songToAudioSource).toList();
+    final sources = songs.map(songToAudioSource).toList();
     final currentIndex = _player.currentIndex;
     if (currentIndex != null) {
-      await _playlist!.insertAll(currentIndex + 1, sources);
+      await _player.insertAudioSources(currentIndex + 1, sources);
     } else {
-      await _playlist!.addAll(sources);
+      await _player.addAudioSources(sources);
     }
   }
 
@@ -353,12 +308,7 @@ class PlaybackController extends _$PlaybackController {
   }
 
   int _findSongIndex(Song song) {
-    return _playlist?.children.indexWhere((source) {
-          final isource = source as IndexedAudioSource;
-          final mediaItem = isource.tag as MediaItem?;
-          return mediaItem?.id == song.id.toString();
-        }) ??
-        -1;
+    return _player.sequence.indexWhere((source) => songIdOf(source) == song.id);
   }
 
   Future<void> _removeExistingSongs(List<Song> songs) async {
@@ -371,7 +321,7 @@ class PlaybackController extends _$PlaybackController {
     indicesToRemove.sort((a, b) => b.compareTo(a));
 
     for (final index in indicesToRemove) {
-      await _playlist?.removeAt(index);
+      await _player.removeAudioSourceAt(index);
     }
   }
 }
