@@ -358,7 +358,7 @@ class AudioQuery {
   static String? _ensureString(dynamic value) {
     if (value == null) return null;
     if (value is String) return value;
-    if (value is List) return value.join('');
+    if (value is List) return value.join(', ');
     return value.toString();
   }
 
