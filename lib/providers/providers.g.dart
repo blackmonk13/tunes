@@ -49,7 +49,7 @@ final appStartupProvider = FutureProvider<void>.internal(
 );
 
 typedef AppStartupRef = FutureProviderRef<void>;
-String _$audioPlayerHash() => r'e54ce7e5ba2cd12db0f50d7caaf550952480c971';
+String _$audioPlayerHash() => r'98f6e2d720cf9b635687e9ef8797288f103dcd48';
 
 /// See also [audioPlayer].
 @ProviderFor(audioPlayer)
@@ -185,6 +185,23 @@ final playerShuffleModeEnabledProvider = StreamProvider<bool>.internal(
 );
 
 typedef PlayerShuffleModeEnabledRef = StreamProviderRef<bool>;
+String _$nowPlayingSongsHash() => r'00ae20c2331992cb77e0aa5e67353bd21bacf97e';
+
+/// The songs currently in the player queue, in playlist order.
+///
+/// Copied from [nowPlayingSongs].
+@ProviderFor(nowPlayingSongs)
+final nowPlayingSongsProvider = FutureProvider<List<Song>>.internal(
+  nowPlayingSongs,
+  name: r'nowPlayingSongsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$nowPlayingSongsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef NowPlayingSongsRef = FutureProviderRef<List<Song>>;
 String _$playlistsWatcherHash() => r'a4ba3f613a00f4aecb2deaf69010b228aad81184';
 
 /// See also [playlistsWatcher].
@@ -672,25 +689,8 @@ final searchHistoryProvider =
 );
 
 typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
-String _$nowPlayingControllerHash() =>
-    r'9020baf82fcafc818da88b52f628c919130e71aa';
-
-/// See also [NowPlayingController].
-@ProviderFor(NowPlayingController)
-final nowPlayingControllerProvider =
-    AsyncNotifierProvider<NowPlayingController, List<Song>>.internal(
-  NowPlayingController.new,
-  name: r'nowPlayingControllerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$nowPlayingControllerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$NowPlayingController = AsyncNotifier<List<Song>>;
 String _$playbackControllerHash() =>
-    r'ef62d7ef7bb1241f64d4434bed68ccb6d9ed8877';
+    r'a9d37d7e31cb31b803241922bb74c0a3a8b2391b';
 
 /// See also [PlaybackController].
 @ProviderFor(PlaybackController)
