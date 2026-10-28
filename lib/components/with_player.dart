@@ -14,11 +14,11 @@ class WithPlayer extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nowPlayingController = ref.watch(nowPlayingControllerProvider);
+    final nowPlayingSongs = ref.watch(nowPlayingSongsProvider);
     final asyncPlayerState = ref.watch(playerStateProvider);
     final hide = asyncPlayerState.when(
       data: (data) {
-        final playlistSongs = nowPlayingController.valueOrNull;
+        final playlistSongs = nowPlayingSongs.valueOrNull;
 
         if (playlistSongs == null) {
           return true;

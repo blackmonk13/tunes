@@ -21,7 +21,6 @@ class AlbumListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(onAudioQueryProvider);
 
     return ListTile(
       onTap: () {

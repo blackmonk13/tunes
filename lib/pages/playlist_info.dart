@@ -1,15 +1,12 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
-import 'package:tunes/components/artwork_data_builder.dart';
-import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/components/with_player.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
-import 'package:tunes/utils/functions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/views/playlists_list_view.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
 class PlaylistInfoPage extends ConsumerWidget {
@@ -30,20 +27,6 @@ class PlaylistInfoPage extends ConsumerWidget {
               pinned: true,
               expandedHeight: context.screenHeight * 0.3,
               flexibleSpace: FlexibleSpaceBar(
-                title: ArtworkDataBuilder(
-                  id: playlist.id,
-                  artworkType: ArtworkType.PLAYLIST,
-                  builder: (image, palette) {
-                    final fgColor = calculateFgColor(palette);
-
-                    return Text(
-                      playlist.name,
-                      style: TextStyle(
-                        color: fgColor,
-                      ),
-                    );
-                  },
-                ),
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -55,13 +38,12 @@ class PlaylistInfoPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  child: SongArtwork(
-                    id: playlist.id,
-                    type: ArtworkType.PLAYLIST,
-                    size: (context.screenHeight * 0.3).toInt(),
-                    height: context.screenHeight * 0.3,
-                    width: context.screenHeight * 0.3,
-                    borderRadius: BorderRadius.circular(5.0),
+                  child: PlaylistThumbnail(
+                    playlist: playlist,
+                    size: context.screenHeight * 0.3,
+                    hasBorder: false,
+                    mini: false,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
               ),
@@ -82,11 +64,8 @@ class PlaylistInfoPage extends ConsumerWidget {
                       song: song,
                       onTap: (song) async {
                         return ref
-                            .read(nowPlayingControllerProvider.notifier)
-                            .queue(
-                          [song],
-                          startWith: song,
-                        );
+                            .read(playbackControllerProvider.notifier)
+                            .addAndPlay(song);
                       },
                       trailing: IconButton(
                         icon: const Icon(FluentIcons.more_vertical_24_regular),
@@ -109,7 +88,8 @@ class PlaylistInfoPage extends ConsumerWidget {
                             builder: (context) {
                               return SongTileOptions(
                                 song: song,
-                                songs: [song],
+                                indices:
+                                    playlist.songs.map((e) => e.id).toList(),
                               );
                             },
                           );

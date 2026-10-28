@@ -92,6 +92,40 @@ class PlayerPage extends ConsumerWidget {
         Positioned.fill(
           child: ThumbnailDataBuilder(
             thumbnail: song?.thumbnailPath,
+            nullWidget: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [
+                      .3,
+                      .35,
+                      .4,
+                    ],
+                    colors: [
+                      Colors.transparent,
+                      context.colorScheme.surface.withOpacity(.4),
+                      context.colorScheme.surface,
+                    ],
+                  ),
+                ),
+                child: AnimatedCrossFade(
+                  firstChild: PlayerDetailsAndControls(
+                    song: song,
+                  ),
+                  secondChild: song == null
+                      ? PlayerDetailsAndControls(
+                          song: song,
+                        )
+                      : PlayerDetailsAndControls(
+                          song: song,
+                        ),
+                  crossFadeState: song == null
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  duration: kThemeAnimationDuration,
+                ),
+              ),
             builder: (image, palette) {
               final bgColor =
                   palette.dominantColor?.color ?? context.colorScheme.surface;
@@ -162,7 +196,6 @@ class PlayerPage extends ConsumerWidget {
                 builder: (context) {
                   return SongTileOptions(
                     song: song,
-                    songs: [song],
                     queue: false,
                   );
                 },

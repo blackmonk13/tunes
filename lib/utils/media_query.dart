@@ -167,6 +167,7 @@ enum SongsSortType {
   modified,
   duration,
   size,
+  none,
 }
 
 enum SongQueryType {
@@ -494,7 +495,7 @@ class AudioQuery {
               _processFileWithRetry(event.path);
             }
           } else if (event.type == ChangeType.REMOVE) {
-            _removeSong(event.path);
+            _removeSongTxn(event.path);
           }
         });
         _watchers.add(subscription);
@@ -533,6 +534,32 @@ class AudioQuery {
   }
 
   Future<void> _removeSong(String filePath) async {
+    final song =
+        await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
+    if (song != null) {
+      await song.artist.load();
+      await song.album.load();
+      await song.genre.load();
+
+      if (song.artist.value != null) {
+        song.artist.value!.songs.remove(song);
+        await song.artist.value!.songs.save();
+      }
+      if (song.album.value != null) {
+        song.album.value!.songs.remove(song);
+        await song.album.value!.songs.save();
+      }
+      if (song.genre.value != null) {
+        song.genre.value!.songs.remove(song);
+        await song.genre.value!.songs.save();
+      }
+
+      await _isar.songs.delete(song.id);
+     
+    }
+  }
+  
+  Future<void> _removeSongTxn(String filePath) async {
     final song =
         await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
     if (song != null) {
@@ -616,6 +643,7 @@ class AudioQuery {
     SongQueryType queryType = SongQueryType.all,
     String? query,
     String? searchQuery,
+    List<int> indices = const [],
   }) {
     final withSearchQuery = searchQuery != null && searchQuery.isNotEmpty;
     final withQueryType = ![
@@ -623,14 +651,20 @@ class AudioQuery {
           SongQueryType.playlist,
         ].contains(queryType) &&
         query != null;
-
+    _logger.w(indices);
     return _isar.songs
         .where()
         .optional(
-          withQueryType || withSearchQuery,
+          withQueryType || withSearchQuery || indices.isNotEmpty,
           (q) {
             return q
                 .filter()
+                .optional(indices.isNotEmpty, (qi) {
+                  return qi.anyOf(indices, (qa, id) {
+                    return qa.idEqualTo(id);
+                  });
+                })
+                .and()
                 .optional(withQueryType, (qt) {
                   switch (queryType) {
                     case SongQueryType.album:
@@ -686,7 +720,7 @@ class AudioQuery {
                 );
           },
         )
-        .optional(true, (qs) {
+        .optional(sortType != SongsSortType.none, (qs) {
           switch (sort) {
             case Sort.asc:
               switch (sortType) {
@@ -882,6 +916,7 @@ Stream<void> songsWatcher(
   SongQueryType queryType = SongQueryType.all,
   String? query,
   String? searchQuery,
+  List<int> indices = const [],
 }) {
   return ref
       .watch(mediaQueryProvider)
@@ -889,6 +924,7 @@ Stream<void> songsWatcher(
         queryType: queryType,
         query: query,
         searchQuery: searchQuery,
+        indices: indices,
       )
       .watchLazy();
 }
@@ -899,11 +935,13 @@ FutureOr<int> songsCount(
   SongQueryType queryType = SongQueryType.all,
   String? query,
   String? searchQuery,
+  List<int> indices = const [],
 }) {
   ref.watch(songsWatcherProvider(
     queryType: queryType,
     query: query,
     searchQuery: searchQuery,
+    indices: indices,
   ));
   return ref
       .watch(mediaQueryProvider)
@@ -911,6 +949,7 @@ FutureOr<int> songsCount(
         queryType: queryType,
         query: query,
         searchQuery: searchQuery,
+        indices: indices,
       )
       .count();
 }
@@ -918,12 +957,13 @@ FutureOr<int> songsCount(
 @riverpod
 class SongsQuery extends _$SongsQuery {
   @override
-  FutureOr<List<Song>> build(
-    int limit,
-    int offset, {
+  FutureOr<List<Song>> build({
+    int? limit,
+    int? offset,
     SongQueryType queryType = SongQueryType.all,
     String? query,
     String? searchQuery,
+    List<int> indices = const [],
   }) {
     final songsSortOrder = ref.watch(
       songsSortOrderProvider(
@@ -940,6 +980,7 @@ class SongsQuery extends _$SongsQuery {
           queryType: queryType,
           query: query,
           searchQuery: searchQuery,
+          indices: indices,
         )
         .findAll();
   }

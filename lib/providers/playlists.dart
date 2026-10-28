@@ -1,28 +1,28 @@
 part of 'providers.dart';
 
-@riverpod
-class PlaylistSortOrder extends _$PlaylistSortOrder {
-  @override
-  ({PlaylistSortType sortType, OrderType orderType}) build() {
-    return (
-      sortType: PlaylistSortType.DATE_ADDED,
-      orderType: OrderType.DESC_OR_GREATER,
-    );
-  }
+// @riverpod
+// class PlaylistSortOrder extends _$PlaylistSortOrder {
+//   @override
+//   ({PlaylistSortType sortType, OrderType orderType}) build() {
+//     return (
+//       sortType: PlaylistSortType.DATE_ADDED,
+//       orderType: OrderType.DESC_OR_GREATER,
+//     );
+//   }
 
-  void sort({PlaylistSortType? sortType, OrderType? orderType}) {
-    state = (
-      sortType: sortType ?? state.sortType,
-      orderType: orderType ?? state.orderType
-    );
-  }
-}
+//   void sort({PlaylistSortType? sortType, OrderType? orderType}) {
+//     state = (
+//       sortType: sortType ?? state.sortType,
+//       orderType: orderType ?? state.orderType
+//     );
+//   }
+// }
 
 @riverpod
 class PlaylistsController extends _$PlaylistsController {
   @override
   FutureOr<List<Playlist>> build() {
-    final playlistSortOrder = ref.watch(playlistSortOrderProvider);
+    // final playlistSortOrder = ref.watch(playlistSortOrderProvider);
     return ref.watch(isarProvider).requireValue.playlists.where().findAll();
   }
 
@@ -101,19 +101,6 @@ class PlaylistsController extends _$PlaylistsController {
     ref.invalidateSelf();
     await future;
     return removed;
-  }
-}
-
-@riverpod
-class PlaylistSongs extends _$PlaylistSongs {
-  @override
-  FutureOr<List<SongModel>> build(PlaylistModel playlist) {
-    return ref.read(onAudioQueryProvider).queryAudiosFrom(
-          AudiosFromType.PLAYLIST,
-          playlist.playlist,
-          sortType: SongSortType.DATE_ADDED,
-          orderType: OrderType.DESC_OR_GREATER,
-        );
   }
 }
 

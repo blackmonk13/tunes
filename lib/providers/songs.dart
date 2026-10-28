@@ -1,7 +1,5 @@
 part of 'providers.dart';
 
-
-
 @riverpod
 class SongsSortOrder extends _$SongsSortOrder {
   @override
@@ -194,33 +192,6 @@ class MetadataController extends _$MetadataController {
   }
 }
 
-@riverpod
-FutureOr<({Uint8List image, PaletteGenerator palette})?> artworkData(
-  ArtworkDataRef ref,
-  int id,
-  ArtworkType type, {
-  ArtworkFormat? format,
-  int? size,
-  int? quality,
-}) async {
-  final imageData = await ref.read(onAudioQueryProvider).queryArtwork(
-        id,
-        type,
-        format: format,
-        size: size,
-        quality: quality,
-      );
-
-  if (imageData == null) {
-    return null;
-  }
-
-  final palette = await PaletteGenerator.fromImageProvider(
-    MemoryImage(imageData),
-  );
-  return (image: imageData, palette: palette);
-}
-
 @Riverpod(keepAlive: true)
 FutureOr<({FileImage image, PaletteGenerator palette})?> thumbnailData(
   ThumbnailDataRef ref,
@@ -245,42 +216,7 @@ FutureOr<({FileImage image, PaletteGenerator palette})?> thumbnailData(
   return (image: thumbFileImage, palette: palette);
 }
 
-@riverpod
-FutureOr<File?> artworkFile(
-  ArtworkFileRef ref,
-  int id,
-  ArtworkType type, {
-  ArtworkFormat? format,
-  int? size,
-  int? quality,
-}) async {
-  final imageBytes = await ref.read(onAudioQueryProvider).queryArtwork(
-        id,
-        type,
-        format: format,
-        size: size,
-        quality: quality,
-      );
 
-  if (imageBytes == null) {
-    return null;
-  }
-
-  final appDocumentsDir = await getApplicationDocumentsDirectory();
-  final artworkDir = Directory('${appDocumentsDir.path}/.artwork');
-
-  if (!await artworkDir.exists()) {
-    await artworkDir.create();
-  }
-
-  final artworkFile = File('${artworkDir.path}/$id.jpg');
-
-  if (!await artworkFile.exists()) {
-    await artworkFile.writeAsBytes(imageBytes);
-  }
-
-  return artworkFile;
-}
 
 @riverpod
 MP4Handler mp4Handler(Ref ref, String filePath) {

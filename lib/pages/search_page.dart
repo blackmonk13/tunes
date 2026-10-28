@@ -62,21 +62,23 @@ class SearchPage extends SearchDelegate<String> {
                 ],
               ),
               Expanded(
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: searchHistory.map((item) {
-                    return ActionChip(
-                      label: Text(item),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                      onPressed: () {
-                        query = item;
-                        showResults(context);
-                      },
-                    );
-                  }).toList(),
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: searchHistory.map((item) {
+                      return ActionChip(
+                        label: Text(item),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                        onPressed: () {
+                          query = item;
+                          showResults(context);
+                        },
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ],

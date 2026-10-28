@@ -115,12 +115,10 @@ class PlayerDetailsAndControls extends ConsumerWidget {
               onTap: () async {
                 await showModalBottomSheet<void>(
                   context: context,
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: context.colorScheme.outlineVariant,
                   isScrollControlled: true,
                   useSafeArea: true,
-                  constraints: BoxConstraints(
-                    maxHeight: context.screenHeight * .7,
-                  ),
+                  showDragHandle: true,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20.0),
