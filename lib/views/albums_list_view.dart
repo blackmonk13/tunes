@@ -1,53 +1,15 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 import 'package:tunes/components/common/error_view.dart';
+import 'package:tunes/components/song_artwork.dart';
+import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 
 import 'package:tunes/pages/album_info.dart';
-
-class AsyncAlbumsListView extends StatelessWidget {
-  final AsyncValue<List<AlbumModel>> asyncAlbums;
-  final ScrollController? scrollController;
-  const AsyncAlbumsListView({
-    super.key,
-    required this.asyncAlbums,
-    this.scrollController,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return asyncAlbums.when(
-      data: (data) {
-        if (data.isEmpty) {
-          return const Text("No Albums");
-        }
-        return ListView.builder(
-          controller: scrollController,
-          itemCount: data.length,
-          itemBuilder: (BuildContext context, int index) {
-            final currentAlbum = data[index];
-
-            return AlbumListTile(album: currentAlbum);
-          },
-        );
-      },
-      error: (error, stackTrace) {
-        return AsyncErrorView(
-          error: error,
-          stackTrace: stackTrace,
-        );
-      },
-      loading: () {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-  }
-}
+import 'package:tunes/utils/media_query.dart';
 
 class AlbumListTile extends ConsumerWidget {
   const AlbumListTile({
@@ -55,11 +17,10 @@ class AlbumListTile extends ConsumerWidget {
     required this.album,
   });
 
-  final AlbumModel album;
+  final Album album;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final audioQuery = ref.watch(onAudioQueryProvider);
 
     return ListTile(
       onTap: () {
@@ -73,47 +34,133 @@ class AlbumListTile extends ConsumerWidget {
         );
       },
       title: Text(
-        album.album,
+        album.title,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
+        style: context.textTheme.bodyLarge,
       ),
       subtitle: Text(
-        album.artist ?? "No Artist",
+        album.artist.value?.name ?? "No Artist",
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
+        style: (() {
+          final textTheme = context.textTheme.labelSmall;
+          return textTheme?.copyWith(
+            color: textTheme.color?.withOpacity(.7),
+          );
+        })(),
       ),
-      // This Widget will query/load image.
-      // You can use/create your own widget/method using [queryArtwork].
-      leading: QueryArtworkWidget(
-        controller: audioQuery,
-        id: album.id,
-        type: ArtworkType.ALBUM,
-        artworkBorder: BorderRadius.circular(20.0),
-        nullArtworkWidget: Container(
-          decoration: BoxDecoration(
-            color: context.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          width: 50,
-          height: 50,
-          child: Icon(
-            FluentIcons.music_note_2_24_regular,
-            color: context.colorScheme.onPrimaryContainer,
-            size: 32.0,
-          ),
-        ),
+      leading: Thumbnail(
+        thumbnail: album.artworkPath ?? album.songs.first.thumbnailMiniPath,
+        hasBorder: true,
+        borderRadius: BorderRadius.circular(20.0),
+        width: 50,
+        height: 50,
       ),
     );
   }
 }
 
-class AlbumsListView extends ConsumerWidget {
-  const AlbumsListView({super.key});
+class AlbumsView extends HookConsumerWidget {
+  const AlbumsView({
+    super.key,
+    this.searchQuery,
+  });
+  final String? searchQuery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncAlbums = ref.watch(albumsControllerProvider);
+    final scrollController = useScrollController();
+    return AlbumsListView(
+      searchQuery: searchQuery,
+      scrollController: scrollController,
+    );
+  }
+}
 
-    return AsyncAlbumsListView(asyncAlbums: asyncAlbums);
+class AlbumsListView extends ConsumerWidget {
+  const AlbumsListView({
+    super.key,
+    this.scrollController,
+    this.searchQuery,
+  });
+
+  final ScrollController? scrollController;
+  final String? searchQuery;
+
+  static const pageSize = 100;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncCount = ref.watch(albumsCountProvider(
+      searchQuery: searchQuery,
+    ));
+    return asyncCount.when(
+      data: (itemCount) {
+        if (itemCount == 0) {
+          return Container(
+            width: context.screenWidth,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Spacer(),
+                Text(
+                  "No albums",
+                  style: context.textTheme.bodyLarge?.copyWith(
+                    color: context.colorScheme.outline,
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          itemCount: itemCount,
+          itemBuilder: (BuildContext context, int index) {
+            final page = index ~/ pageSize;
+            final offset = page * pageSize;
+            final indexInPage = index % pageSize;
+            final asyncQueryValue = ref.watch(albumsQueryProvider(
+              pageSize,
+              offset,
+              searchQuery: searchQuery,
+            ));
+            return asyncQueryValue.when(
+              data: (data) {
+                final item = data.elementAt(indexInPage);
+                return AlbumListTile(
+                  album: item,
+                );
+              },
+              error: (error, stackTrace) {
+                return ListTile(
+                  leading: const Icon(FluentIcons.warning_24_regular),
+                  title: const Text("Error"),
+                  subtitle: Text(error.toString()),
+                );
+              },
+              loading: () {
+                return const SongListTileLoading();
+              },
+            );
+          },
+        );
+      },
+      error: (error, stackTrace) {
+        return AsyncErrorView(
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
+      loading: () {
+        return ListView.builder(
+          itemCount: 10,
+          itemBuilder: (BuildContext context, int index) {
+            return const SongListTileLoading();
+          },
+        );
+      },
+    );
   }
 }

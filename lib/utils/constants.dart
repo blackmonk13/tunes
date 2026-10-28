@@ -1,0 +1,1 @@
+const favsPlaylistName = '_favorites';

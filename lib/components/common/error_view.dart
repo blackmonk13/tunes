@@ -135,8 +135,8 @@ class AsyncErrorView extends StatelessWidget {
     this.trailing = const [],
     this.builder,
   });
-  final Object error;
-  final StackTrace stackTrace;
+  final Object? error;
+  final StackTrace? stackTrace;
   final RefreshCallback? onRefresh;
   final List<InlineSpan> additionalText;
   final List<Widget> trailing;

@@ -14,11 +14,13 @@ class PlayPauseBtn extends HookConsumerWidget {
     this.loadingWidget = const CircularProgressIndicator(
       strokeWidth: 2.0,
     ),
+    this.color,
   });
   final double size;
   final IconData playIcon;
   final IconData pauseIcon;
   final Widget loadingWidget;
+  final Color? color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,6 +74,7 @@ class PlayPauseBtn extends HookConsumerWidget {
         }
 
         return IconButton(
+          color: color,
           disabledColor: context.colorScheme.outline.withOpacity(.5),
           icon: Icon(
             iconData,
@@ -92,6 +95,7 @@ class PlayPauseBtn extends HookConsumerWidget {
   IconButton disabledBtn(BuildContext context) {
     return IconButton(
       onPressed: null,
+      color: color,
       disabledColor: context.colorScheme.outline.withOpacity(.5),
       icon: Icon(
         playIcon,
@@ -106,9 +110,13 @@ class NextBtn extends HookConsumerWidget {
     super.key,
     this.size = 24.0,
     this.alwaysShow = false,
+    this.color,
+    this.builder,
   });
   final double size;
   final bool alwaysShow;
+  final Color? color;
+  final Widget Function(Widget icon, VoidCallback? onTap)? builder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,17 +127,26 @@ class NextBtn extends HookConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    final icon = Icon(
+      FluentIcons.next_24_filled,
+      size: size,
+    );
+
+    final onPressed = player.hasNext
+        ? () async {
+            await player.seekToNext();
+          }
+        : null;
+
+    if (builder != null) {
+      return builder!(icon, onPressed);
+    }
+
     return IconButton(
+      color: color,
       disabledColor: context.colorScheme.outline.withOpacity(.5),
-      onPressed: player.hasNext
-          ? () async {
-              await player.seekToNext();
-            }
-          : null,
-      icon: Icon(
-        FluentIcons.next_24_filled,
-        size: size,
-      ),
+      onPressed: onPressed,
+      icon: icon,
     );
   }
 }
@@ -139,9 +156,13 @@ class PreviousBtn extends HookConsumerWidget {
     super.key,
     this.size = 24.0,
     this.alwaysShow = false,
+    this.color,
+    this.builder,
   });
   final double size;
   final bool alwaysShow;
+  final Color? color;
+  final Widget Function(Widget icon, VoidCallback? onTap)? builder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -151,27 +172,41 @@ class PreviousBtn extends HookConsumerWidget {
     if (!alwaysShow) {
       return const SizedBox.shrink();
     }
+    final icon = Icon(
+      FluentIcons.previous_24_filled,
+      size: size,
+    );
+
+    final onPressed = player.hasPrevious
+        ? () async {
+            await player.seekToPrevious();
+          }
+        : null;
+
+    if (builder != null) {
+      return builder!(icon, onPressed);
+    }
 
     return IconButton(
+      color: color,
       disabledColor: context.colorScheme.outline.withOpacity(.5),
-      onPressed: player.hasPrevious
-          ? () async {
-              await player.seekToPrevious();
-            }
-          : null,
-      icon: Icon(
-        FluentIcons.previous_24_filled,
-        size: size,
-      ),
+      onPressed: onPressed,
+      icon: icon,
     );
   }
 }
 
 class RepeatBtn extends ConsumerWidget {
   final double size;
+  final bool filled;
+  final Color? color;
+  final Widget Function(Widget icon, VoidCallback onTap)? builder;
   const RepeatBtn({
     super.key,
     this.size = 24.0,
+    this.filled = false,
+    this.color,
+    this.builder,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -180,37 +215,60 @@ class RepeatBtn extends ConsumerWidget {
 
     return asyncLoopMode.when(
       data: (data) {
-        return IconButton(
-          icon: Icon(
-            (() {
-              switch (data) {
-                case LoopMode.all:
-                  return FluentIcons.arrow_repeat_all_24_regular;
-                case LoopMode.one:
-                  return FluentIcons.arrow_repeat_1_24_regular;
-                case LoopMode.off:
-                  return FluentIcons.arrow_repeat_all_off_24_regular;
-                default:
-              }
-            })(),
-            size: size,
-          ),
-          onPressed: () {
+        final icon = Icon(
+          (() {
             switch (data) {
               case LoopMode.all:
-                player.setLoopMode(LoopMode.off);
-                break;
-              case LoopMode.off:
-                player.setLoopMode(LoopMode.one);
-                break;
+                return filled
+                    ? FluentIcons.arrow_repeat_all_24_filled
+                    : FluentIcons.arrow_repeat_all_24_regular;
               case LoopMode.one:
-                player.setLoopMode(LoopMode.all);
-                break;
+                return filled
+                    ? FluentIcons.arrow_repeat_1_24_filled
+                    : FluentIcons.arrow_repeat_1_24_regular;
+              case LoopMode.off:
+                return filled
+                    ? FluentIcons.arrow_repeat_all_off_24_filled
+                    : FluentIcons.arrow_repeat_all_off_24_regular;
               default:
-                player.setLoopMode(LoopMode.off);
-                break;
             }
-          },
+          })(),
+          size: size,
+        );
+
+        onPressed() {
+          switch (data) {
+            case LoopMode.all:
+              player.setLoopMode(LoopMode.off);
+              break;
+            case LoopMode.off:
+              player.setLoopMode(LoopMode.one);
+              break;
+            case LoopMode.one:
+              player.setLoopMode(LoopMode.all);
+              break;
+            default:
+              player.setLoopMode(LoopMode.off);
+              break;
+          }
+        }
+
+        if (builder != null) {
+          return builder!(icon, onPressed);
+        }
+
+        if (filled) {
+          return IconButton.filled(
+            icon: icon,
+            color: color,
+            onPressed: onPressed,
+          );
+        }
+
+        return IconButton(
+          icon: icon,
+          color: color,
+          onPressed: onPressed,
         );
       },
       error: (error, stackTrace) {
@@ -236,9 +294,15 @@ class RepeatBtn extends ConsumerWidget {
 
 class ShuffleBtn extends ConsumerWidget {
   final double size;
+  final bool filled;
+  final Color? color;
+  final Widget Function(Widget icon, VoidCallback onTap)? builder;
   const ShuffleBtn({
     super.key,
     this.size = 24.0,
+    this.filled = false,
+    this.color,
+    this.builder,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -247,17 +311,38 @@ class ShuffleBtn extends ConsumerWidget {
 
     return asyncShuffleModeEnabled.when(
       data: (data) {
+        final onIcon = filled
+            ? FluentIcons.arrow_shuffle_24_filled
+            : FluentIcons.arrow_shuffle_24_regular;
+        final offIcon = filled
+            ? FluentIcons.arrow_shuffle_off_24_filled
+            : FluentIcons.arrow_shuffle_off_24_regular;
+        final icon = Icon(
+          data ? onIcon : offIcon,
+          size: size,
+        );
+
+        onPressed() async {
+          await player.setShuffleModeEnabled(!data);
+          await player.shuffle();
+        }
+
+        if (builder != null) {
+          return builder!(icon, onPressed);
+        }
+
+        if (filled) {
+          return IconButton.filled(
+            icon: icon,
+            color: color,
+            onPressed: onPressed,
+          );
+        }
+
         return IconButton(
-          icon: Icon(
-            data
-                ? FluentIcons.arrow_shuffle_24_regular
-                : FluentIcons.arrow_shuffle_off_24_regular,
-            size: size,
-          ),
-          onPressed: () async {
-            await player.setShuffleModeEnabled(!data);
-            await player.shuffle();
-          },
+          icon: icon,
+          color: color,
+          onPressed: onPressed,
         );
       },
       error: (error, stackTrace) {

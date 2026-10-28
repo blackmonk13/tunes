@@ -1,17 +1,18 @@
 part of 'providers.dart';
 
-
 @riverpod
 class SongsSortOrder extends _$SongsSortOrder {
   @override
-  ({SongSortType sortType, OrderType orderType}) build(String viewKey) {
+  ({SongsSortType sortType, Sort orderType}) build(
+    SongQueryType queryType,
+  ) {
     return (
-      sortType: SongSortType.DATE_ADDED,
-      orderType: OrderType.DESC_OR_GREATER,
+      sortType: SongsSortType.modified,
+      orderType: Sort.desc,
     );
   }
 
-  void sort({SongSortType? sortType, OrderType? orderType}) {
+  void sort({SongsSortType? sortType, Sort? orderType}) {
     state = (
       sortType: sortType ?? state.sortType,
       orderType: orderType ?? state.orderType
@@ -19,35 +20,104 @@ class SongsSortOrder extends _$SongsSortOrder {
   }
 }
 
-@riverpod
-class SongsController extends _$SongsController {
+@Riverpod(keepAlive: true)
+class SongsFilterConfigs extends _$SongsFilterConfigs {
   @override
-  FutureOr<List<SongModel>> build() {
-    final songsSortOrder = ref.watch(songsSortOrderProvider('all_songs'));
-    return ref.read(onAudioQueryProvider).querySongs(
-          sortType: songsSortOrder.sortType,
-          orderType: songsSortOrder.orderType,
-        );
+  ({Set<PathFilter> filterPaths}) build() {
+    return (filterPaths: _prefsFilterPaths);
+  }
+
+  Set<PathFilter> get _prefsFilterPaths {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
+    final filterPathsJsonList = prefs.getStringList(filterPathsPrefsKey);
+
+    if (filterPathsJsonList == null) {
+      return {};
+    }
+
+    final filterPathsList = filterPathsJsonList.map((fp) {
+      return PathFilter.fromJson(json.decode(fp));
+    });
+
+    return filterPathsList.toSet();
+  }
+
+  Future<bool> addPath(PathFilter value) async {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
+    final filterPaths = state.filterPaths;
+    final added = filterPaths.add(value);
+
+    if (!added) {
+      return false;
+    }
+
+    final filterPathsList = filterPaths.map(
+      (e) {
+        return json.encode(e.toJson());
+      },
+    ).toList();
+
+    final prefsAdded = await prefs.setStringList(
+      filterPathsPrefsKey,
+      filterPathsList,
+    );
+    state = (filterPaths: filterPaths);
+    return prefsAdded;
+  }
+
+  Future<bool> updatePath(PathFilter previous, PathFilter next) async {
+    final prefs = ref.read(sharedPreferencesProvider).requireValue;
+    final filterPaths = state.filterPaths;
+    final updated = filterPaths.map((filter) {
+      return filter == previous ? next : filter;
+    }).toSet();
+
+    final filterPathsList = updated.map(
+      (e) {
+        return json.encode(e.toJson());
+      },
+    ).toList();
+
+    final prefsUpdated = await prefs.setStringList(
+      filterPathsPrefsKey,
+      filterPathsList,
+    );
+    state = (filterPaths: updated);
+    return state.filterPaths.contains(next) && prefsUpdated;
+  }
+
+  Future<bool> removePath(PathFilter value) async {
+    final prefs = ref.watch(sharedPreferencesProvider).requireValue;
+    final filterPaths = state.filterPaths;
+    final removed = filterPaths.remove(value);
+
+    if (removed == false) {
+      return false;
+    }
+    final filterPathsList = filterPaths.map(
+      (e) {
+        return json.encode(e.toJson());
+      },
+    ).toList();
+
+    final prefsUpdated = await prefs.setStringList(
+      filterPathsPrefsKey,
+      filterPathsList,
+    );
+    state = (filterPaths: filterPaths);
+    return prefsUpdated;
   }
 }
 
 @riverpod
-FutureOr<Map<int, SongModel>> mappedSongs(MappedSongsRef ref) async {
-  final songs = await ref.read(onAudioQueryProvider).querySongs();
-
-  return {for (var song in songs) song.id: song};
-}
-
-@riverpod
-FutureOr<SongModel?> songWithId(SongWithIdRef ref, String id) async {
+FutureOr<Song?> songWithId(SongWithIdRef ref, String id) async {
   final intId = int.parse(id);
-  final songsMap = await ref.watch(mappedSongsProvider.future);
 
-  return songsMap[intId];
+  return ref.watch(isarProvider).requireValue.songs.get(intId);
 }
 
 @riverpod
-FutureOr<SongModel?> currentSongInfo(CurrentSongInfoRef ref) async {
+FutureOr<Song?> currentSongInfo(CurrentSongInfoRef ref) async {
   final currentIndex = await ref.watch(playerCurrentIndexProvider.future);
   final sequence = await ref.watch(playlistSequenceProvider.future);
 
@@ -79,65 +149,76 @@ FutureOr<SongModel?> currentSongInfo(CurrentSongInfoRef ref) async {
 @riverpod
 class MetadataController extends _$MetadataController {
   @override
-  FutureOr<bool?> build(SongModel song) {
+  FutureOr<bool?> build(Song song) {
     return null;
   }
 
-  Future<void> encodeSongMetadata(Map<String, dynamic> fields) async {
+  Future<bool> encode(Map<String, dynamic> fields) async {
+    bool isEncoded = false;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // `song.data` should be a path to the file
-      final songFile = File(song.data);
+      final songFile = File(song.filePath);
 
       // Check if the file actually exists
       if (!await songFile.exists()) {
         debugPrint("File does not exist");
+        isEncoded = false;
         throw Exception('File not found');
       }
 
-      // Read the file as bytes
-      final bytes = await songFile.readAsBytes();
+      final mimeType = lookupMimeType(song.filePath);
+      // TODO: Handle Picture for id3 and cover for mp4
+      final isId3 = id3Mimes.contains(mimeType);
+      final handler = AudioQuery.createCodecHandler(songFile.path);
 
-      // Initialize the encoder with the bytes
-      final encoder = ID3Encoder(bytes);
-
-      // Create the metadata body
-      final metadata = MetadataV2p4Body(
-        title: fields['title'] as String?,
-        artist: fields['artist'] as String?,
-        album: fields['album'] as String?,
-      );
-
-      // Encode the metadata
-      final encodedBytes = await encoder.encodeAsync(metadata);
-
-      // Create Decoder
-      final decoder = ID3Decoder(encodedBytes);
-
-      // Decode the newly encoded metadata
-      final decoded = await decoder.decodeAsync();
-
-      debugPrint(decoded.toString());
-
-      if (decoded.isEmpty) {
-        throw Exception("Failed to decode the encoded metadata");
+      if (handler == null) {
+        isEncoded = false;
+        return false;
       }
 
-      final updatedSongFile = await songFile.writeAsBytes(encodedBytes);
+      handler.updateMetadata(fields);
 
-      if (!await updatedSongFile.exists()) {
-        throw Exception("Failed to update the song file");
-      }
+      await handler.applyMetadataChanges();
 
-      // Update audio query
-      final isUpdated =
-          await ref.read(onAudioQueryProvider).scanMedia(updatedSongFile.path);
+      // TODO: Reindex file
 
-      if (isUpdated) {
-        ref.invalidate(songsControllerProvider);
-      }
+      isEncoded = true;
 
-      return isUpdated;
+      return true;
     });
+
+    return isEncoded;
   }
+}
+
+@Riverpod(keepAlive: true)
+FutureOr<({FileImage image, PaletteGenerator palette})?> thumbnailData(
+  ThumbnailDataRef ref,
+  String? thumbnail,
+) async {
+  if (thumbnail == null) {
+    return null;
+  }
+
+  final thumbFile = File(thumbnail);
+
+  if (!await thumbFile.exists()) {
+    return null;
+  }
+
+  final thumbFileImage = FileImage(thumbFile);
+
+  final palette = await PaletteGenerator.fromImageProvider(
+    thumbFileImage,
+  );
+
+  return (image: thumbFileImage, palette: palette);
+}
+
+
+
+@riverpod
+MP4Handler mp4Handler(Ref ref, String filePath) {
+  return MP4Handler(filePath);
 }
