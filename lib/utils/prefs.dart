@@ -13,6 +13,7 @@ const skipShortTracksPrefsKey = "skip_short_tracks";
 const skipSmallTracksPrefsKey = "skip_small_tracks";
 const filterPathsPrefsKey = "filter_paths";
 const searchHistoryPrefsKey = "search_history";
+const playbackSessionPrefsKey = "playback_session";
 // ThemeMode get themeModePref {
 //   final themeModeInt = prefs.getInt(themeModePrefsKey);
 
