@@ -93,6 +93,10 @@ Future<List<Song>> nowPlayingSongs(NowPlayingSongsRef ref) async {
 
 @Riverpod(keepAlive: true)
 class PlaybackController extends _$PlaybackController {
+  // `AudioPlayer.play()` completes only when playback pauses or ends, so it is
+  // never awaited here: callers (such as a bottom sheet closing after its
+  // action) would otherwise wait for the song to finish.
+
   AudioPlayer get _player => ref.read(audioPlayerProvider);
 
   @override
@@ -115,7 +119,7 @@ class PlaybackController extends _$PlaybackController {
     await _player.clearAudioSources();
     await _player.addAudioSource(source);
     await _player.seek(Duration.zero, index: 0);
-    await _player.play();
+    unawaited(_player.play());
   }
 
   Future<void> addToQueue(Song song) async {
@@ -133,34 +137,17 @@ class PlaybackController extends _$PlaybackController {
     await _player.shuffle();
   }
 
+  /// Plays [song] now: it is added to the end of the queue when missing, then
+  /// playback jumps to it, whether the player was playing, paused or idle.
   Future<void> addAndPlay(Song song) async {
-    final source = songToAudioSource(song);
-    final existingIndex = _findSongIndex(song);
-
-    if (existingIndex != -1) {
-      if (existingIndex == _player.currentIndex) {
-        // If it's the currently playing song, restart playback
-        await _player.seek(Duration.zero, index: existingIndex);
-      } else if (existingIndex < (_player.currentIndex ?? -1)) {
-        // If it's already been played, move it to be the next item
-        await _player.removeAudioSourceAt(existingIndex);
-        await _player.insertAudioSource(
-            (_player.currentIndex ?? -1) + 1, source);
-        await _player.seekToNext();
-      } else {
-        // If it's not been played yet, move it to be the next item
-        await _player.removeAudioSourceAt(existingIndex);
-        await _player.insertAudioSource(
-            (_player.currentIndex ?? -1) + 1, source);
-        await _player.seekToNext();
-      }
-    } else {
-      // If it's not in the queue, add it and play
-      final index = _player.audioSources.length;
-      await _player.addAudioSource(source);
-      await _player.seek(Duration.zero, index: index);
+    var index = _findSongIndex(song);
+    if (index == -1) {
+      index = _player.audioSources.length;
+      await _player.addAudioSource(songToAudioSource(song));
     }
-    await _player.play();
+
+    await _player.seek(Duration.zero, index: index);
+    unawaited(_player.play());
   }
 
   Future<void> addMultipleAndPlay(List<Song> songs, {Song? startWith}) async {
@@ -182,7 +169,7 @@ class PlaybackController extends _$PlaybackController {
     } else {
       await _player.seek(Duration.zero, index: startIndex);
     }
-    await _player.play();
+    unawaited(_player.play());
   }
 
   Future<void> addAndPlayNext(Song song) async {
@@ -195,7 +182,7 @@ class PlaybackController extends _$PlaybackController {
       await _player.addAudioSource(source);
       await _player.seek(Duration.zero, index: 0);
     }
-    await _player.play();
+    unawaited(_player.play());
   }
 
   Future<void> addMultipleAndPlayNext(List<Song> songs,
@@ -220,7 +207,7 @@ class PlaybackController extends _$PlaybackController {
     } else {
       await _player.seekToNext();
     }
-    await _player.play();
+    unawaited(_player.play());
   }
 
   Future<void> replaceQueue(List<Song> songs, {Song? startWith}) async {
@@ -241,7 +228,7 @@ class PlaybackController extends _$PlaybackController {
 
     await _player.setShuffleModeEnabled(true);
     await _player.shuffle();
-    await _player.play();
+    unawaited(_player.play());
   }
 
   Future<void> removeFromQueue(int index) async {
