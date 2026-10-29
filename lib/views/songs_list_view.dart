@@ -5,7 +5,7 @@ import 'package:isar/isar.dart';
 import 'package:tunes/components/add_to_playlist_dialog.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/options_view.dart';
-import 'package:tunes/components/song_labels_dialog.dart';
+import 'package:tunes/components/song_labels_sheet.dart';
 import 'package:tunes/pages/song_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
@@ -493,14 +493,7 @@ class SongTileOptions extends ConsumerWidget {
             title: "Add to playlist",
           ),
           OptionsTile(
-            onTap: () async {
-              await showDialog(
-                context: context,
-                builder: (context) {
-                  return SongLabelsDialog(song: song);
-                },
-              );
-            },
+            onTap: () => showSongLabelsSheet(context, song),
             leading: FluentIcons.tag_24_regular,
             title: "Labels",
           ),

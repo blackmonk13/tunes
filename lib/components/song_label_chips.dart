@@ -1,7 +1,7 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:tunes/components/song_labels_dialog.dart';
+import 'package:tunes/components/song_labels_sheet.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/media_query.dart';
 
@@ -52,12 +52,7 @@ class SongLabelChips extends ConsumerWidget {
             labelStyle: labelStyle,
             side: outline,
             backgroundColor: Colors.transparent,
-            onPressed: () async {
-              await showDialog<void>(
-                context: context,
-                builder: (context) => SongLabelsDialog(song: song),
-              );
-            },
+            onPressed: () => showSongLabelsSheet(context, song),
           ),
         ],
       ),
