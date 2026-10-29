@@ -13,6 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tunes/models/filters/filters.dart';
+import 'package:tunes/utils/search_text.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:watcher/watcher.dart';
 
@@ -48,6 +49,15 @@ class Song {
 
   String? thumbnailPath;
   String? thumbnailMiniPath;
+
+  /// Folded "title artist album genre" text that song search matches against.
+  String searchKey = '';
+
+  /// Folded lyrics, empty when the file has none.
+  String lyricsKey = '';
+
+  /// The [searchIndexVersion] this song was indexed with.
+  int searchVersion = 0;
 
   Song({
     required this.title,
@@ -246,7 +256,10 @@ class AudioQuery {
       try {
         final songs = await _isar.songs.where().findAll();
         return {
-          for (var element in songs) element.filePath: element.lastModified
+          for (var element in songs)
+            element.filePath: element.searchVersion < searchIndexVersion
+                ? -1 // forces a re-read so the search text gets filled in
+                : element.lastModified
         };
       } catch (e) {
         _logger.e(e);
@@ -362,6 +375,38 @@ class AudioQuery {
     return value.toString();
   }
 
+  static void _applySearchIndex(
+    Song song,
+    Metadata metadata,
+    String artistName,
+    String albumTitle,
+    String genreName,
+  ) {
+    song
+      ..searchKey = foldForSearch(
+        '${song.title} $artistName $albumTitle $genreName',
+      )
+      ..lyricsKey = foldForSearch(_lyricsOf(metadata) ?? '')
+      ..searchVersion = searchIndexVersion;
+  }
+
+  /// MP4 files store lyrics under `lyrics`, ID3 files under
+  /// `unsynchronizedLyrics` (a map with the text under `text`).
+  static String? _lyricsOf(Metadata metadata) {
+    final plain = _ensureString(metadata.get('lyrics'));
+    if (plain != null && plain.isNotEmpty) return plain;
+
+    final unsynchronized = metadata.get('unsynchronizedLyrics');
+    if (unsynchronized is Map) return _ensureString(unsynchronized['text']);
+    if (unsynchronized is List) {
+      return unsynchronized
+          .map((entry) => entry is Map ? entry['text'] : entry)
+          .whereType<String>()
+          .join('\n');
+    }
+    return null;
+  }
+
   Future<void> _addOrUpdateSong(Metadata metadata) async {
     await _isar.writeTxn(() async {
       final thumbnailPaths = await _saveThumbnail(metadata);
@@ -397,6 +442,7 @@ class AudioQuery {
         ..size = metadata.get('size') ?? song.size
         ..thumbnailPath = thumbnailPaths.original ?? song.thumbnailPath
         ..thumbnailMiniPath = thumbnailPaths.mini ?? song.thumbnailMiniPath;
+      _applySearchIndex(song, metadata, artistName, albumTitle, genreName);
 
       song.artist.value = artist;
       song.album.value = album;
@@ -459,6 +505,7 @@ class AudioQuery {
             ..size = metadata.get('size') ?? song.size
             ..thumbnailPath = thumbnailPaths.original ?? song.thumbnailPath
             ..thumbnailMiniPath = thumbnailPaths.mini ?? song.thumbnailMiniPath;
+          _applySearchIndex(song, metadata, artistName, albumTitle, genreName);
 
           song.artist.value = artist;
           song.album.value = album;
@@ -555,10 +602,9 @@ class AudioQuery {
       }
 
       await _isar.songs.delete(song.id);
-     
     }
   }
-  
+
   Future<void> _removeSongTxn(String filePath) async {
     final song =
         await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
@@ -645,7 +691,8 @@ class AudioQuery {
     String? searchQuery,
     List<int> indices = const [],
   }) {
-    final withSearchQuery = searchQuery != null && searchQuery.isNotEmpty;
+    final tokens = searchQuery == null ? <String>[] : searchTokens(searchQuery);
+    final withSearchQuery = tokens.isNotEmpty;
     final withQueryType = ![
           SongQueryType.all,
           SongQueryType.playlist,
@@ -681,41 +728,16 @@ class AudioQuery {
                 .optional(
                   withSearchQuery,
                   (sq) {
-                    return sq
-                        .titleContains(
-                          searchQuery!,
-                          caseSensitive: false,
-                        )
-                        .or()
-                        .artist(
-                          (qar) {
-                            return qar
-                                .nameContains(searchQuery)
-                                .or()
-                                .descriptionContains(searchQuery);
-                          },
-                        )
-                        .or()
-                        .album(
-                          (qal) {
-                            return qal
-                                .titleContains(
-                                  searchQuery,
-                                  caseSensitive: false,
-                                )
-                                .or()
-                                .descriptionContains(searchQuery)
-                                .or()
-                                .artist(
-                              (qalar) {
-                                return qalar
-                                    .nameContains(searchQuery)
-                                    .or()
-                                    .descriptionContains(searchQuery);
-                              },
-                            );
-                          },
-                        );
+                    // Every word must appear somewhere in the metadata or the
+                    // lyrics, in any order.
+                    return sq.allOf(tokens, (qt, token) {
+                      return qt.group(
+                        (g) => g
+                            .searchKeyContains(token)
+                            .or()
+                            .lyricsKeyContains(token),
+                      );
+                    });
                   },
                 );
           },
