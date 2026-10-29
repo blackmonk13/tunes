@@ -27,6 +27,7 @@ part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
 part 'genres.dart';
+part 'labels.dart';
 part 'player.dart';
 part 'playback_session.dart';
 part 'playlists.dart';

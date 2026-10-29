@@ -49,6 +49,196 @@ final appStartupProvider = FutureProvider<void>.internal(
 );
 
 typedef AppStartupRef = FutureProviderRef<void>;
+String _$labelsWatcherHash() => r'0e9f9cf887ecbf815d49818bf20461e9c70e6dfe';
+
+/// See also [labelsWatcher].
+@ProviderFor(labelsWatcher)
+final labelsWatcherProvider = AutoDisposeStreamProvider<void>.internal(
+  labelsWatcher,
+  name: r'labelsWatcherProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$labelsWatcherHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef LabelsWatcherRef = AutoDisposeStreamProviderRef<void>;
+String _$labelsHash() => r'30d7ed12db2f29b60156921b20cc6aa178d3315d';
+
+/// See also [labels].
+@ProviderFor(labels)
+final labelsProvider = AutoDisposeFutureProvider<List<Label>>.internal(
+  labels,
+  name: r'labelsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$labelsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef LabelsRef = AutoDisposeFutureProviderRef<List<Label>>;
+String _$songLabelIdsHash() => r'314ec0bee1f1d325495a776ae6488ed89fbabc5d';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// The ids of the labels attached to the song with [songId].
+///
+/// Copied from [songLabelIds].
+@ProviderFor(songLabelIds)
+const songLabelIdsProvider = SongLabelIdsFamily();
+
+/// The ids of the labels attached to the song with [songId].
+///
+/// Copied from [songLabelIds].
+class SongLabelIdsFamily extends Family<AsyncValue<Set<int>>> {
+  /// The ids of the labels attached to the song with [songId].
+  ///
+  /// Copied from [songLabelIds].
+  const SongLabelIdsFamily();
+
+  /// The ids of the labels attached to the song with [songId].
+  ///
+  /// Copied from [songLabelIds].
+  SongLabelIdsProvider call(
+    int songId,
+  ) {
+    return SongLabelIdsProvider(
+      songId,
+    );
+  }
+
+  @override
+  SongLabelIdsProvider getProviderOverride(
+    covariant SongLabelIdsProvider provider,
+  ) {
+    return call(
+      provider.songId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'songLabelIdsProvider';
+}
+
+/// The ids of the labels attached to the song with [songId].
+///
+/// Copied from [songLabelIds].
+class SongLabelIdsProvider extends AutoDisposeFutureProvider<Set<int>> {
+  /// The ids of the labels attached to the song with [songId].
+  ///
+  /// Copied from [songLabelIds].
+  SongLabelIdsProvider(
+    int songId,
+  ) : this._internal(
+          (ref) => songLabelIds(
+            ref as SongLabelIdsRef,
+            songId,
+          ),
+          from: songLabelIdsProvider,
+          name: r'songLabelIdsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$songLabelIdsHash,
+          dependencies: SongLabelIdsFamily._dependencies,
+          allTransitiveDependencies:
+              SongLabelIdsFamily._allTransitiveDependencies,
+          songId: songId,
+        );
+
+  SongLabelIdsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.songId,
+  }) : super.internal();
+
+  final int songId;
+
+  @override
+  Override overrideWith(
+    FutureOr<Set<int>> Function(SongLabelIdsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SongLabelIdsProvider._internal(
+        (ref) => create(ref as SongLabelIdsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        songId: songId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<Set<int>> createElement() {
+    return _SongLabelIdsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SongLabelIdsProvider && other.songId == songId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, songId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SongLabelIdsRef on AutoDisposeFutureProviderRef<Set<int>> {
+  /// The parameter `songId` of this provider.
+  int get songId;
+}
+
+class _SongLabelIdsProviderElement
+    extends AutoDisposeFutureProviderElement<Set<int>> with SongLabelIdsRef {
+  _SongLabelIdsProviderElement(super.provider);
+
+  @override
+  int get songId => (origin as SongLabelIdsProvider).songId;
+}
+
 String _$audioPlayerHash() => r'98f6e2d720cf9b635687e9ef8797288f103dcd48';
 
 /// See also [audioPlayer].
@@ -237,27 +427,6 @@ final playlistsWatcherProvider = AutoDisposeStreamProvider<void>.internal(
 
 typedef PlaylistsWatcherRef = AutoDisposeStreamProviderRef<void>;
 String _$songWithIdHash() => r'910afa630ad84fe729d944bf8884f3e9052d9c4c';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
 
 /// See also [songWithId].
 @ProviderFor(songWithId)
@@ -708,6 +877,22 @@ final searchHistoryProvider =
 );
 
 typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
+String _$labelsControllerHash() => r'b845644833c7aec3e9ee3563f4ebfeba8027beb3';
+
+/// See also [LabelsController].
+@ProviderFor(LabelsController)
+final labelsControllerProvider =
+    AutoDisposeNotifierProvider<LabelsController, void>.internal(
+  LabelsController.new,
+  name: r'labelsControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$labelsControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LabelsController = AutoDisposeNotifier<void>;
 String _$playbackControllerHash() =>
     r'4917f65c8d363b3c26c95874c11811977a582c3c';
 
