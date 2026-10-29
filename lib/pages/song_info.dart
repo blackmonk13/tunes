@@ -8,12 +8,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:mpeg_codec/mpeg_codec.dart' hide formatDuration;
+import 'package:tunes/components/cover_carousel.dart';
 import 'package:tunes/components/dialog_form.dart';
-import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/functions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/utils/song_covers.dart';
 
 class SongInfo extends HookConsumerWidget {
   final Song song;
@@ -106,19 +107,11 @@ class SongInfo extends HookConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
-          SliverAppBar(
-            expandedHeight: 300,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Thumbnail(
-                thumbnail: song.thumbnailPath,
-                width: context.shortestSide,
-                height: context.shortestSide,
-                filterQuality: FilterQuality.high,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20.0),
-                  bottomRight: Radius.circular(20.0),
-                ),
-              ),
+          const SliverAppBar(pinned: true),
+          SliverToBoxAdapter(
+            child: CoverCarousel(
+              song: song,
+              height: context.shortestSide * .75,
             ),
           ),
           SliverPadding(
@@ -160,7 +153,7 @@ class SongInfo extends HookConsumerWidget {
       return metadata
           .asMap()
           .entries
-          .where((e) => !['cover', 'picture'].contains(e.key))
+          .where((e) => !isBinaryMetadata(e.value))
           .map((entry) {
         return (
           title: camelToSentence(entry.key),
