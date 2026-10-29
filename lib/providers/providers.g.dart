@@ -49,7 +49,7 @@ final appStartupProvider = FutureProvider<void>.internal(
 );
 
 typedef AppStartupRef = FutureProviderRef<void>;
-String _$sortedArtistsHash() => r'a15fa9d6c2074d57ad85d5ea495ffdb470731868';
+String _$songCoversHash() => r'fba721aa62cbd2bc60331f938b1b1d066666097a';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -71,6 +71,159 @@ class _SystemHash {
     return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
   }
 }
+
+/// Every cover embedded in the audio file at [filePath].
+///
+/// The file is read in another isolate, so large tags do not block the UI.
+///
+/// Copied from [songCovers].
+@ProviderFor(songCovers)
+const songCoversProvider = SongCoversFamily();
+
+/// Every cover embedded in the audio file at [filePath].
+///
+/// The file is read in another isolate, so large tags do not block the UI.
+///
+/// Copied from [songCovers].
+class SongCoversFamily extends Family<AsyncValue<List<SongCover>>> {
+  /// Every cover embedded in the audio file at [filePath].
+  ///
+  /// The file is read in another isolate, so large tags do not block the UI.
+  ///
+  /// Copied from [songCovers].
+  const SongCoversFamily();
+
+  /// Every cover embedded in the audio file at [filePath].
+  ///
+  /// The file is read in another isolate, so large tags do not block the UI.
+  ///
+  /// Copied from [songCovers].
+  SongCoversProvider call(
+    String filePath,
+  ) {
+    return SongCoversProvider(
+      filePath,
+    );
+  }
+
+  @override
+  SongCoversProvider getProviderOverride(
+    covariant SongCoversProvider provider,
+  ) {
+    return call(
+      provider.filePath,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'songCoversProvider';
+}
+
+/// Every cover embedded in the audio file at [filePath].
+///
+/// The file is read in another isolate, so large tags do not block the UI.
+///
+/// Copied from [songCovers].
+class SongCoversProvider extends AutoDisposeFutureProvider<List<SongCover>> {
+  /// Every cover embedded in the audio file at [filePath].
+  ///
+  /// The file is read in another isolate, so large tags do not block the UI.
+  ///
+  /// Copied from [songCovers].
+  SongCoversProvider(
+    String filePath,
+  ) : this._internal(
+          (ref) => songCovers(
+            ref as SongCoversRef,
+            filePath,
+          ),
+          from: songCoversProvider,
+          name: r'songCoversProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$songCoversHash,
+          dependencies: SongCoversFamily._dependencies,
+          allTransitiveDependencies:
+              SongCoversFamily._allTransitiveDependencies,
+          filePath: filePath,
+        );
+
+  SongCoversProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.filePath,
+  }) : super.internal();
+
+  final String filePath;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<SongCover>> Function(SongCoversRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SongCoversProvider._internal(
+        (ref) => create(ref as SongCoversRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        filePath: filePath,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<SongCover>> createElement() {
+    return _SongCoversProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SongCoversProvider && other.filePath == filePath;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, filePath.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SongCoversRef on AutoDisposeFutureProviderRef<List<SongCover>> {
+  /// The parameter `filePath` of this provider.
+  String get filePath;
+}
+
+class _SongCoversProviderElement
+    extends AutoDisposeFutureProviderElement<List<SongCover>>
+    with SongCoversRef {
+  _SongCoversProviderElement(super.provider);
+
+  @override
+  String get filePath => (origin as SongCoversProvider).filePath;
+}
+
+String _$sortedArtistsHash() => r'a15fa9d6c2074d57ad85d5ea495ffdb470731868';
 
 /// See also [sortedArtists].
 @ProviderFor(sortedArtists)
@@ -1434,6 +1587,22 @@ final searchHistoryProvider =
 );
 
 typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
+String _$coversControllerHash() => r'c05f2310531818eadf5632bb509e12e7b1cf6c28';
+
+/// See also [CoversController].
+@ProviderFor(CoversController)
+final coversControllerProvider =
+    AutoDisposeNotifierProvider<CoversController, void>.internal(
+  CoversController.new,
+  name: r'coversControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$coversControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CoversController = AutoDisposeNotifier<void>;
 String _$groupSortOrderHash() => r'8cdc6d230b6e5da19f9f5c60e507ba8f6f4fd6b2';
 
 abstract class _$GroupSortOrder

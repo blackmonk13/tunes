@@ -3,6 +3,7 @@ library providers;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/material.dart' hide MediaQuery;
 import 'package:flutter/services.dart';
@@ -23,10 +24,12 @@ import 'package:tunes/utils/constants.dart';
 import 'package:tunes/utils/group_sort.dart';
 import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/utils/prefs.dart';
+import 'package:tunes/utils/song_covers.dart';
 
 part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
+part 'covers.dart';
 part 'genres.dart';
 part 'groups.dart';
 part 'labels.dart';
