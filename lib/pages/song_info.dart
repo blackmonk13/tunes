@@ -90,6 +90,23 @@ class SongInfo extends HookConsumerWidget {
         editable: false,
       ),
       (
+        title: 'Plays',
+        name: 'playCount',
+        value: song.playCount,
+        editable: false,
+      ),
+      (
+        title: 'Last Played',
+        name: 'lastPlayedAt',
+        value: song.lastPlayedAt == 0
+            ? 'Never'
+            : DateTime.fromMillisecondsSinceEpoch(song.lastPlayedAt)
+                .toString()
+                .split('.')
+                .first,
+        editable: false,
+      ),
+      (
         title: 'File Size',
         name: 'size',
         value: formatFileSize(song.size.toString()),

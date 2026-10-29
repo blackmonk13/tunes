@@ -118,14 +118,11 @@ class SortOrderView extends ConsumerWidget {
               dense: true,
               controlAffinity: ListTileControlAffinity.trailing,
               title: Text(
-                sortType
-                    .toString()
-                    .split('.')
-                    .last
-                    .split('_')
-                    .join(' ')
-                    .toLowerCase()
-                    .toCamelCase,
+                switch (sortType) {
+                  SongsSortType.recentlyPlayed => 'Recently played',
+                  SongsSortType.playCount => 'Play count',
+                  _ => sortType.name.toCamelCase,
+                },
               ),
               value: sortType,
               groupValue: songsSortOrder.sortType,

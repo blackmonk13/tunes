@@ -59,6 +59,14 @@ class Song {
   /// The [searchIndexVersion] this song was indexed with.
   int searchVersion = 0;
 
+  /// How many times the song was listened to for long enough to count.
+  @Index(type: IndexType.value)
+  int playCount = 0;
+
+  /// Milliseconds since the epoch of the last counted play, 0 when never.
+  @Index(type: IndexType.value)
+  int lastPlayedAt = 0;
+
   /// The user's own labels on this song.
   @Backlink(to: 'songs')
   final labels = IsarLinks<Label>();
@@ -192,6 +200,8 @@ enum SongsSortType {
   modified,
   duration,
   size,
+  recentlyPlayed,
+  playCount,
   none,
 }
 
@@ -779,6 +789,10 @@ class AudioQuery {
                   return qs.sortByDuration();
                 case SongsSortType.size:
                   return qs.sortBySize();
+                case SongsSortType.recentlyPlayed:
+                  return qs.sortByLastPlayedAt();
+                case SongsSortType.playCount:
+                  return qs.sortByPlayCount();
                 case SongsSortType.modified:
                 default:
                   return qs.sortByLastModified();
@@ -791,6 +805,10 @@ class AudioQuery {
                   return qs.sortByDurationDesc();
                 case SongsSortType.size:
                   return qs.sortBySizeDesc();
+                case SongsSortType.recentlyPlayed:
+                  return qs.sortByLastPlayedAtDesc();
+                case SongsSortType.playCount:
+                  return qs.sortByPlayCountDesc();
                 case SongsSortType.modified:
                 default:
                   return qs.sortByLastModifiedDesc();
