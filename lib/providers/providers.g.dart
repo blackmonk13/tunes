@@ -35,7 +35,7 @@ final eulaAcceptedProvider = Provider<bool>.internal(
 );
 
 typedef EulaAcceptedRef = ProviderRef<bool>;
-String _$appStartupHash() => r'a9bdb12b534b0776217cc57dd1c788c1e2f2b23b';
+String _$appStartupHash() => r'2ba814598e79496e4beb6fc00f19f18022730f77';
 
 /// See also [appStartup].
 @ProviderFor(appStartup)
@@ -202,6 +202,25 @@ final nowPlayingSongsProvider = FutureProvider<List<Song>>.internal(
 );
 
 typedef NowPlayingSongsRef = FutureProviderRef<List<Song>>;
+String _$playbackSessionHash() => r'80cf8e5649e8665b1f4e615b81db2c59c54b0fe0';
+
+/// Restores the last queue into the player (paused), then keeps saving it.
+///
+/// Must be awaited at startup after Isar and shared preferences are ready.
+///
+/// Copied from [playbackSession].
+@ProviderFor(playbackSession)
+final playbackSessionProvider = FutureProvider<void>.internal(
+  playbackSession,
+  name: r'playbackSessionProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playbackSessionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlaybackSessionRef = FutureProviderRef<void>;
 String _$playlistsWatcherHash() => r'a4ba3f613a00f4aecb2deaf69010b228aad81184';
 
 /// See also [playlistsWatcher].
@@ -690,7 +709,7 @@ final searchHistoryProvider =
 
 typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
 String _$playbackControllerHash() =>
-    r'a9d37d7e31cb31b803241922bb74c0a3a8b2391b';
+    r'4917f65c8d363b3c26c95874c11811977a582c3c';
 
 /// See also [PlaybackController].
 @ProviderFor(PlaybackController)
