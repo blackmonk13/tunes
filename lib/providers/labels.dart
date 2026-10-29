@@ -25,6 +25,19 @@ Future<Set<int>> songLabelIds(SongLabelIdsRef ref, int songId) async {
   return song.labels.map((label) => label.id).toSet();
 }
 
+/// The labels attached to the song with [songId], sorted by name.
+@riverpod
+Future<List<Label>> songLabels(SongLabelsRef ref, int songId) async {
+  ref.watch(labelsWatcherProvider);
+  final isar = ref.watch(isarProvider).requireValue;
+  final song = await isar.songs.get(songId);
+  if (song == null) return [];
+
+  await song.labels.load();
+  return song.labels.toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+}
+
 @riverpod
 class LabelsController extends _$LabelsController {
   @override
@@ -62,6 +75,10 @@ class LabelsController extends _$LabelsController {
         ..addAll(selected.whereType<Label>());
       await song.labels.save();
     });
+
+    // Changing links may not wake the labels watcher, so refresh explicitly.
+    ref.invalidate(songLabelsProvider(song.id));
+    ref.invalidate(songLabelIdsProvider(song.id));
   }
 
   Future<bool> delete(int labelId) async {
