@@ -35,7 +35,7 @@ final eulaAcceptedProvider = Provider<bool>.internal(
 );
 
 typedef EulaAcceptedRef = ProviderRef<bool>;
-String _$appStartupHash() => r'2ba814598e79496e4beb6fc00f19f18022730f77';
+String _$appStartupHash() => r'4d5e454e8ad96ae70de1c57d1280781cceb7fd6c';
 
 /// See also [appStartup].
 @ProviderFor(appStartup)
@@ -1102,6 +1102,25 @@ final queueEntriesProvider = FutureProvider<List<QueueEntry>>.internal(
 );
 
 typedef QueueEntriesRef = FutureProviderRef<List<QueueEntry>>;
+String _$playHistoryHash() => r'7e72a1bdb2e5e4832f6e518cc85bbbcf3d94c5dd';
+
+/// Counts a play on a song once it has been listened to for long enough, and
+/// stamps the time, so the songs can be sorted by what was played.
+///
+/// Must be started at startup after Isar is ready.
+///
+/// Copied from [playHistory].
+@ProviderFor(playHistory)
+final playHistoryProvider = Provider<void>.internal(
+  playHistory,
+  name: r'playHistoryProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$playHistoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayHistoryRef = ProviderRef<void>;
 String _$playbackSessionHash() => r'80cf8e5649e8665b1f4e615b81db2c59c54b0fe0';
 
 /// Restores the last queue into the player (paused), then keeps saving it.

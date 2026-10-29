@@ -70,6 +70,7 @@ Future<void> appStartup(AppStartupRef ref) async {
   await ref.watch(isarProvider.future);
   await ref.watch(thumbnailDirectoryProvider.future);
   await ref.watch(playbackSessionProvider.future);
+  ref.watch(playHistoryProvider);
   ref.watch(indexingControllerProvider.future);
 }
 
