@@ -931,7 +931,7 @@ packages:
       path: "../../dart/mpeg_codec"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "2.0.0"
   objective_c:
     dependency: transitive
     description:
