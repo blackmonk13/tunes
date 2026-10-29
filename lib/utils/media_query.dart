@@ -59,6 +59,10 @@ class Song {
   /// The [searchIndexVersion] this song was indexed with.
   int searchVersion = 0;
 
+  /// The user's own labels on this song.
+  @Backlink(to: 'songs')
+  final labels = IsarLinks<Label>();
+
   Song({
     required this.title,
     required this.filePath,
@@ -68,6 +72,17 @@ class Song {
     this.thumbnailPath,
     this.thumbnailMiniPath,
   });
+}
+
+/// A user-defined tag that can be attached to any number of songs.
+@collection
+class Label {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, caseSensitive: false, type: IndexType.value)
+  late String name;
+
+  final songs = IsarLinks<Song>();
 }
 
 @collection
@@ -728,14 +743,21 @@ class AudioQuery {
                 .optional(
                   withSearchQuery,
                   (sq) {
-                    // Every word must appear somewhere in the metadata or the
-                    // lyrics, in any order.
+                    // Every word must appear somewhere in the metadata, the
+                    // lyrics or a label, in any order.
                     return sq.allOf(tokens, (qt, token) {
                       return qt.group(
                         (g) => g
                             .searchKeyContains(token)
                             .or()
-                            .lyricsKeyContains(token),
+                            .lyricsKeyContains(token)
+                            .or()
+                            .labels(
+                              (l) => l.nameContains(
+                                token,
+                                caseSensitive: false,
+                              ),
+                            ),
                       );
                     });
                   },
@@ -888,7 +910,14 @@ class AudioQuery {
 FutureOr<Isar> isar(IsarRef ref) async {
   final dir = await getApplicationSupportDirectory();
   final isar = await Isar.open(
-    [SongSchema, ArtistSchema, AlbumSchema, GenreSchema, PlaylistSchema],
+    [
+      SongSchema,
+      ArtistSchema,
+      AlbumSchema,
+      GenreSchema,
+      PlaylistSchema,
+      LabelSchema,
+    ],
     directory: dir.path,
     inspector: false,
   );
