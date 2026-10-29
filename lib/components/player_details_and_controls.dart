@@ -6,8 +6,10 @@ import 'package:tunes/components/now_playing_view.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/components/player_controls.dart';
 import 'package:tunes/components/scrolling_text.dart';
+import 'package:tunes/components/song_label_chips.dart';
 import 'package:tunes/pages/album_info.dart';
 import 'package:tunes/pages/artist_info.dart';
+import 'package:tunes/pages/label_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -73,6 +75,14 @@ class PlayerDetailsAndControls extends ConsumerWidget {
                       context,
                       AlbumInfoPage(album: album),
                     ),
+          ),
+          SongLabelChips(
+            song: song!,
+            fgColor: fgColor,
+            onOpenLabel: (label) => _openFromPlayer(
+              context,
+              LabelInfoPage(label: label),
+            ),
           ),
         ],
         PlayerProgressBar(

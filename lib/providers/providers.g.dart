@@ -624,6 +624,146 @@ class _SongLabelIdsProviderElement
   int get songId => (origin as SongLabelIdsProvider).songId;
 }
 
+String _$songLabelsHash() => r'ae9412ec85bfb2e995b498d09560ddf157a139bd';
+
+/// The labels attached to the song with [songId], sorted by name.
+///
+/// Copied from [songLabels].
+@ProviderFor(songLabels)
+const songLabelsProvider = SongLabelsFamily();
+
+/// The labels attached to the song with [songId], sorted by name.
+///
+/// Copied from [songLabels].
+class SongLabelsFamily extends Family<AsyncValue<List<Label>>> {
+  /// The labels attached to the song with [songId], sorted by name.
+  ///
+  /// Copied from [songLabels].
+  const SongLabelsFamily();
+
+  /// The labels attached to the song with [songId], sorted by name.
+  ///
+  /// Copied from [songLabels].
+  SongLabelsProvider call(
+    int songId,
+  ) {
+    return SongLabelsProvider(
+      songId,
+    );
+  }
+
+  @override
+  SongLabelsProvider getProviderOverride(
+    covariant SongLabelsProvider provider,
+  ) {
+    return call(
+      provider.songId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'songLabelsProvider';
+}
+
+/// The labels attached to the song with [songId], sorted by name.
+///
+/// Copied from [songLabels].
+class SongLabelsProvider extends AutoDisposeFutureProvider<List<Label>> {
+  /// The labels attached to the song with [songId], sorted by name.
+  ///
+  /// Copied from [songLabels].
+  SongLabelsProvider(
+    int songId,
+  ) : this._internal(
+          (ref) => songLabels(
+            ref as SongLabelsRef,
+            songId,
+          ),
+          from: songLabelsProvider,
+          name: r'songLabelsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$songLabelsHash,
+          dependencies: SongLabelsFamily._dependencies,
+          allTransitiveDependencies:
+              SongLabelsFamily._allTransitiveDependencies,
+          songId: songId,
+        );
+
+  SongLabelsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.songId,
+  }) : super.internal();
+
+  final int songId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Label>> Function(SongLabelsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SongLabelsProvider._internal(
+        (ref) => create(ref as SongLabelsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        songId: songId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Label>> createElement() {
+    return _SongLabelsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SongLabelsProvider && other.songId == songId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, songId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SongLabelsRef on AutoDisposeFutureProviderRef<List<Label>> {
+  /// The parameter `songId` of this provider.
+  int get songId;
+}
+
+class _SongLabelsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Label>> with SongLabelsRef {
+  _SongLabelsProviderElement(super.provider);
+
+  @override
+  int get songId => (origin as SongLabelsProvider).songId;
+}
+
 String _$audioPlayerHash() => r'98f6e2d720cf9b635687e9ef8797288f103dcd48';
 
 /// See also [audioPlayer].
@@ -1458,7 +1598,7 @@ class _GroupSortOrderProviderElement extends NotifierProviderElement<
   GroupKind get kind => (origin as GroupSortOrderProvider).kind;
 }
 
-String _$labelsControllerHash() => r'b845644833c7aec3e9ee3563f4ebfeba8027beb3';
+String _$labelsControllerHash() => r'ffabc679ec15817cdf1c288acd5a30aec03db5aa';
 
 /// See also [LabelsController].
 @ProviderFor(LabelsController)

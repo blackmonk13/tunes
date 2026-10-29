@@ -201,6 +201,7 @@ enum SongQueryType {
   album,
   genre,
   playlist,
+  label,
 }
 
 class AudioQuery {
@@ -735,6 +736,10 @@ class AudioQuery {
                       return qt.artist((qar) => qar.nameEqualTo(query!));
                     case SongQueryType.genre:
                       return qt.genre((qg) => qg.nameEqualTo(query!));
+                    case SongQueryType.label:
+                      return qt.labels(
+                        (ql) => ql.nameEqualTo(query!, caseSensitive: false),
+                      );
                     default:
                       return qt.filePathIsNotEmpty();
                   }
