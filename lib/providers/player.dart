@@ -97,10 +97,15 @@ class PlaybackController extends _$PlaybackController {
   // never awaited here: callers (such as a bottom sheet closing after its
   // action) would otherwise wait for the song to finish.
 
-  AudioPlayer get _player => ref.read(audioPlayerProvider);
+  // Held in a field, not read through `ref` on each use: this controller
+  // rebuilds whenever the queue changes, and `ref.read` throws between a
+  // dependency changing and the rebuild, which a method that edits the queue
+  // and then uses the player again would hit.
+  late AudioPlayer _player;
 
   @override
   FutureOr<List<int>> build() async {
+    _player = ref.watch(audioPlayerProvider);
     final sequence = await ref.watch(playlistSequenceProvider.future);
 
     return sequence?.map(songIdOf).toList() ?? [];
