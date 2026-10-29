@@ -1,4 +1,3 @@
-
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -6,6 +5,9 @@ import 'package:like_button/like_button.dart';
 import 'package:tunes/components/now_playing_view.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/components/player_controls.dart';
+import 'package:tunes/components/scrolling_text.dart';
+import 'package:tunes/pages/album_info.dart';
+import 'package:tunes/pages/artist_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -21,18 +23,31 @@ class PlayerDetailsAndControls extends ConsumerWidget {
   final Color? fgColor;
   final Color? bgColor;
 
+  /// Closes the full player sheet, then opens [page] on the app's navigator.
+  void _openFromPlayer(BuildContext context, Widget page) {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(routeTo(page: page));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final artist = song?.artist.value;
+    final album = song?.album.value;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (song != null) ...[
-          DetailsText(
-            text: song?.title,
-            style: context.textTheme.displayMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              color: fgColor,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: ScrollingText(
+              song?.title ?? "Unknown",
+              style: context.textTheme.displayMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: fgColor,
+              ),
             ),
           ),
           DetailsText(
@@ -40,13 +55,25 @@ class PlayerDetailsAndControls extends ConsumerWidget {
             style: context.textTheme.headlineSmall?.copyWith(
               color: fgColor,
             ),
+            onTap: artist == null
+                ? null
+                : () => _openFromPlayer(
+                      context,
+                      ArtistInfoPage(artist: artist),
+                    ),
           ),
-          // DetailsText(
-          //   text: song?.album,
-          //   style: context.textTheme.headlineSmall?.copyWith(
-          //     color: fgColor,
-          //   ),
-          // ),
+          DetailsText(
+            text: song?.album.value?.title,
+            style: context.textTheme.titleMedium?.copyWith(
+              color: fgColor?.withOpacity(.8),
+            ),
+            onTap: album == null
+                ? null
+                : () => _openFromPlayer(
+                      context,
+                      AlbumInfoPage(album: album),
+                    ),
+          ),
         ],
         PlayerProgressBar(
           color: fgColor,
@@ -151,22 +178,32 @@ class DetailsText extends StatelessWidget {
     super.key,
     this.text,
     this.style,
+    this.onTap,
   });
   final String? text;
   final TextStyle? style;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final label = Text(
+      text ?? "Unknown",
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 16.0,
       ),
-      child: Text(
-        text ?? "Unknown",
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: style,
-      ),
+      child: onTap == null
+          ? label
+          : InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8.0),
+              child: label,
+            ),
     );
   }
 }
