@@ -375,6 +375,22 @@ final playerShuffleModeEnabledProvider = StreamProvider<bool>.internal(
 );
 
 typedef PlayerShuffleModeEnabledRef = StreamProviderRef<bool>;
+String _$playerShuffleIndicesHash() =>
+    r'b193edaefb5a890fd7cc167027fef31ad3369e7c';
+
+/// See also [playerShuffleIndices].
+@ProviderFor(playerShuffleIndices)
+final playerShuffleIndicesProvider = StreamProvider<List<int>>.internal(
+  playerShuffleIndices,
+  name: r'playerShuffleIndicesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$playerShuffleIndicesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PlayerShuffleIndicesRef = StreamProviderRef<List<int>>;
 String _$nowPlayingSongsHash() => r'00ae20c2331992cb77e0aa5e67353bd21bacf97e';
 
 /// The songs currently in the player queue, in playlist order.
@@ -392,6 +408,22 @@ final nowPlayingSongsProvider = FutureProvider<List<Song>>.internal(
 );
 
 typedef NowPlayingSongsRef = FutureProviderRef<List<Song>>;
+String _$queueEntriesHash() => r'2c4ec17e5860b536c35f5cddbbdf352935fa9847';
+
+/// The queue in playback order: the shuffle order when shuffle is on.
+///
+/// Copied from [queueEntries].
+@ProviderFor(queueEntries)
+final queueEntriesProvider = FutureProvider<List<QueueEntry>>.internal(
+  queueEntries,
+  name: r'queueEntriesProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$queueEntriesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef QueueEntriesRef = FutureProviderRef<List<QueueEntry>>;
 String _$playbackSessionHash() => r'80cf8e5649e8665b1f4e615b81db2c59c54b0fe0';
 
 /// Restores the last queue into the player (paused), then keeps saving it.
@@ -894,7 +926,7 @@ final labelsControllerProvider =
 
 typedef _$LabelsController = AutoDisposeNotifier<void>;
 String _$playbackControllerHash() =>
-    r'4917f65c8d363b3c26c95874c11811977a582c3c';
+    r'27f018116487c8dc80693ac55d14f7e4c216c31b';
 
 /// See also [PlaybackController].
 @ProviderFor(PlaybackController)

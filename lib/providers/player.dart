@@ -52,6 +52,11 @@ Stream<bool> playerShuffleModeEnabled(PlayerShuffleModeEnabledRef ref) {
   return ref.watch(audioPlayerProvider).shuffleModeEnabledStream;
 }
 
+@Riverpod(keepAlive: true)
+Stream<List<int>> playerShuffleIndices(PlayerShuffleIndicesRef ref) {
+  return ref.watch(audioPlayerProvider).shuffleIndicesStream;
+}
+
 /// Builds the [AudioSource] for [song]. The [MediaItem] tag carries the song id
 /// so the queue can be mapped back to Isar [Song]s (see [songIdOf]).
 UriAudioSource songToAudioSource(Song song) {
@@ -89,6 +94,42 @@ Future<List<Song>> nowPlayingSongs(NowPlayingSongsRef ref) async {
       .getAll(sequence.map(songIdOf).toList());
 
   return songs.whereType<Song>().toList();
+}
+
+/// One row of the queue: its position in the player's playlist and its song.
+///
+/// The same song can be in the queue more than once, so rows are told apart by
+/// [index], not by song id.
+class QueueEntry {
+  const QueueEntry({required this.index, required this.song});
+
+  /// The index of this item in the player's playlist (what `seek` and
+  /// `removeAudioSourceAt` take), not its place in the playback order.
+  final int index;
+  final Song song;
+}
+
+/// The queue in playback order: the shuffle order when shuffle is on.
+@Riverpod(keepAlive: true)
+Future<List<QueueEntry>> queueEntries(QueueEntriesRef ref) async {
+  // Everything is watched before the first await, which Riverpod requires.
+  final player = ref.watch(audioPlayerProvider);
+  final isar = ref.watch(isarProvider).requireValue;
+  ref.watch(playlistSequenceProvider);
+  ref.watch(playerShuffleModeEnabledProvider);
+  ref.watch(playerShuffleIndicesProvider);
+
+  // Read the player once so the sequence and the order are from the same moment.
+  final sequence = player.sequence;
+  final order = player.effectiveIndices;
+  if (sequence.isEmpty) return [];
+
+  final songs = await isar.songs.getAll(sequence.map(songIdOf).toList());
+
+  return [
+    for (final index in order)
+      if (songs[index] != null) QueueEntry(index: index, song: songs[index]!),
+  ];
 }
 
 @Riverpod(keepAlive: true)
@@ -265,6 +306,12 @@ class PlaybackController extends _$PlaybackController {
   Future<void> clearQueue() async {
     await _player.stop();
     await _player.clearAudioSources();
+  }
+
+  /// Jumps to the queue item at playlist [index] and plays it.
+  Future<void> playQueueItem(int index) async {
+    await _player.seek(Duration.zero, index: index);
+    unawaited(_player.play());
   }
 
   Future<void> skipToQueueItem(int index) async {
