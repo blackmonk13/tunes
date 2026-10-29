@@ -20,6 +20,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tunes/models/filters/filters.dart';
 import 'package:tunes/utils/constants.dart';
+import 'package:tunes/utils/group_sort.dart';
 import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/utils/prefs.dart';
 
@@ -27,6 +28,7 @@ part 'albums.dart';
 part 'artists.dart';
 part 'common.dart';
 part 'genres.dart';
+part 'groups.dart';
 part 'labels.dart';
 part 'player.dart';
 part 'playback_session.dart';
