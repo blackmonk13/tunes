@@ -46,5 +46,3 @@ app.*.map.json
 *.g.dart
 suggest.md
 .vscode/comments.json
-suggestions.md
-notes.md
