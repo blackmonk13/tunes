@@ -1069,27 +1069,17 @@ FutureOr<int> albumsCount(
 @riverpod
 class AlbumsQuery extends _$AlbumsQuery {
   @override
-  FutureOr<List<Album>> build(
+  Future<List<Album>> build(
     int limit,
     int offset, {
     SongQueryType queryType = SongQueryType.all,
     String? query,
     String? searchQuery,
-  }) {
-    // final songsSortOrder = ref.watch(
-    //   songsSortOrderProvider(
-    //     SongQueryType.all,
-    //   ),
-    // );
-    return ref
-        .watch(mediaQueryProvider)
-        .queryAlbums(
-          limit: limit,
-          offset: offset,
-          // sort: songsSortOrder.orderType,
-          searchQuery: searchQuery,
-        )
-        .findAll();
+  }) async {
+    final albums = await ref.watch(
+      sortedAlbumsProvider(searchQuery: searchQuery).future,
+    );
+    return albums.skip(offset).take(limit).toList();
   }
 }
 
@@ -1125,19 +1115,15 @@ FutureOr<int> artistsCount(
 @riverpod
 class ArtistsQuery extends _$ArtistsQuery {
   @override
-  FutureOr<List<Artist>> build(
+  Future<List<Artist>> build(
     int limit,
     int offset, {
     String? searchQuery,
-  }) {
-    return ref
-        .watch(mediaQueryProvider)
-        .queryArtists(
-          limit: limit,
-          offset: offset,
-          searchQuery: searchQuery,
-        )
-        .findAll();
+  }) async {
+    final artists = await ref.watch(
+      sortedArtistsProvider(searchQuery: searchQuery).future,
+    );
+    return artists.skip(offset).take(limit).toList();
   }
 }
 
@@ -1173,18 +1159,14 @@ FutureOr<int> genresCount(
 @riverpod
 class GenresQuery extends _$GenresQuery {
   @override
-  FutureOr<List<Genre>> build(
+  Future<List<Genre>> build(
     int limit,
     int offset, {
     String? searchQuery,
-  }) {
-    return ref
-        .watch(mediaQueryProvider)
-        .queryGenres(
-          limit: limit,
-          offset: offset,
-          searchQuery: searchQuery,
-        )
-        .findAll();
+  }) async {
+    final genres = await ref.watch(
+      sortedGenresProvider(searchQuery: searchQuery).future,
+    );
+    return genres.skip(offset).take(limit).toList();
   }
 }

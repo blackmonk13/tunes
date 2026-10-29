@@ -5,7 +5,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
+import 'package:tunes/components/group_sort_view.dart';
+import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/group_sort.dart';
 
 import 'package:tunes/pages/genre_info.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -20,9 +23,20 @@ class GenresView extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollController = useScrollController();
-    return GenresListView(
-      searchQuery: searchQuery,
-      scrollController: scrollController,
+    final count =
+        ref.watch(genresCountProvider(searchQuery: searchQuery)).valueOrNull;
+
+    return Column(
+      children: [
+        GroupSortHeader(kind: GroupKind.genres, count: count),
+        const Divider(height: 1.5),
+        Expanded(
+          child: GenresListView(
+            searchQuery: searchQuery,
+            scrollController: scrollController,
+          ),
+        ),
+      ],
     );
   }
 }

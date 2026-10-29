@@ -49,6 +49,412 @@ final appStartupProvider = FutureProvider<void>.internal(
 );
 
 typedef AppStartupRef = FutureProviderRef<void>;
+String _$sortedArtistsHash() => r'a15fa9d6c2074d57ad85d5ea495ffdb470731868';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// See also [sortedArtists].
+@ProviderFor(sortedArtists)
+const sortedArtistsProvider = SortedArtistsFamily();
+
+/// See also [sortedArtists].
+class SortedArtistsFamily extends Family<AsyncValue<List<Artist>>> {
+  /// See also [sortedArtists].
+  const SortedArtistsFamily();
+
+  /// See also [sortedArtists].
+  SortedArtistsProvider call({
+    String? searchQuery,
+  }) {
+    return SortedArtistsProvider(
+      searchQuery: searchQuery,
+    );
+  }
+
+  @override
+  SortedArtistsProvider getProviderOverride(
+    covariant SortedArtistsProvider provider,
+  ) {
+    return call(
+      searchQuery: provider.searchQuery,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'sortedArtistsProvider';
+}
+
+/// See also [sortedArtists].
+class SortedArtistsProvider extends AutoDisposeFutureProvider<List<Artist>> {
+  /// See also [sortedArtists].
+  SortedArtistsProvider({
+    String? searchQuery,
+  }) : this._internal(
+          (ref) => sortedArtists(
+            ref as SortedArtistsRef,
+            searchQuery: searchQuery,
+          ),
+          from: sortedArtistsProvider,
+          name: r'sortedArtistsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$sortedArtistsHash,
+          dependencies: SortedArtistsFamily._dependencies,
+          allTransitiveDependencies:
+              SortedArtistsFamily._allTransitiveDependencies,
+          searchQuery: searchQuery,
+        );
+
+  SortedArtistsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.searchQuery,
+  }) : super.internal();
+
+  final String? searchQuery;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Artist>> Function(SortedArtistsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SortedArtistsProvider._internal(
+        (ref) => create(ref as SortedArtistsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        searchQuery: searchQuery,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Artist>> createElement() {
+    return _SortedArtistsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SortedArtistsProvider && other.searchQuery == searchQuery;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, searchQuery.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SortedArtistsRef on AutoDisposeFutureProviderRef<List<Artist>> {
+  /// The parameter `searchQuery` of this provider.
+  String? get searchQuery;
+}
+
+class _SortedArtistsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Artist>>
+    with SortedArtistsRef {
+  _SortedArtistsProviderElement(super.provider);
+
+  @override
+  String? get searchQuery => (origin as SortedArtistsProvider).searchQuery;
+}
+
+String _$sortedAlbumsHash() => r'6ad7f962229f153c96a038f5a2559e1a464ae775';
+
+/// See also [sortedAlbums].
+@ProviderFor(sortedAlbums)
+const sortedAlbumsProvider = SortedAlbumsFamily();
+
+/// See also [sortedAlbums].
+class SortedAlbumsFamily extends Family<AsyncValue<List<Album>>> {
+  /// See also [sortedAlbums].
+  const SortedAlbumsFamily();
+
+  /// See also [sortedAlbums].
+  SortedAlbumsProvider call({
+    String? searchQuery,
+  }) {
+    return SortedAlbumsProvider(
+      searchQuery: searchQuery,
+    );
+  }
+
+  @override
+  SortedAlbumsProvider getProviderOverride(
+    covariant SortedAlbumsProvider provider,
+  ) {
+    return call(
+      searchQuery: provider.searchQuery,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'sortedAlbumsProvider';
+}
+
+/// See also [sortedAlbums].
+class SortedAlbumsProvider extends AutoDisposeFutureProvider<List<Album>> {
+  /// See also [sortedAlbums].
+  SortedAlbumsProvider({
+    String? searchQuery,
+  }) : this._internal(
+          (ref) => sortedAlbums(
+            ref as SortedAlbumsRef,
+            searchQuery: searchQuery,
+          ),
+          from: sortedAlbumsProvider,
+          name: r'sortedAlbumsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$sortedAlbumsHash,
+          dependencies: SortedAlbumsFamily._dependencies,
+          allTransitiveDependencies:
+              SortedAlbumsFamily._allTransitiveDependencies,
+          searchQuery: searchQuery,
+        );
+
+  SortedAlbumsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.searchQuery,
+  }) : super.internal();
+
+  final String? searchQuery;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Album>> Function(SortedAlbumsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SortedAlbumsProvider._internal(
+        (ref) => create(ref as SortedAlbumsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        searchQuery: searchQuery,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Album>> createElement() {
+    return _SortedAlbumsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SortedAlbumsProvider && other.searchQuery == searchQuery;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, searchQuery.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SortedAlbumsRef on AutoDisposeFutureProviderRef<List<Album>> {
+  /// The parameter `searchQuery` of this provider.
+  String? get searchQuery;
+}
+
+class _SortedAlbumsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Album>> with SortedAlbumsRef {
+  _SortedAlbumsProviderElement(super.provider);
+
+  @override
+  String? get searchQuery => (origin as SortedAlbumsProvider).searchQuery;
+}
+
+String _$sortedGenresHash() => r'6c9951e77ff9016985af1a0b2c5069ad6d43cc04';
+
+/// See also [sortedGenres].
+@ProviderFor(sortedGenres)
+const sortedGenresProvider = SortedGenresFamily();
+
+/// See also [sortedGenres].
+class SortedGenresFamily extends Family<AsyncValue<List<Genre>>> {
+  /// See also [sortedGenres].
+  const SortedGenresFamily();
+
+  /// See also [sortedGenres].
+  SortedGenresProvider call({
+    String? searchQuery,
+  }) {
+    return SortedGenresProvider(
+      searchQuery: searchQuery,
+    );
+  }
+
+  @override
+  SortedGenresProvider getProviderOverride(
+    covariant SortedGenresProvider provider,
+  ) {
+    return call(
+      searchQuery: provider.searchQuery,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'sortedGenresProvider';
+}
+
+/// See also [sortedGenres].
+class SortedGenresProvider extends AutoDisposeFutureProvider<List<Genre>> {
+  /// See also [sortedGenres].
+  SortedGenresProvider({
+    String? searchQuery,
+  }) : this._internal(
+          (ref) => sortedGenres(
+            ref as SortedGenresRef,
+            searchQuery: searchQuery,
+          ),
+          from: sortedGenresProvider,
+          name: r'sortedGenresProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$sortedGenresHash,
+          dependencies: SortedGenresFamily._dependencies,
+          allTransitiveDependencies:
+              SortedGenresFamily._allTransitiveDependencies,
+          searchQuery: searchQuery,
+        );
+
+  SortedGenresProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.searchQuery,
+  }) : super.internal();
+
+  final String? searchQuery;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Genre>> Function(SortedGenresRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SortedGenresProvider._internal(
+        (ref) => create(ref as SortedGenresRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        searchQuery: searchQuery,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Genre>> createElement() {
+    return _SortedGenresProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SortedGenresProvider && other.searchQuery == searchQuery;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, searchQuery.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SortedGenresRef on AutoDisposeFutureProviderRef<List<Genre>> {
+  /// The parameter `searchQuery` of this provider.
+  String? get searchQuery;
+}
+
+class _SortedGenresProviderElement
+    extends AutoDisposeFutureProviderElement<List<Genre>> with SortedGenresRef {
+  _SortedGenresProviderElement(super.provider);
+
+  @override
+  String? get searchQuery => (origin as SortedGenresProvider).searchQuery;
+}
+
 String _$labelsWatcherHash() => r'0e9f9cf887ecbf815d49818bf20461e9c70e6dfe';
 
 /// See also [labelsWatcher].
@@ -79,27 +485,6 @@ final labelsProvider = AutoDisposeFutureProvider<List<Label>>.internal(
 
 typedef LabelsRef = AutoDisposeFutureProviderRef<List<Label>>;
 String _$songLabelIdsHash() => r'314ec0bee1f1d325495a776ae6488ed89fbabc5d';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
 
 /// The ids of the labels attached to the song with [songId].
 ///
@@ -909,6 +1294,170 @@ final searchHistoryProvider =
 );
 
 typedef _$SearchHistory = AutoDisposeNotifier<List<String>>;
+String _$groupSortOrderHash() => r'8cdc6d230b6e5da19f9f5c60e507ba8f6f4fd6b2';
+
+abstract class _$GroupSortOrder
+    extends BuildlessNotifier<({GroupSortType sortType, Sort orderType})> {
+  late final GroupKind kind;
+
+  ({GroupSortType sortType, Sort orderType}) build(
+    GroupKind kind,
+  );
+}
+
+/// The sort order of the artists, albums or genres list, remembered between
+/// launches.
+///
+/// Copied from [GroupSortOrder].
+@ProviderFor(GroupSortOrder)
+const groupSortOrderProvider = GroupSortOrderFamily();
+
+/// The sort order of the artists, albums or genres list, remembered between
+/// launches.
+///
+/// Copied from [GroupSortOrder].
+class GroupSortOrderFamily
+    extends Family<({GroupSortType sortType, Sort orderType})> {
+  /// The sort order of the artists, albums or genres list, remembered between
+  /// launches.
+  ///
+  /// Copied from [GroupSortOrder].
+  const GroupSortOrderFamily();
+
+  /// The sort order of the artists, albums or genres list, remembered between
+  /// launches.
+  ///
+  /// Copied from [GroupSortOrder].
+  GroupSortOrderProvider call(
+    GroupKind kind,
+  ) {
+    return GroupSortOrderProvider(
+      kind,
+    );
+  }
+
+  @override
+  GroupSortOrderProvider getProviderOverride(
+    covariant GroupSortOrderProvider provider,
+  ) {
+    return call(
+      provider.kind,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'groupSortOrderProvider';
+}
+
+/// The sort order of the artists, albums or genres list, remembered between
+/// launches.
+///
+/// Copied from [GroupSortOrder].
+class GroupSortOrderProvider extends NotifierProviderImpl<GroupSortOrder,
+    ({GroupSortType sortType, Sort orderType})> {
+  /// The sort order of the artists, albums or genres list, remembered between
+  /// launches.
+  ///
+  /// Copied from [GroupSortOrder].
+  GroupSortOrderProvider(
+    GroupKind kind,
+  ) : this._internal(
+          () => GroupSortOrder()..kind = kind,
+          from: groupSortOrderProvider,
+          name: r'groupSortOrderProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$groupSortOrderHash,
+          dependencies: GroupSortOrderFamily._dependencies,
+          allTransitiveDependencies:
+              GroupSortOrderFamily._allTransitiveDependencies,
+          kind: kind,
+        );
+
+  GroupSortOrderProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.kind,
+  }) : super.internal();
+
+  final GroupKind kind;
+
+  @override
+  ({GroupSortType sortType, Sort orderType}) runNotifierBuild(
+    covariant GroupSortOrder notifier,
+  ) {
+    return notifier.build(
+      kind,
+    );
+  }
+
+  @override
+  Override overrideWith(GroupSortOrder Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: GroupSortOrderProvider._internal(
+        () => create()..kind = kind,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        kind: kind,
+      ),
+    );
+  }
+
+  @override
+  NotifierProviderElement<GroupSortOrder,
+      ({GroupSortType sortType, Sort orderType})> createElement() {
+    return _GroupSortOrderProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GroupSortOrderProvider && other.kind == kind;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, kind.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin GroupSortOrderRef
+    on NotifierProviderRef<({GroupSortType sortType, Sort orderType})> {
+  /// The parameter `kind` of this provider.
+  GroupKind get kind;
+}
+
+class _GroupSortOrderProviderElement extends NotifierProviderElement<
+    GroupSortOrder,
+    ({GroupSortType sortType, Sort orderType})> with GroupSortOrderRef {
+  _GroupSortOrderProviderElement(super.provider);
+
+  @override
+  GroupKind get kind => (origin as GroupSortOrderProvider).kind;
+}
+
 String _$labelsControllerHash() => r'b845644833c7aec3e9ee3563f4ebfeba8027beb3';
 
 /// See also [LabelsController].

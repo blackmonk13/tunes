@@ -6,7 +6,9 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
+import 'package:tunes/components/group_sort_view.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/group_sort.dart';
 
 import 'package:tunes/pages/album_info.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -21,7 +23,6 @@ class AlbumListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     return ListTile(
       onTap: () {
         // Navigate to song info page
@@ -71,9 +72,20 @@ class AlbumsView extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollController = useScrollController();
-    return AlbumsListView(
-      searchQuery: searchQuery,
-      scrollController: scrollController,
+    final count =
+        ref.watch(albumsCountProvider(searchQuery: searchQuery)).valueOrNull;
+
+    return Column(
+      children: [
+        GroupSortHeader(kind: GroupKind.albums, count: count),
+        const Divider(height: 1.5),
+        Expanded(
+          child: AlbumsListView(
+            searchQuery: searchQuery,
+            scrollController: scrollController,
+          ),
+        ),
+      ],
     );
   }
 }
