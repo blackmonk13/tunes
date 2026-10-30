@@ -8,9 +8,11 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/dialog_title.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
+import 'package:tunes/pages/smart_playlist.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/utils/smart_playlists.dart';
 
 class AsyncPlaylistView extends StatelessWidget {
   const AsyncPlaylistView({
@@ -19,14 +21,39 @@ class AsyncPlaylistView extends StatelessWidget {
     this.onTap,
     this.onNew,
     this.searchQuery = "",
+    this.showSmartPlaylists = false,
   });
   final AsyncValue<List<Playlist>> asyncPlaylists;
+  final bool showSmartPlaylists;
   final ValueChanged<Playlist>? onTap;
   final ValueChanged<Playlist>? onNew;
   final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
+    final playlistsView = _buildPlaylists(context);
+    if (!showSmartPlaylists || searchQuery.isNotEmpty) return playlistsView;
+
+    return Column(
+      children: [
+        for (final kind in SmartPlaylistKind.values)
+          ListTile(
+            leading: Icon(kind.icon),
+            title: Text(kind.title),
+            subtitle: Text(kind.description),
+            onTap: () {
+              Navigator.of(context).push(
+                routeTo(page: SmartPlaylistPage(kind: kind)),
+              );
+            },
+          ),
+        const Divider(height: 1.5),
+        Expanded(child: playlistsView),
+      ],
+    );
+  }
+
+  Widget _buildPlaylists(BuildContext context) {
     return asyncPlaylists.when(
       data: (data) {
         List<Playlist> playlists = data;
@@ -152,6 +179,7 @@ class PlaylistsListView extends ConsumerWidget {
       searchQuery: searchQuery,
       onTap: onTap,
       onNew: onNew,
+      showSmartPlaylists: true,
     );
   }
 }
@@ -377,7 +405,8 @@ class PlaylistThumbnail extends StatelessWidget {
             .map((s) => (mini ? s.thumbnailMiniPath : s.thumbnailPath)!)
             .toList()
         : [
-            ...songsWithThumbnails.map((s) => (mini ? s.thumbnailMiniPath : s.thumbnailPath)!),
+            ...songsWithThumbnails
+                .map((s) => (mini ? s.thumbnailMiniPath : s.thumbnailPath)!),
             ...List.filled(4 - songsWithThumbnails.length, null)
           ];
 

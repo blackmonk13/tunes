@@ -25,6 +25,7 @@ import 'package:tunes/utils/group_sort.dart';
 import 'package:tunes/utils/media_query.dart';
 import 'package:tunes/utils/play_counter.dart';
 import 'package:tunes/utils/prefs.dart';
+import 'package:tunes/utils/smart_playlists.dart';
 import 'package:tunes/utils/song_covers.dart';
 
 part 'albums.dart';
@@ -38,5 +39,6 @@ part 'player.dart';
 part 'play_history.dart';
 part 'playback_session.dart';
 part 'playlists.dart';
+part 'smart_playlists.dart';
 part 'providers.g.dart';
 part 'songs.dart';
