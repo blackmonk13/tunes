@@ -495,7 +495,7 @@ class SongTileOptions extends ConsumerWidget {
           OptionsTile(
             onTap: () => showSongLabelsSheet(context, song),
             leading: FluentIcons.tag_24_regular,
-            title: "Labels",
+            title: "Tags",
           ),
           OptionsTile(
             onTap: () {

@@ -4,12 +4,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/components/with_player.dart';
+import 'package:tunes/pages/smart_playlist_editor.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
+import 'package:tunes/utils/media_query.dart' show Song;
 import 'package:tunes/utils/smart_playlists.dart';
 import 'package:tunes/views/songs_list_view.dart';
 
-/// The songs of a [SmartPlaylistKind], in the order the playlist defines.
+/// The songs of a built-in [SmartPlaylistKind], in the order the playlist
+/// defines.
 class SmartPlaylistPage extends ConsumerWidget {
   const SmartPlaylistPage({
     super.key,
@@ -20,17 +23,77 @@ class SmartPlaylistPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncSongs = ref.watch(smartPlaylistSongsProvider(kind));
+    return SmartSongsPage(
+      title: kind.title,
+      asyncSongs: ref.watch(smartPlaylistSongsProvider(kind)),
+      emptyMessage: 'Nothing played yet',
+    );
+  }
+}
 
+/// The songs of a smart playlist made from rules, with a button to edit it.
+class CustomSmartPlaylistPage extends ConsumerWidget {
+  const CustomSmartPlaylistPage({
+    super.key,
+    required this.id,
+  });
+
+  final String id;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final definition = ref.watch(
+      smartPlaylistStoreProvider.select(
+        (all) => all.where((d) => d.id == id).firstOrNull,
+      ),
+    );
+
+    return SmartSongsPage(
+      title: definition?.name ?? 'Smart playlist',
+      asyncSongs: ref.watch(customSmartPlaylistSongsProvider(id)),
+      emptyMessage: 'No songs match the rules',
+      actions: [
+        if (definition != null)
+          IconButton(
+            tooltip: 'Edit rules',
+            icon: const Icon(FluentIcons.edit_24_regular),
+            onPressed: () {
+              Navigator.of(context).push(
+                routeTo(page: SmartPlaylistEditorPage(definition: definition)),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+/// A page listing [asyncSongs] with the usual song actions.
+class SmartSongsPage extends ConsumerWidget {
+  const SmartSongsPage({
+    super.key,
+    required this.title,
+    required this.asyncSongs,
+    required this.emptyMessage,
+    this.actions = const [],
+  });
+
+  final String title;
+  final AsyncValue<List<Song>> asyncSongs;
+  final String emptyMessage;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: Text(kind.title)),
+      appBar: AppBar(title: Text(title), actions: actions),
       body: WithPlayer(
         child: asyncSongs.when(
           data: (songs) {
             if (songs.isEmpty) {
               return Center(
                 child: Text(
-                  "Nothing played yet",
+                  emptyMessage,
                   style: context.textTheme.bodyLarge?.copyWith(
                     color: context.colorScheme.outline,
                   ),

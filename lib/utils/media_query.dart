@@ -117,7 +117,11 @@ class Artist {
   String? description;
   String? artworkPath;
 
+  /// The songs and albums point at the artist, so these always match them.
+  @Backlink(to: 'artist')
   final songs = IsarLinks<Song>();
+
+  @Backlink(to: 'artist')
   final albums = IsarLinks<Album>();
 }
 
@@ -137,6 +141,7 @@ class Album {
   String? artworkPath;
   int? releaseYear;
 
+  @Backlink(to: 'album')
   final songs = IsarLinks<Song>();
 }
 
@@ -153,6 +158,7 @@ class Genre {
 
   String? description;
 
+  @Backlink(to: 'genre')
   final songs = IsarLinks<Song>();
 }
 
@@ -274,6 +280,7 @@ class AudioQuery {
       }
     }
 
+    await _deleteEmptyGroups();
     _indexingProgressController.close();
   }
 
@@ -348,6 +355,7 @@ class AudioQuery {
               .then((date) => date.millisecondsSinceEpoch);
           metadata.set('lastModified', lastModified);
           await _addOrUpdateSong(metadata);
+          await _deleteEmptyGroups();
           break;
         }
       } catch (e) {
@@ -478,16 +486,6 @@ class AudioQuery {
       await song.artist.save();
       await song.album.save();
       await song.genre.save();
-
-      artist.songs.add(song);
-      artist.albums.add(album);
-      album.songs.add(song);
-      genre.songs.add(song);
-
-      await artist.songs.save();
-      await artist.albums.save();
-      await album.songs.save();
-      await genre.songs.save();
     });
   }
 
@@ -541,16 +539,6 @@ class AudioQuery {
           await song.artist.save();
           await song.album.save();
           await song.genre.save();
-
-          artist.songs.add(song);
-          artist.albums.add(album);
-          album.songs.add(song);
-          genre.songs.add(song);
-
-          await artist.songs.save();
-          await artist.albums.save();
-          await album.songs.save();
-          await genre.songs.save();
         }
       }
     });
@@ -610,23 +598,6 @@ class AudioQuery {
     final song =
         await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
     if (song != null) {
-      await song.artist.load();
-      await song.album.load();
-      await song.genre.load();
-
-      if (song.artist.value != null) {
-        song.artist.value!.songs.remove(song);
-        await song.artist.value!.songs.save();
-      }
-      if (song.album.value != null) {
-        song.album.value!.songs.remove(song);
-        await song.album.value!.songs.save();
-      }
-      if (song.genre.value != null) {
-        song.genre.value!.songs.remove(song);
-        await song.genre.value!.songs.save();
-      }
-
       await _isar.songs.delete(song.id);
     }
   }
@@ -636,26 +607,20 @@ class AudioQuery {
         await _isar.songs.filter().filePathEqualTo(filePath).findFirst();
     if (song != null) {
       await _isar.writeTxn(() async {
-        await song.artist.load();
-        await song.album.load();
-        await song.genre.load();
-
-        if (song.artist.value != null) {
-          song.artist.value!.songs.remove(song);
-          await song.artist.value!.songs.save();
-        }
-        if (song.album.value != null) {
-          song.album.value!.songs.remove(song);
-          await song.album.value!.songs.save();
-        }
-        if (song.genre.value != null) {
-          song.genre.value!.songs.remove(song);
-          await song.genre.value!.songs.save();
-        }
-
         await _isar.songs.delete(song.id);
       });
+      await _deleteEmptyGroups();
     }
+  }
+
+  /// Removes artists, albums and genres that no song points at any more, for
+  /// example after the last song of a genre was retagged or deleted.
+  Future<void> _deleteEmptyGroups() async {
+    await _isar.writeTxn(() async {
+      await _isar.genres.filter().songsIsEmpty().deleteAll();
+      await _isar.albums.filter().songsIsEmpty().deleteAll();
+      await _isar.artists.filter().songsIsEmpty().deleteAll();
+    });
   }
 
   Future<({String? original, String? mini})> _saveThumbnail(

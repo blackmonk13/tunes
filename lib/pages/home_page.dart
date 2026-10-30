@@ -6,8 +6,7 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
 
-import 'package:tunes/components/options_view.dart';
-
+import 'package:tunes/pages/settings_page.dart';
 import 'package:tunes/views/tabbed_view.dart';
 import 'search_page.dart';
 
@@ -39,31 +38,14 @@ class HomePage extends HookConsumerWidget {
             ),
           ),
           IconButton(
-            onPressed: () async {
-              await showModalBottomSheet<void>(
-                context: context,
-                // backgroundColor: Colors.transparent,
-                constraints: BoxConstraints(
-                  minWidth: context.shortestSide,
-                  maxWidth: context.shortestSide,
-                  minHeight: 300.0,
-                  maxHeight: 300.0,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20.0),
-                  ),
-                  side: BorderSide(
-                    color: context.colorScheme.outline.withOpacity(.3),
-                  ),
-                ),
-                builder: (context) {
-                  return const OptionsView();
-                },
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                routeTo(page: const SettingsPage()),
               );
             },
             icon: const Icon(
-              FluentIcons.options_24_regular,
+              FluentIcons.settings_24_regular,
             ),
           ),
         ],

@@ -8,10 +8,14 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/dialog_title.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
+import 'package:tunes/models/smart_rules.dart';
 import 'package:tunes/pages/smart_playlist.dart';
+import 'package:tunes/pages/smart_playlist_editor.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/utils/constants.dart';
+import 'package:tunes/utils/playlist_names.dart';
 import 'package:tunes/utils/smart_playlists.dart';
 
 class AsyncPlaylistView extends StatelessWidget {
@@ -22,9 +26,17 @@ class AsyncPlaylistView extends StatelessWidget {
     this.onNew,
     this.searchQuery = "",
     this.showSmartPlaylists = false,
+    this.favorites,
+    this.customSmartPlaylists = const [],
   });
   final AsyncValue<List<Playlist>> asyncPlaylists;
   final bool showSmartPlaylists;
+
+  /// The smart playlists made from rules, shown after the built-in ones.
+  final List<SmartPlaylistDefinition> customSmartPlaylists;
+
+  /// Pinned above the smart playlists, and left out of the list below them.
+  final Playlist? favorites;
   final ValueChanged<Playlist>? onTap;
   final ValueChanged<Playlist>? onNew;
   final String searchQuery;
@@ -36,17 +48,69 @@ class AsyncPlaylistView extends StatelessWidget {
 
     return Column(
       children: [
-        for (final kind in SmartPlaylistKind.values)
-          ListTile(
-            leading: Icon(kind.icon),
-            title: Text(kind.title),
-            subtitle: Text(kind.description),
-            onTap: () {
-              Navigator.of(context).push(
-                routeTo(page: SmartPlaylistPage(kind: kind)),
-              );
-            },
+        // The pinned playlists scroll on their own when there are many.
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: context.screenHeight * .6),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              if (favorites != null)
+                PlaylistListTile(playlist: favorites!, onTap: onTap),
+              for (final kind in SmartPlaylistKind.values)
+                ListTile(
+                  leading: Icon(kind.icon),
+                  title: Text(kind.title),
+                  subtitle: Text(kind.description),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      routeTo(page: SmartPlaylistPage(kind: kind)),
+                    );
+                  },
+                ),
+              for (final definition in customSmartPlaylists)
+                ListTile(
+                  leading: const Icon(FluentIcons.filter_24_regular),
+                  title: Text(
+                    definition.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${definition.rules.length} '
+                    '${definition.rules.length == 1 ? 'rule' : 'rules'}, '
+                    'match ${definition.matchAll ? 'all' : 'any'}',
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Edit rules',
+                    icon: const Icon(FluentIcons.edit_20_regular),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        routeTo(
+                          page: SmartPlaylistEditorPage(
+                            definition: definition,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      routeTo(page: CustomSmartPlaylistPage(id: definition.id)),
+                    );
+                  },
+                ),
+              ListTile(
+                leading: const Icon(FluentIcons.add_circle_24_regular),
+                title: const Text('New smart playlist'),
+                subtitle: const Text('Fill a playlist from rules'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    routeTo(page: const SmartPlaylistEditorPage()),
+                  );
+                },
+              ),
+            ],
           ),
+        ),
         const Divider(height: 1.5),
         Expanded(child: playlistsView),
       ],
@@ -58,9 +122,13 @@ class AsyncPlaylistView extends StatelessWidget {
       data: (data) {
         List<Playlist> playlists = data;
 
+        if (showSmartPlaylists && searchQuery.isEmpty && favorites != null) {
+          playlists = data.where((el) => el.name != favsPlaylistName).toList();
+        }
+
         if (searchQuery.isNotEmpty) {
           playlists = data.where((el) {
-            for (final e in [el.name]) {
+            for (final e in [el.displayName]) {
               if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
                 return true;
               }
@@ -69,7 +137,9 @@ class AsyncPlaylistView extends StatelessWidget {
           }).toList();
         }
 
-        if (playlists.isEmpty) {
+        // With nothing to search for and no playlists, the button to create
+        // one is still shown.
+        if (playlists.isEmpty && searchQuery.isNotEmpty) {
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -124,18 +194,27 @@ class AsyncPlaylistView extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                // padding: EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: playlists.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final currentPlaylist = playlists[index];
+              child: playlists.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No playlists yet",
+                        style: context.textTheme.bodyLarge?.copyWith(
+                          color: context.colorScheme.outline,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      // padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: playlists.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final currentPlaylist = playlists[index];
 
-                  return PlaylistListTile(
-                    playlist: currentPlaylist,
-                    onTap: onTap,
-                  );
-                },
-              ),
+                        return PlaylistListTile(
+                          playlist: currentPlaylist,
+                          onTap: onTap,
+                        );
+                      },
+                    ),
             ),
           ],
         );
@@ -171,7 +250,7 @@ class PlaylistsListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(favoritesPlaylistProvider);
+    final favorites = ref.watch(favoritesPlaylistProvider).valueOrNull;
     final asyncPlaylists = ref.watch(playlistsControllerProvider);
 
     return AsyncPlaylistView(
@@ -180,6 +259,8 @@ class PlaylistsListView extends ConsumerWidget {
       onTap: onTap,
       onNew: onNew,
       showSmartPlaylists: true,
+      favorites: favorites,
+      customSmartPlaylists: ref.watch(smartPlaylistStoreProvider),
     );
   }
 }
@@ -207,7 +288,7 @@ class PlaylistListTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20.0),
       ),
       title: Text(
-        playlist.name,
+        playlist.displayName,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
       ),

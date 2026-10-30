@@ -27,7 +27,7 @@ class GenreInfoPage extends ConsumerWidget {
               expandedHeight: context.screenHeight * 0.3,
               flexibleSpace: FlexibleSpaceBar(
                 title: ThumbnailDataBuilder(
-                  thumbnail: genre.songs.first.thumbnailPath,
+                  thumbnail: genre.songs.firstOrNull?.thumbnailPath,
                   builder: (image, palette) {
                     final fgColor = calculateFgColor(palette);
 
@@ -51,7 +51,7 @@ class GenreInfoPage extends ConsumerWidget {
                     ),
                   ),
                   child: Thumbnail(
-                    thumbnail: genre.songs.first.thumbnailPath,
+                    thumbnail: genre.songs.firstOrNull?.thumbnailPath,
                     height: context.screenHeight * 0.3,
                     width: context.screenHeight * 0.3,
                     borderRadius: BorderRadius.circular(5.0),

@@ -14,6 +14,7 @@ const skipSmallTracksPrefsKey = "skip_small_tracks";
 const filterPathsPrefsKey = "filter_paths";
 const searchHistoryPrefsKey = "search_history";
 const playbackSessionPrefsKey = "playback_session";
+const smartPlaylistsPrefsKey = "smart_playlists";
 // ThemeMode get themeModePref {
 //   final themeModeInt = prefs.getInt(themeModePrefsKey);
 

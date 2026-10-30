@@ -174,7 +174,7 @@ class GenreListTile extends ConsumerWidget {
         })(),
       ),
       leading: Thumbnail(
-        thumbnail: genre.songs.first.thumbnailMiniPath,
+        thumbnail: genre.songs.firstOrNull?.thumbnailMiniPath,
         hasBorder: true,
         borderRadius: BorderRadius.circular(20.0),
         width: 50,
