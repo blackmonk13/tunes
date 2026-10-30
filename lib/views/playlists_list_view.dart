@@ -81,7 +81,9 @@ class AsyncPlaylistView extends StatelessWidget {
           }).toList();
         }
 
-        if (playlists.isEmpty) {
+        // With nothing to search for and no playlists, the button to create
+        // one is still shown.
+        if (playlists.isEmpty && searchQuery.isNotEmpty) {
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -136,18 +138,27 @@ class AsyncPlaylistView extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                // padding: EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: playlists.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final currentPlaylist = playlists[index];
+              child: playlists.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No playlists yet",
+                        style: context.textTheme.bodyLarge?.copyWith(
+                          color: context.colorScheme.outline,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      // padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: playlists.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final currentPlaylist = playlists[index];
 
-                  return PlaylistListTile(
-                    playlist: currentPlaylist,
-                    onTap: onTap,
-                  );
-                },
-              ),
+                        return PlaylistListTile(
+                          playlist: currentPlaylist,
+                          onTap: onTap,
+                        );
+                      },
+                    ),
             ),
           ],
         );
