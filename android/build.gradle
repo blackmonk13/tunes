@@ -9,7 +9,7 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-// Register the namespace fallback for every project before any of them is
+// Register the namespace and compileSdk fallbacks for every project before any of them is
 // evaluated: evaluationDependsOn below evaluates projects immediately, and
 // afterEvaluate cannot be added to a project that is already evaluated.
 subprojects {
@@ -19,6 +19,9 @@ subprojects {
                 if (namespace == null) {
                     namespace project.group
                 }
+                // Some plugins still compile against an old SDK, which the
+                // dependency check of newer Android Gradle Plugins rejects.
+                compileSdkVersion "android-37.0"
             }
         }
     }
