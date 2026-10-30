@@ -1708,7 +1708,7 @@ class _Mp4HandlerProviderElement extends AutoDisposeProviderElement<MP4Handler>
   String get filePath => (origin as Mp4HandlerProvider).filePath;
 }
 
-String _$themeControllerHash() => r'ffd9c2285caba34adfb4ad6a3a677282b0a28858';
+String _$themeControllerHash() => r'31f661d12f87ee73407d2535c9c483acb9897a39';
 
 /// See also [ThemeController].
 @ProviderFor(ThemeController)

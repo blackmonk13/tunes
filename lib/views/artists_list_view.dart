@@ -59,7 +59,7 @@ class ArtistListTile extends StatelessWidget {
         })(),
       ),
       leading: Thumbnail(
-        thumbnail: artist.artworkPath ?? artist.songs.first.thumbnailMiniPath,
+        thumbnail: artist.artworkPath ?? artist.songs.firstOrNull?.thumbnailMiniPath,
         borderRadius: BorderRadius.circular(20.0),
         width: 50,
         height: 50,
