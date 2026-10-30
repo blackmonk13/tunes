@@ -59,3 +59,20 @@ Future<void> _resetUnsetPlayFields(Isar isar) async {
   }
   await isar.writeTxn(() => isar.songs.putAll(unset));
 }
+
+/// Sets every song back to never played.
+Future<void> resetPlayHistory(Isar isar) async {
+  final played = await isar.songs
+      .filter()
+      .playCountGreaterThan(0)
+      .or()
+      .lastPlayedAtGreaterThan(0)
+      .findAll();
+
+  for (final song in played) {
+    song
+      ..playCount = 0
+      ..lastPlayedAt = 0;
+  }
+  await isar.writeTxn(() => isar.songs.putAll(played));
+}
