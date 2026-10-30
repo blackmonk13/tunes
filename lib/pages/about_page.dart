@@ -25,13 +25,17 @@ class AboutPage extends HookConsumerWidget {
         children: [
           const SizedBox(height: 24.0),
           Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28.0),
-              child: Image.asset(
-                'assets/icons/icon.png',
-                width: 112.0,
-                height: 112.0,
+            // The icon is a black glyph, so it sits on a light tile that shows
+            // in both themes.
+            child: Container(
+              width: 112.0,
+              height: 112.0,
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28.0),
               ),
+              child: Image.asset('assets/icons/icon.png'),
             ),
           ),
           const SizedBox(height: 16.0),
