@@ -52,7 +52,7 @@ class AlbumListTile extends ConsumerWidget {
         })(),
       ),
       leading: Thumbnail(
-        thumbnail: album.artworkPath ?? album.songs.first.thumbnailMiniPath,
+        thumbnail: album.artworkPath ?? album.songs.firstOrNull?.thumbnailMiniPath,
         hasBorder: true,
         borderRadius: BorderRadius.circular(20.0),
         width: 50,

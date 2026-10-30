@@ -46,7 +46,7 @@ class ArtistInfoPage extends HookConsumerWidget {
                     ),
                     child: Thumbnail(
                       thumbnail: artist.artworkPath ??
-                          artist.songs.first.thumbnailPath,
+                          artist.songs.firstOrNull?.thumbnailPath,
                       height: context.screenHeight * 0.3,
                       width: context.screenHeight * 0.3,
                       borderRadius: BorderRadius.circular(5.0),
