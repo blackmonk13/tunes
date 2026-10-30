@@ -1155,6 +1155,155 @@ final playlistsWatcherProvider = AutoDisposeStreamProvider<void>.internal(
 );
 
 typedef PlaylistsWatcherRef = AutoDisposeStreamProviderRef<void>;
+String _$customSmartPlaylistSongsHash() =>
+    r'cd15c2cc43904f7743e7b63a50d8b2aa9ca82029';
+
+/// The songs of the smart playlist with [id], refreshed when the songs, the
+/// tags or the playlist itself change.
+///
+/// Copied from [customSmartPlaylistSongs].
+@ProviderFor(customSmartPlaylistSongs)
+const customSmartPlaylistSongsProvider = CustomSmartPlaylistSongsFamily();
+
+/// The songs of the smart playlist with [id], refreshed when the songs, the
+/// tags or the playlist itself change.
+///
+/// Copied from [customSmartPlaylistSongs].
+class CustomSmartPlaylistSongsFamily extends Family<AsyncValue<List<Song>>> {
+  /// The songs of the smart playlist with [id], refreshed when the songs, the
+  /// tags or the playlist itself change.
+  ///
+  /// Copied from [customSmartPlaylistSongs].
+  const CustomSmartPlaylistSongsFamily();
+
+  /// The songs of the smart playlist with [id], refreshed when the songs, the
+  /// tags or the playlist itself change.
+  ///
+  /// Copied from [customSmartPlaylistSongs].
+  CustomSmartPlaylistSongsProvider call(
+    String id,
+  ) {
+    return CustomSmartPlaylistSongsProvider(
+      id,
+    );
+  }
+
+  @override
+  CustomSmartPlaylistSongsProvider getProviderOverride(
+    covariant CustomSmartPlaylistSongsProvider provider,
+  ) {
+    return call(
+      provider.id,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'customSmartPlaylistSongsProvider';
+}
+
+/// The songs of the smart playlist with [id], refreshed when the songs, the
+/// tags or the playlist itself change.
+///
+/// Copied from [customSmartPlaylistSongs].
+class CustomSmartPlaylistSongsProvider
+    extends AutoDisposeFutureProvider<List<Song>> {
+  /// The songs of the smart playlist with [id], refreshed when the songs, the
+  /// tags or the playlist itself change.
+  ///
+  /// Copied from [customSmartPlaylistSongs].
+  CustomSmartPlaylistSongsProvider(
+    String id,
+  ) : this._internal(
+          (ref) => customSmartPlaylistSongs(
+            ref as CustomSmartPlaylistSongsRef,
+            id,
+          ),
+          from: customSmartPlaylistSongsProvider,
+          name: r'customSmartPlaylistSongsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$customSmartPlaylistSongsHash,
+          dependencies: CustomSmartPlaylistSongsFamily._dependencies,
+          allTransitiveDependencies:
+              CustomSmartPlaylistSongsFamily._allTransitiveDependencies,
+          id: id,
+        );
+
+  CustomSmartPlaylistSongsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Song>> Function(CustomSmartPlaylistSongsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: CustomSmartPlaylistSongsProvider._internal(
+        (ref) => create(ref as CustomSmartPlaylistSongsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Song>> createElement() {
+    return _CustomSmartPlaylistSongsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CustomSmartPlaylistSongsProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin CustomSmartPlaylistSongsRef on AutoDisposeFutureProviderRef<List<Song>> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _CustomSmartPlaylistSongsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Song>>
+    with CustomSmartPlaylistSongsRef {
+  _CustomSmartPlaylistSongsProviderElement(super.provider);
+
+  @override
+  String get id => (origin as CustomSmartPlaylistSongsProvider).id;
+}
+
 String _$smartPlaylistSongsHash() =>
     r'03639ebae916c0a0f9a083710833d91b16b35ed8';
 
@@ -2000,6 +2149,25 @@ final favoritesPlaylistProvider =
 );
 
 typedef _$FavoritesPlaylist = AutoDisposeAsyncNotifier<Playlist>;
+String _$smartPlaylistStoreHash() =>
+    r'0a828ee92da5640ff775c0cedf7a3dccd56f3271';
+
+/// The smart playlists the user made from rules, kept in the preferences.
+///
+/// Copied from [SmartPlaylistStore].
+@ProviderFor(SmartPlaylistStore)
+final smartPlaylistStoreProvider = NotifierProvider<SmartPlaylistStore,
+    List<SmartPlaylistDefinition>>.internal(
+  SmartPlaylistStore.new,
+  name: r'smartPlaylistStoreProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$smartPlaylistStoreHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$SmartPlaylistStore = Notifier<List<SmartPlaylistDefinition>>;
 String _$songsSortOrderHash() => r'4301a44cc2f04ab2a143635a14ddd78fd29b3d15';
 
 abstract class _$SongsSortOrder extends BuildlessAutoDisposeNotifier<

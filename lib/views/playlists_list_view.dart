@@ -8,7 +8,9 @@ import 'package:tunes/components/common/error_view.dart';
 import 'package:tunes/components/dialog_title.dart';
 import 'package:tunes/components/song_artwork.dart';
 import 'package:tunes/components/song_list_tile.dart';
+import 'package:tunes/models/smart_rules.dart';
 import 'package:tunes/pages/smart_playlist.dart';
+import 'package:tunes/pages/smart_playlist_editor.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -25,9 +27,13 @@ class AsyncPlaylistView extends StatelessWidget {
     this.searchQuery = "",
     this.showSmartPlaylists = false,
     this.favorites,
+    this.customSmartPlaylists = const [],
   });
   final AsyncValue<List<Playlist>> asyncPlaylists;
   final bool showSmartPlaylists;
+
+  /// The smart playlists made from rules, shown after the built-in ones.
+  final List<SmartPlaylistDefinition> customSmartPlaylists;
 
   /// Pinned above the smart playlists, and left out of the list below them.
   final Playlist? favorites;
@@ -42,19 +48,69 @@ class AsyncPlaylistView extends StatelessWidget {
 
     return Column(
       children: [
-        if (favorites != null)
-          PlaylistListTile(playlist: favorites!, onTap: onTap),
-        for (final kind in SmartPlaylistKind.values)
-          ListTile(
-            leading: Icon(kind.icon),
-            title: Text(kind.title),
-            subtitle: Text(kind.description),
-            onTap: () {
-              Navigator.of(context).push(
-                routeTo(page: SmartPlaylistPage(kind: kind)),
-              );
-            },
+        // The pinned playlists scroll on their own when there are many.
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: context.screenHeight * .6),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              if (favorites != null)
+                PlaylistListTile(playlist: favorites!, onTap: onTap),
+              for (final kind in SmartPlaylistKind.values)
+                ListTile(
+                  leading: Icon(kind.icon),
+                  title: Text(kind.title),
+                  subtitle: Text(kind.description),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      routeTo(page: SmartPlaylistPage(kind: kind)),
+                    );
+                  },
+                ),
+              for (final definition in customSmartPlaylists)
+                ListTile(
+                  leading: const Icon(FluentIcons.filter_24_regular),
+                  title: Text(
+                    definition.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${definition.rules.length} '
+                    '${definition.rules.length == 1 ? 'rule' : 'rules'}, '
+                    'match ${definition.matchAll ? 'all' : 'any'}',
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Edit rules',
+                    icon: const Icon(FluentIcons.edit_20_regular),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        routeTo(
+                          page: SmartPlaylistEditorPage(
+                            definition: definition,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      routeTo(page: CustomSmartPlaylistPage(id: definition.id)),
+                    );
+                  },
+                ),
+              ListTile(
+                leading: const Icon(FluentIcons.add_circle_24_regular),
+                title: const Text('New smart playlist'),
+                subtitle: const Text('Fill a playlist from rules'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    routeTo(page: const SmartPlaylistEditorPage()),
+                  );
+                },
+              ),
+            ],
           ),
+        ),
         const Divider(height: 1.5),
         Expanded(child: playlistsView),
       ],
@@ -204,6 +260,7 @@ class PlaylistsListView extends ConsumerWidget {
       onNew: onNew,
       showSmartPlaylists: true,
       favorites: favorites,
+      customSmartPlaylists: ref.watch(smartPlaylistStoreProvider),
     );
   }
 }
