@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+# A new push to a branch cancels the run still going for the one before it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # The Isar, Riverpod and freezed code is generated, not committed.
+      - name: Generate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Only errors fail the build for now: the project still has warnings and
+      # lints from before the checks existed.
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        run: flutter test
+
+      # Without the release secrets this APK is signed with the debug key, so it
+      # is for trying out a change, not for publishing.
+      - name: Build APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunes-apks-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
+          retention-days: 14
