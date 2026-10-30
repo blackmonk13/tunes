@@ -12,6 +12,8 @@ import 'package:tunes/pages/smart_playlist.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/utils/constants.dart';
+import 'package:tunes/utils/playlist_names.dart';
 import 'package:tunes/utils/smart_playlists.dart';
 
 class AsyncPlaylistView extends StatelessWidget {
@@ -22,9 +24,13 @@ class AsyncPlaylistView extends StatelessWidget {
     this.onNew,
     this.searchQuery = "",
     this.showSmartPlaylists = false,
+    this.favorites,
   });
   final AsyncValue<List<Playlist>> asyncPlaylists;
   final bool showSmartPlaylists;
+
+  /// Pinned above the smart playlists, and left out of the list below them.
+  final Playlist? favorites;
   final ValueChanged<Playlist>? onTap;
   final ValueChanged<Playlist>? onNew;
   final String searchQuery;
@@ -36,6 +42,8 @@ class AsyncPlaylistView extends StatelessWidget {
 
     return Column(
       children: [
+        if (favorites != null)
+          PlaylistListTile(playlist: favorites!, onTap: onTap),
         for (final kind in SmartPlaylistKind.values)
           ListTile(
             leading: Icon(kind.icon),
@@ -58,9 +66,13 @@ class AsyncPlaylistView extends StatelessWidget {
       data: (data) {
         List<Playlist> playlists = data;
 
+        if (showSmartPlaylists && searchQuery.isEmpty && favorites != null) {
+          playlists = data.where((el) => el.name != favsPlaylistName).toList();
+        }
+
         if (searchQuery.isNotEmpty) {
           playlists = data.where((el) {
-            for (final e in [el.name]) {
+            for (final e in [el.displayName]) {
               if (e.toLowerCase().contains(searchQuery.toLowerCase())) {
                 return true;
               }
@@ -69,7 +81,9 @@ class AsyncPlaylistView extends StatelessWidget {
           }).toList();
         }
 
-        if (playlists.isEmpty) {
+        // With nothing to search for and no playlists, the button to create
+        // one is still shown.
+        if (playlists.isEmpty && searchQuery.isNotEmpty) {
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -124,18 +138,27 @@ class AsyncPlaylistView extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                // padding: EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: playlists.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final currentPlaylist = playlists[index];
+              child: playlists.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No playlists yet",
+                        style: context.textTheme.bodyLarge?.copyWith(
+                          color: context.colorScheme.outline,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      // padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: playlists.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final currentPlaylist = playlists[index];
 
-                  return PlaylistListTile(
-                    playlist: currentPlaylist,
-                    onTap: onTap,
-                  );
-                },
-              ),
+                        return PlaylistListTile(
+                          playlist: currentPlaylist,
+                          onTap: onTap,
+                        );
+                      },
+                    ),
             ),
           ],
         );
@@ -171,7 +194,7 @@ class PlaylistsListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(favoritesPlaylistProvider);
+    final favorites = ref.watch(favoritesPlaylistProvider).valueOrNull;
     final asyncPlaylists = ref.watch(playlistsControllerProvider);
 
     return AsyncPlaylistView(
@@ -180,6 +203,7 @@ class PlaylistsListView extends ConsumerWidget {
       onTap: onTap,
       onNew: onNew,
       showSmartPlaylists: true,
+      favorites: favorites,
     );
   }
 }
@@ -207,7 +231,7 @@ class PlaylistListTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20.0),
       ),
       title: Text(
-        playlist.name,
+        playlist.displayName,
         overflow: TextOverflow.ellipsis,
         maxLines: 3,
       ),

@@ -8,6 +8,7 @@ import 'package:tunes/components/song_list_tile.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
+import 'package:tunes/utils/playlist_names.dart';
 import 'package:tunes/views/playlists_list_view.dart';
 
 class AddToPlaylistDialog extends HookConsumerWidget {
@@ -32,7 +33,7 @@ class AddToPlaylistDialog extends HookConsumerWidget {
       if (added) {
         if (context.mounted) {
           context.showSnackBar(
-            message: "${song.title} has been added to ${value.name}",
+            message: "${song.title} has been added to ${value.displayName}",
           );
           Navigator.of(context).maybePop();
         }
@@ -40,7 +41,7 @@ class AddToPlaylistDialog extends HookConsumerWidget {
       }
       if (context.mounted) {
         context.showErrorSnackBar(
-          message: "${song.title} could not be added to ${value.name}",
+          message: "${song.title} could not be added to ${value.displayName}",
         );
         Navigator.of(context).maybePop();
       }
@@ -121,7 +122,7 @@ class AddToPlaylistDialog extends HookConsumerWidget {
                           ),
                         ),
                         title: Text(
-                          playlist.name,
+                          playlist.displayName,
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text.rich(
