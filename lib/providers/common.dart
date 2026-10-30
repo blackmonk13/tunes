@@ -35,8 +35,10 @@ FutureOr<bool> appPermissions(AppPermissionsRef ref) async {
 class ThemeController extends _$ThemeController {
   @override
   ThemeMode build() {
-    final sharedPrefs = ref.watch(sharedPreferencesProvider).requireValue;
-    final themeModeInt = sharedPrefs.getInt(themeModePrefsKey);
+    // The app is built before the preferences finish loading, so the system
+    // theme is used until they are there.
+    final sharedPrefs = ref.watch(sharedPreferencesProvider).valueOrNull;
+    final themeModeInt = sharedPrefs?.getInt(themeModePrefsKey);
 
     if (themeModeInt == null) {
       return ThemeMode.system;
@@ -47,6 +49,7 @@ class ThemeController extends _$ThemeController {
 
   Future<bool> setTheme(ThemeMode themeMode) async {
     final sharedPrefs = ref.read(sharedPreferencesProvider).requireValue;
+    state = themeMode;
     return sharedPrefs.setInt(themeModePrefsKey, themeMode.index);
   }
 }

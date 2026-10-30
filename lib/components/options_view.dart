@@ -1,7 +1,10 @@
 import 'dart:ui';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:tunes/pages/about_page.dart';
+import 'package:tunes/pages/privacy_policy_page.dart';
 import 'package:tunes/pages/scan_filters.dart';
+import 'package:tunes/pages/settings_page.dart';
 import 'package:tunes/utils/extensions.dart';
 
 class OptionsView extends StatelessWidget {
@@ -42,7 +45,11 @@ class OptionsView extends StatelessWidget {
           ),
           const Divider(),
           OptionsTile(
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                routeTo(page: const SettingsPage()),
+              );
+            },
             title: "Settings",
           ),
           OptionsTile(
@@ -56,11 +63,19 @@ class OptionsView extends StatelessWidget {
             title: "Filters",
           ),
           OptionsTile(
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                routeTo(page: const PrivacyPolicyPage()),
+              );
+            },
             title: "Privacy Policy",
           ),
           OptionsTile(
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                routeTo(page: const AboutPage()),
+              );
+            },
             title: "About",
           ),
         ],

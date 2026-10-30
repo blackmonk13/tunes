@@ -10,107 +10,113 @@
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![GitHub Issues](https://img.shields.io/github/issues/blackmonk13/tunes.svg)](https://github.com/blackmonk13/tunes/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/blackmonk13/tunes.svg)](https://github.com/blackmonk13/tunes/pulls)
-[![License](https://img.shields.io/badge/license-GPL-blue.svg)](/LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](/LICENSE)
 
 </div>
 
-
 ---
 
-<p align="center"> A local music player for android.
+<p align="center"> A local music player for Android.
     <br> 
 </p>
 
-## 📝 Table of Contents
+## Table of Contents
 
 - [About](#about)
+- [Features](#features)
 - [Getting Started](#getting_started)
-- [Deployment](#deployment)
-- [Usage](#usage)
+- [Running the tests](#tests)
+- [Project layout](#layout)
 - [Built Using](#built_using)
-- [TODO](../TODO.md)
-- [Contributing](../CONTRIBUTING.md)
-- [Authors](#authors)
-- [Acknowledgments](#acknowledgement)
+- [Contributing](#contributing)
+- [Privacy](#privacy)
+- [License](#license)
+- [Acknowledgements](#acknowledgement)
 
-## 🧐 About <a name = "about"></a>
+## About <a name = "about"></a>
 
-Write about 1-2 paragraphs describing the purpose of your project.
+Tunes plays the music that is already on your phone. It has no account, no ads and needs no internet. It reads the tags and cover art in your files, keeps its own index of your library, and lets you organise it with playlists and your own labels.
 
-## 🏁 Getting Started <a name = "getting_started"></a>
+## Features <a name = "features"></a>
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
+- Browse by songs, artists, albums, genres and playlists, with sorting.
+- Search by title, artist, album, genre, label and lyrics. Words can be in any order and accents and case are ignored.
+- Your own labels on songs, shown in the full player, with a page for every label.
+- Smart playlists: Recently played, Most played and Least played.
+- Shuffle All, and a Now Playing sheet that shows the real queue and follows what is playing.
+- Resume: the queue, the shuffle order and the position are restored when the app starts.
+- Edit tags and add or remove cover art. The song page shows every cover in a carousel.
+- Scan filters to choose which folders are indexed, and a watcher that keeps the library in sync.
+- Light, dark and system themes.
+
+## Getting Started <a name = "getting_started"></a>
 
 ### Prerequisites
 
-What things you need to install the software and how to install them.
-
-```
-Give examples
-```
+- [Flutter](https://docs.flutter.dev/get-started/install) 3.47 or newer (Dart 3.5.4 or newer).
+- The Android SDK, and an Android device or emulator.
+- A checkout of [`mpeg_codec`](https://github.com/blackmonk13/mpeg_codec), the package Tunes uses to read and write ID3 and MP4 tags. It is a path dependency in `pubspec.yaml`, so it has to sit at `../../dart/mpeg_codec` relative to this repository. For example, if this repository is at `~/dev/flutter/tunes`, put it at `~/dev/dart/mpeg_codec`.
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running.
-
-Say what the step will be
-
 ```
-Give the example
-```
-
-And repeat
-
-```
-until finished
+git clone https://github.com/blackmonk13/tunes.git
+cd tunes
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter run
 ```
 
-End with an example of getting some data out of the system or using it for a little demo.
+`build_runner` generates the Isar, Riverpod and freezed code, so run it again after changing a collection, a `@riverpod` provider or a `@freezed` model.
 
-## 🔧 Running the tests <a name = "tests"></a>
-
-Explain how to run the automated tests for this system.
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+### Building an APK
 
 ```
-Give an example
+flutter build apk --release
 ```
 
-### And coding style tests
+Install a debug build over an existing install, keeping its data, with `flutter build apk --debug` and `adb install -r build/app/outputs/flutter-apk/app-debug.apk`.
 
-Explain what these tests test and why
+## Running the tests <a name = "tests"></a>
 
 ```
-Give an example
+flutter test
+flutter analyze
 ```
 
-## 🎈 Usage <a name="usage"></a>
+## Project layout <a name = "layout"></a>
 
-Add notes about how to use the system.
+- `lib/utils/media_query.dart` is the library core: the Isar collections, the filesystem scanner and watcher, and the song queries.
+- `lib/providers/` holds the Riverpod providers. It is a single Dart library (`providers.dart`) with part files, so imports are added only in `providers.dart`.
+- `lib/providers/player.dart` and `playback_session.dart` hold playback and the saved session, on top of `just_audio` and `just_audio_background`.
+- `lib/pages/`, `lib/views/` and `lib/components/` are the screens, the tabbed lists and the shared widgets.
 
-## 🚀 Deployment <a name = "deployment"></a>
+## Built Using <a name = "built_using"></a>
 
-Add additional notes about how to deploy this on a live system.
+- [Flutter](https://flutter.dev/) - UI framework
+- [Riverpod](https://riverpod.dev/) - State management
+- [Isar](https://isar.dev/) - Database
+- [just_audio](https://pub.dev/packages/just_audio) and [just_audio_background](https://pub.dev/packages/just_audio_background) - Playback
+- [mpeg_codec](https://github.com/blackmonk13/mpeg_codec) - ID3 and MP4 tags and cover art
 
-## ⛏️ Built Using <a name = "built_using"></a>
+## Contributing <a name = "contributing"></a>
 
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Express](https://expressjs.com/) - Server Framework
-- [VueJs](https://vuejs.org/) - Web Framework
-- [NodeJs](https://nodejs.org/en/) - Server Environment
+Work is tracked in [issues](https://github.com/blackmonk13/tunes/issues). Each feature or fix gets its own branch and a pull request into `dev`, with a closing keyword such as `Closes #12` in the description. `dev` is merged into `main` for releases.
 
-## ✍️ Authors <a name = "authors"></a>
+## Privacy <a name = "privacy"></a>
 
-- [@blackmonk13](https://github.com/blackmonk13) - Idea & Initial work
+Everything stays on the device. Tunes keeps an index of your library, your playlists, labels, play counts and searches locally, and sends nothing anywhere. The same text is in the app under Options, Privacy Policy.
+
+## License <a name = "license"></a>
+
+Tunes is licensed under the [GNU General Public License v3.0](LICENSE).
+
+## Authors <a name = "authors"></a>
+
+- [@blackmonk13](https://github.com/blackmonk13) - Idea and initial work
 
 See also the list of [contributors](https://github.com/blackmonk13/tunes/contributors) who participated in this project.
 
-## 🎉 Acknowledgements <a name = "acknowledgement"></a>
+## Acknowledgements <a name = "acknowledgement"></a>
 
 - [google play music icons](https://www.flaticon.com/free-icons/google-play-music)
-- Hat tip to anyone whose code was used
-- Inspiration
-- References
