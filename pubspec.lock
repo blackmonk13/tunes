@@ -928,10 +928,12 @@ packages:
   mpeg_codec:
     dependency: "direct main"
     description:
-      path: "../../dart/mpeg_codec"
-      relative: true
-    source: path
-    version: "2.0.0"
+      path: "."
+      ref: "v2.1.0"
+      resolved-ref: c46a9b99126967b2cae69602b3e67519ef65897e
+      url: "https://github.com/blackmonk13/mpeg_codec.git"
+    source: git
+    version: "2.1.0"
   objective_c:
     dependency: transitive
     description:

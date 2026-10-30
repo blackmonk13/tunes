@@ -55,7 +55,7 @@ Tunes plays the music that is already on your phone. It has no account, no ads a
 
 - [Flutter](https://docs.flutter.dev/get-started/install) 3.47 or newer (Dart 3.5.4 or newer).
 - The Android SDK, and an Android device or emulator.
-- A checkout of [`mpeg_codec`](https://github.com/blackmonk13/mpeg_codec), the package Tunes uses to read and write ID3 and MP4 tags. It is a path dependency in `pubspec.yaml`, so it has to sit at `../../dart/mpeg_codec` relative to this repository. For example, if this repository is at `~/dev/flutter/tunes`, put it at `~/dev/dart/mpeg_codec`.
+- Git, because Tunes gets [`mpeg_codec`](https://github.com/blackmonk13/mpeg_codec), its package for reading and writing ID3 and MP4 tags, straight from GitHub (`flutter pub get` does it, pinned to a release tag).
 
 ### Installing
 
@@ -68,6 +68,14 @@ flutter run
 ```
 
 `build_runner` generates the Isar, Riverpod and freezed code, so run it again after changing a collection, a `@riverpod` provider or a `@freezed` model.
+
+To work on `mpeg_codec` together with Tunes, clone it next to this repository and add a `pubspec_overrides.yaml` (it is ignored by git):
+
+```
+dependency_overrides:
+  mpeg_codec:
+    path: ../mpeg_codec
+```
 
 ### Building an APK
 
