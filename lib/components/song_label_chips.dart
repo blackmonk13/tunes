@@ -41,7 +41,7 @@ class SongLabelChips extends ConsumerWidget {
                     padding: const EdgeInsets.only(right: 8.0),
                     child: Center(
                       child: Text(
-                        'No labels',
+                        'No tags',
                         style: labelStyle.copyWith(
                           color: fgColor?.withOpacity(.7),
                         ),
@@ -68,7 +68,7 @@ class SongLabelChips extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: IconButton(
-              tooltip: 'Add or change labels',
+              tooltip: 'Add or change tags',
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(

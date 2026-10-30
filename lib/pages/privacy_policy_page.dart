@@ -17,7 +17,7 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: 'To work, Tunes keeps these on your device only:\n'
           '• An index of your songs, artists, albums and genres, built by '
           'reading the tags in your music files.\n'
-          '• Your playlists and the labels you add to songs.\n'
+          '• Your playlists and the tags you add to songs yourself.\n'
           '• How many times and when you played each song, which fills the '
           'Recently played, Most played and Least played playlists.\n'
           '• Your recent searches.\n'
@@ -49,7 +49,7 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: 'In Settings you can clear the search history and reset the play '
           'history. Clearing the app\'s storage in Android settings, or '
           'uninstalling the app, removes everything Tunes keeps, including '
-          'playlists and labels. Your music files are never deleted.',
+          'playlists and tags. Your music files are never deleted.',
     ),
     (
       title: 'Changes to this policy',
