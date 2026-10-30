@@ -2,6 +2,7 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:like_button/like_button.dart';
+import 'package:tunes/components/add_to_playlist_dialog.dart';
 import 'package:tunes/components/now_playing_view.dart';
 import 'package:tunes/components/player_btns.dart';
 import 'package:tunes/components/player_controls.dart';
@@ -10,6 +11,7 @@ import 'package:tunes/components/song_label_chips.dart';
 import 'package:tunes/pages/album_info.dart';
 import 'package:tunes/pages/artist_info.dart';
 import 'package:tunes/pages/label_info.dart';
+import 'package:tunes/pages/song_info.dart';
 import 'package:tunes/providers/providers.dart';
 import 'package:tunes/utils/extensions.dart';
 import 'package:tunes/utils/media_query.dart';
@@ -44,11 +46,15 @@ class PlayerDetailsAndControls extends ConsumerWidget {
         if (song != null) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ScrollingText(
-              song?.title ?? "Unknown",
-              style: context.textTheme.displayMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: fgColor,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _openFromPlayer(context, SongInfo(song: song!)),
+              child: ScrollingText(
+                song?.title ?? "Unknown",
+                style: context.textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: fgColor,
+                ),
               ),
             ),
           ),
@@ -148,7 +154,42 @@ class PlayerDetailsAndControls extends ConsumerWidget {
                 );
               },
             ),
-            InkWell(
+          ],
+        ),
+        const SizedBox(height: 12.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _ActionBtn(
+              tooltip: 'Song info',
+              icon: FluentIcons.info_24_filled,
+              fgColor: fgColor,
+              bgColor: bgColor,
+              onTap: song == null
+                  ? null
+                  : () => _openFromPlayer(context, SongInfo(song: song!)),
+            ),
+            _ActionBtn(
+              tooltip: 'Add to playlist',
+              icon: FluentIcons.receipt_add_24_filled,
+              fgColor: fgColor,
+              bgColor: bgColor,
+              onTap: song == null
+                  ? null
+                  : () async {
+                      await showDialog<void>(
+                        context: context,
+                        builder: (context) {
+                          return AddToPlaylistDialog(song: song!);
+                        },
+                      );
+                    },
+            ),
+            _ActionBtn(
+              tooltip: 'Now playing',
+              icon: FluentIcons.reading_list_24_filled,
+              fgColor: fgColor,
+              bgColor: bgColor,
               onTap: () async {
                 await showModalBottomSheet<void>(
                   context: context,
@@ -167,11 +208,6 @@ class PlayerDetailsAndControls extends ConsumerWidget {
                   },
                 );
               },
-              child: CircleAvatar(
-                backgroundColor: fgColor,
-                foregroundColor: bgColor,
-                child: const Icon(FluentIcons.reading_list_24_filled),
-              ),
             ),
           ],
         ),
@@ -282,6 +318,38 @@ class FavoriteBtn extends ConsumerWidget {
       loading: () {
         return const SizedBox.shrink();
       },
+    );
+  }
+}
+
+/// A round button in the lower row of the full player.
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.fgColor,
+    this.bgColor,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final Color? fgColor;
+  final Color? bgColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        child: CircleAvatar(
+          backgroundColor: fgColor,
+          foregroundColor: bgColor,
+          child: Icon(icon),
+        ),
+      ),
     );
   }
 }

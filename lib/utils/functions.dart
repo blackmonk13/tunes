@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -21,7 +23,25 @@ Color? calculateFgColor(PaletteGenerator palette) {
 
   fgColor ??= bgLuminance < 0.5 ? Colors.white : Colors.black;
 
-  return fgColor;
+  return readableOn(palette.dominantColor!.color, fgColor);
+}
+
+/// The WCAG contrast ratio between two colours, from 1 to 21.
+double contrastRatio(Color a, Color b) {
+  final first = a.computeLuminance();
+  final second = b.computeLuminance();
+  return (math.max(first, second) + 0.05) / (math.min(first, second) + 0.05);
+}
+
+/// [preferred] when it can be read on [background], otherwise black or white,
+/// whichever contrasts more.
+Color readableOn(Color background, Color preferred, {double minRatio = 4.5}) {
+  if (contrastRatio(background, preferred) >= minRatio) return preferred;
+
+  return contrastRatio(background, Colors.white) >=
+          contrastRatio(background, Colors.black)
+      ? Colors.white
+      : Colors.black;
 }
 
 String formatDuration(Duration duration, {int padding = 2}) {
