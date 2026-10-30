@@ -8,6 +8,7 @@
 <div align="center">
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
+[![CI](https://github.com/blackmonk13/tunes/actions/workflows/ci.yml/badge.svg)](https://github.com/blackmonk13/tunes/actions/workflows/ci.yml)
 [![GitHub Issues](https://img.shields.io/github/issues/blackmonk13/tunes.svg)](https://github.com/blackmonk13/tunes/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/blackmonk13/tunes.svg)](https://github.com/blackmonk13/tunes/pulls)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](/LICENSE)
@@ -26,6 +27,7 @@
 - [Features](#features)
 - [Getting Started](#getting_started)
 - [Running the tests](#tests)
+- [Continuous integration and releases](#releases)
 - [Project layout](#layout)
 - [Built Using](#built_using)
 - [Contributing](#contributing)
@@ -55,7 +57,7 @@ Tunes plays the music that is already on your phone. It has no account, no ads a
 
 - [Flutter](https://docs.flutter.dev/get-started/install) 3.47 or newer (Dart 3.5.4 or newer).
 - The Android SDK, and an Android device or emulator.
-- A checkout of [`mpeg_codec`](https://github.com/blackmonk13/mpeg_codec), the package Tunes uses to read and write ID3 and MP4 tags. It is a path dependency in `pubspec.yaml`, so it has to sit at `../../dart/mpeg_codec` relative to this repository. For example, if this repository is at `~/dev/flutter/tunes`, put it at `~/dev/dart/mpeg_codec`.
+- Git, because Tunes gets [`mpeg_codec`](https://github.com/blackmonk13/mpeg_codec), its package for reading and writing ID3 and MP4 tags, straight from GitHub (`flutter pub get` does it, pinned to a release tag).
 
 ### Installing
 
@@ -68,6 +70,14 @@ flutter run
 ```
 
 `build_runner` generates the Isar, Riverpod and freezed code, so run it again after changing a collection, a `@riverpod` provider or a `@freezed` model.
+
+To work on `mpeg_codec` together with Tunes, clone it next to this repository and add a `pubspec_overrides.yaml` (it is ignored by git):
+
+```
+dependency_overrides:
+  mpeg_codec:
+    path: ../mpeg_codec
+```
 
 ### Building an APK
 
@@ -82,6 +92,44 @@ Install a debug build over an existing install, keeping its data, with `flutter 
 ```
 flutter test
 flutter analyze
+```
+
+## Continuous integration and releases <a name = "releases"></a>
+
+Every push and pull request to `main` and `dev` runs the CI workflow. It generates the code, analyzes, runs the tests and builds the APKs, which are kept as a build artifact for 14 days. Only errors fail the analysis for now. Without the release key these APKs are signed with a debug key, so they are for trying a change out, not for publishing.
+
+To publish a release:
+
+1. Set the new `version:` in `pubspec.yaml` and merge it.
+2. Push a tag with that version, for example `git tag v1.1.0` and `git push origin v1.1.0`.
+
+The Release workflow checks that the tag matches `pubspec.yaml`, then builds one APK for each processor type (`arm64-v8a` is the one most phones need) and a universal APK, signed with the release key, and publishes them with a `SHA256SUMS.txt` and generated release notes. The build number is the number of the workflow run.
+
+### Signing key
+
+The release key is made once and kept in four repository secrets:
+
+```
+keytool -genkey -v -keystore release.keystore -alias tunes -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 release.keystore
+```
+
+| Secret                      | Value                                  |
+| --------------------------- | -------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | the output of `base64` above           |
+| `ANDROID_KEYSTORE_PASSWORD` | the keystore password                  |
+| `ANDROID_KEY_ALIAS`         | `tunes`, the alias used above          |
+| `ANDROID_KEY_PASSWORD`      | the key password                       |
+
+Keep a copy of the keystore somewhere safe. Android only installs an update over an app signed with the same key, so a lost key means users have to uninstall before they can update. The same goes for the first release: a phone with a debug build installed has to uninstall it first.
+
+To sign a local build with the key, put the same four values in `android/key.properties` (git ignores it), with `storeFile` relative to `android/app`:
+
+```
+storePassword=...
+keyPassword=...
+keyAlias=tunes
+storeFile=release.keystore
 ```
 
 ## Project layout <a name = "layout"></a>
