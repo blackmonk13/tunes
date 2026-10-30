@@ -55,7 +55,9 @@ dependencies:
   marquee: ^2.2.3
   mime: ^2.0.0
   mpeg_codec:
-    path: ../../dart/mpeg_codec
+    git:
+      url: https://github.com/blackmonk13/mpeg_codec.git
+      ref: v2.1.0
   package_info_plus: ^10.2.2
   palette_generator: ^0.3.3+3
   path: ^1.9.0

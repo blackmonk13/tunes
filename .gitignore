@@ -46,3 +46,6 @@ app.*.map.json
 *.g.dart
 suggest.md
 .vscode/comments.json
+
+# Local overrides, for example a checkout of mpeg_codec to work on
+pubspec_overrides.yaml
