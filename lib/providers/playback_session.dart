@@ -171,15 +171,35 @@ Future<void> _restoreSession(
       .map((i) => newIndexOf[i]!)
       .toList();
 
-  await player.setAudioSources(
-    songs.map(songToAudioSource).toList(),
-    preload: false,
-    initialIndex: currentSurvived ? newIndexOf[snapshot.index] : 0,
-    initialPosition: currentSurvived ? snapshot.position : Duration.zero,
-    shuffleOrder: shuffleOrder.length == songs.length
-        ? _RestoredShuffleOrder(shuffleOrder)
-        : null,
-  );
+  final sources = songs.map(songToAudioSource).toList();
+  // A new order each time, as one applies its saved order only once.
+  ShuffleOrder? newOrder() => shuffleOrder.length == songs.length
+      ? _RestoredShuffleOrder(shuffleOrder)
+      : null;
+  final index = currentSurvived ? newIndexOf[snapshot.index] : 0;
+  final position = currentSurvived ? snapshot.position : Duration.zero;
+
+  // The current song is loaded now. Left unloaded, a later seek to another
+  // song is lost and the first play starts the restored song from the start.
+  try {
+    await player.setAudioSources(
+      sources,
+      preload: true,
+      initialIndex: index,
+      initialPosition: position,
+      shuffleOrder: newOrder(),
+    );
+  } catch (_) {
+    // The restored song cannot be opened, for example its file is gone. The
+    // queue is still restored so the rest can be played.
+    await player.setAudioSources(
+      sources,
+      preload: false,
+      initialIndex: index,
+      initialPosition: position,
+      shuffleOrder: newOrder(),
+    );
+  }
   await player.setLoopMode(snapshot.loopMode);
   await player.setShuffleModeEnabled(snapshot.shuffleEnabled);
 }

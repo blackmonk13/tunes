@@ -1,18 +1,34 @@
 part of 'providers.dart';
 
+const _appPermissions = [
+  Permission.audio,
+  Permission.videos,
+  Permission.manageExternalStorage,
+];
+
 @Riverpod(keepAlive: true)
 FutureOr<bool> appPermissions(AppPermissionsRef ref) async {
-  Map<Permission, PermissionStatus> statuses = await [
-    Permission.audio,
-    Permission.videos,
-    Permission.manageExternalStorage,
-  ].request();
+  Future<bool> allGranted() async {
+    for (final permission in _appPermissions) {
+      if (!await permission.status.isGranted) return false;
+    }
+    return true;
+  }
 
-  return statuses.entries.every(
-    (element) {
-      return element.value.isGranted;
-    },
-  );
+  // Asking while no activity is attached, for example when the app is opened
+  // from the playback notification, throws. Nothing needs asking when the
+  // permissions are already granted.
+  if (await allGranted()) return true;
+
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try {
+      final statuses = await _appPermissions.request();
+      return statuses.values.every((status) => status.isGranted);
+    } on PlatformException {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+  }
+  return allGranted();
 }
 
 @riverpod

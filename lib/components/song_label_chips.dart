@@ -23,10 +23,10 @@ class SongLabelChips extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final labels = ref.watch(songLabelsProvider(song.id)).valueOrNull ?? [];
     final outline = BorderSide(color: (fgColor ?? Colors.grey).withOpacity(.4));
-    final labelStyle = TextStyle(color: fgColor);
+    final labelStyle = TextStyle(color: fgColor, fontSize: 12.0);
 
     return SizedBox(
-      height: 44,
+      height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -37,6 +37,9 @@ class SongLabelChips extends ConsumerWidget {
               child: ActionChip(
                 label: Text(label.name),
                 labelStyle: labelStyle,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 2.0),
                 side: outline,
                 backgroundColor: Colors.transparent,
                 onPressed: () => onOpenLabel(label),
@@ -45,11 +48,14 @@ class SongLabelChips extends ConsumerWidget {
           ActionChip(
             avatar: Icon(
               FluentIcons.tag_24_regular,
-              size: 18.0,
+              size: 14.0,
               color: fgColor,
             ),
             label: Text(labels.isEmpty ? 'Add label' : 'Edit'),
             labelStyle: labelStyle,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 2.0),
             side: outline,
             backgroundColor: Colors.transparent,
             onPressed: () => showSongLabelsSheet(context, song),

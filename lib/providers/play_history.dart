@@ -10,12 +10,16 @@ void playHistory(PlayHistoryRef ref) {
   final isar = ref.read(isarProvider).requireValue;
   final counter = PlayCounter();
 
+  // Songs saved before these fields existed read back as Isar's null marker
+  // (the smallest int), so they are reset to never played.
+  unawaited(_resetUnsetPlayFields(isar));
+
   Future<void> record(int songId) async {
     await isar.writeTxn(() async {
       final song = await isar.songs.get(songId);
       if (song == null) return;
       song
-        ..playCount += 1
+        ..playCount = (song.playCount < 0 ? 0 : song.playCount) + 1
         ..lastPlayedAt = DateTime.now().millisecondsSinceEpoch;
       await isar.songs.put(song);
     });
@@ -38,4 +42,20 @@ void playHistory(PlayHistoryRef ref) {
   });
 
   ref.onDispose(timer.cancel);
+}
+
+Future<void> _resetUnsetPlayFields(Isar isar) async {
+  final unset = await isar.songs
+      .filter()
+      .playCountLessThan(0)
+      .or()
+      .lastPlayedAtLessThan(0)
+      .findAll();
+  if (unset.isEmpty) return;
+
+  for (final song in unset) {
+    if (song.playCount < 0) song.playCount = 0;
+    if (song.lastPlayedAt < 0) song.lastPlayedAt = 0;
+  }
+  await isar.writeTxn(() => isar.songs.putAll(unset));
 }

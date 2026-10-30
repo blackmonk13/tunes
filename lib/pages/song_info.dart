@@ -92,13 +92,13 @@ class SongInfo extends HookConsumerWidget {
       (
         title: 'Plays',
         name: 'playCount',
-        value: song.playCount,
+        value: song.playCount < 0 ? 0 : song.playCount,
         editable: false,
       ),
       (
         title: 'Last Played',
         name: 'lastPlayedAt',
-        value: song.lastPlayedAt == 0
+        value: song.lastPlayedAt <= 0
             ? 'Never'
             : DateTime.fromMillisecondsSinceEpoch(song.lastPlayedAt)
                 .toString()

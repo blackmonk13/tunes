@@ -6,7 +6,7 @@ part of 'providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appPermissionsHash() => r'dbb9998574e1d1c23023e36faeb68436079893ee';
+String _$appPermissionsHash() => r'e91b5a9f798afe6086ebcddcda2006ac15b2bb1f';
 
 /// See also [appPermissions].
 @ProviderFor(appPermissions)
@@ -1102,7 +1102,7 @@ final queueEntriesProvider = FutureProvider<List<QueueEntry>>.internal(
 );
 
 typedef QueueEntriesRef = FutureProviderRef<List<QueueEntry>>;
-String _$playHistoryHash() => r'7e72a1bdb2e5e4832f6e518cc85bbbcf3d94c5dd';
+String _$playHistoryHash() => r'c3153108ea5c282a1ed699d9a030ac916f812aee';
 
 /// Counts a play on a song once it has been listened to for long enough, and
 /// stamps the time, so the songs can be sorted by what was played.
@@ -1155,6 +1155,154 @@ final playlistsWatcherProvider = AutoDisposeStreamProvider<void>.internal(
 );
 
 typedef PlaylistsWatcherRef = AutoDisposeStreamProviderRef<void>;
+String _$smartPlaylistSongsHash() =>
+    r'03639ebae916c0a0f9a083710833d91b16b35ed8';
+
+/// The songs of a smart playlist, refreshed when the songs change, for
+/// example when a play is counted.
+///
+/// Copied from [smartPlaylistSongs].
+@ProviderFor(smartPlaylistSongs)
+const smartPlaylistSongsProvider = SmartPlaylistSongsFamily();
+
+/// The songs of a smart playlist, refreshed when the songs change, for
+/// example when a play is counted.
+///
+/// Copied from [smartPlaylistSongs].
+class SmartPlaylistSongsFamily extends Family<AsyncValue<List<Song>>> {
+  /// The songs of a smart playlist, refreshed when the songs change, for
+  /// example when a play is counted.
+  ///
+  /// Copied from [smartPlaylistSongs].
+  const SmartPlaylistSongsFamily();
+
+  /// The songs of a smart playlist, refreshed when the songs change, for
+  /// example when a play is counted.
+  ///
+  /// Copied from [smartPlaylistSongs].
+  SmartPlaylistSongsProvider call(
+    SmartPlaylistKind kind,
+  ) {
+    return SmartPlaylistSongsProvider(
+      kind,
+    );
+  }
+
+  @override
+  SmartPlaylistSongsProvider getProviderOverride(
+    covariant SmartPlaylistSongsProvider provider,
+  ) {
+    return call(
+      provider.kind,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'smartPlaylistSongsProvider';
+}
+
+/// The songs of a smart playlist, refreshed when the songs change, for
+/// example when a play is counted.
+///
+/// Copied from [smartPlaylistSongs].
+class SmartPlaylistSongsProvider extends AutoDisposeFutureProvider<List<Song>> {
+  /// The songs of a smart playlist, refreshed when the songs change, for
+  /// example when a play is counted.
+  ///
+  /// Copied from [smartPlaylistSongs].
+  SmartPlaylistSongsProvider(
+    SmartPlaylistKind kind,
+  ) : this._internal(
+          (ref) => smartPlaylistSongs(
+            ref as SmartPlaylistSongsRef,
+            kind,
+          ),
+          from: smartPlaylistSongsProvider,
+          name: r'smartPlaylistSongsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$smartPlaylistSongsHash,
+          dependencies: SmartPlaylistSongsFamily._dependencies,
+          allTransitiveDependencies:
+              SmartPlaylistSongsFamily._allTransitiveDependencies,
+          kind: kind,
+        );
+
+  SmartPlaylistSongsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.kind,
+  }) : super.internal();
+
+  final SmartPlaylistKind kind;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Song>> Function(SmartPlaylistSongsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SmartPlaylistSongsProvider._internal(
+        (ref) => create(ref as SmartPlaylistSongsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        kind: kind,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Song>> createElement() {
+    return _SmartPlaylistSongsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SmartPlaylistSongsProvider && other.kind == kind;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, kind.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin SmartPlaylistSongsRef on AutoDisposeFutureProviderRef<List<Song>> {
+  /// The parameter `kind` of this provider.
+  SmartPlaylistKind get kind;
+}
+
+class _SmartPlaylistSongsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Song>>
+    with SmartPlaylistSongsRef {
+  _SmartPlaylistSongsProviderElement(super.provider);
+
+  @override
+  SmartPlaylistKind get kind => (origin as SmartPlaylistSongsProvider).kind;
+}
+
 String _$songWithIdHash() => r'910afa630ad84fe729d944bf8884f3e9052d9c4c';
 
 /// See also [songWithId].
