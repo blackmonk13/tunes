@@ -35,13 +35,13 @@
 
 ## About <a name = "about"></a>
 
-Tunes plays the music that is already on your phone. It has no account, no ads and needs no internet. It reads the tags and cover art in your files, keeps its own index of your library, and lets you organise it with playlists and your own labels.
+Tunes plays the music that is already on your phone. It has no account, no ads and needs no internet. It reads the tags and cover art in your files, keeps its own index of your library, and lets you organise it with playlists and your own tags.
 
 ## Features <a name = "features"></a>
 
 - Browse by songs, artists, albums, genres and playlists, with sorting.
-- Search by title, artist, album, genre, label and lyrics. Words can be in any order and accents and case are ignored.
-- Your own labels on songs, shown in the full player, with a page for every label.
+- Search by title, artist, album, genre, tag and lyrics. Words can be in any order and accents and case are ignored.
+- Your own tags on songs (kept in the app, not written to the files), shown in the full player, with a page for every tag.
 - Smart playlists: Recently played, Most played and Least played.
 - Shuffle All, and a Now Playing sheet that shows the real queue and follows what is playing.
 - Resume: the queue, the shuffle order and the position are restored when the app starts.
@@ -105,7 +105,7 @@ Work is tracked in [issues](https://github.com/blackmonk13/tunes/issues). Each f
 
 ## Privacy <a name = "privacy"></a>
 
-Everything stays on the device. Tunes keeps an index of your library, your playlists, labels, play counts and searches locally, and sends nothing anywhere. The same text is in the app under Options, Privacy Policy.
+Everything stays on the device. Tunes keeps an index of your library, your playlists, tags, play counts and searches locally, and sends nothing anywhere. The same text is in the app under Settings, Privacy policy.
 
 ## License <a name = "license"></a>
 

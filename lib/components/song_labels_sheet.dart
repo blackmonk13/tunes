@@ -38,7 +38,7 @@ class SongLabelsSheet extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncLabels = ref.watch(labelsProvider);
     final asyncCurrent = ref.watch(songLabelIdsProvider(song.id));
-    // null until the user changes something, so the song's saved labels show.
+    // null until the user changes something, so the song's saved tags show.
     final edited = useState<Set<int>?>(null);
     final nameController = useTextEditingController();
 
@@ -61,7 +61,7 @@ class SongLabelsSheet extends HookConsumerWidget {
           return AlertDialog(
             title: Text('Delete "${label.name}"?'),
             content: const Text(
-              'The label is removed from every song it is attached to.',
+              'The tag is removed from every song it is attached to.',
             ),
             actions: [
               TextButton(
@@ -102,7 +102,7 @@ class SongLabelsSheet extends HookConsumerWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: DialogTitle(title: "Labels"),
+                child: DialogTitle(title: "Tags"),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -124,7 +124,7 @@ class SongLabelsSheet extends HookConsumerWidget {
                       borderSide: BorderSide.none,
                       borderRadius: BorderRadius.circular(30.0),
                     ),
-                    hintText: "New label",
+                    hintText: "New tag",
                     suffixIcon: IconButton(
                       onPressed: addLabel,
                       icon: const Icon(FluentIcons.add_20_regular),
@@ -142,7 +142,7 @@ class SongLabelsSheet extends HookConsumerWidget {
                         children: const [
                           Padding(
                             padding: EdgeInsets.all(24.0),
-                            child: Center(child: Text("No labels yet")),
+                            child: Center(child: Text("No tags yet")),
                           ),
                         ],
                       );
