@@ -15,6 +15,17 @@ FutureOr<bool> appPermissions(AppPermissionsRef ref) async {
     return true;
   }
 
+  // Without this (Android 13+) the playback notification is never shown, so
+  // there are no lockscreen controls and the system is quicker to kill the
+  // playback service. Declining it must not block the app.
+  try {
+    if (!await Permission.notification.status.isGranted) {
+      await Permission.notification.request();
+    }
+  } on PlatformException {
+    // No activity attached; asked again on the next launch.
+  }
+
   // Asking while no activity is attached, for example when the app is opened
   // from the playback notification, throws. Nothing needs asking when the
   // permissions are already granted.
