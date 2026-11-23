@@ -111,7 +111,7 @@ class SmartSongsPage extends ConsumerWidget {
                   onTap: (song) async {
                     await ref
                         .read(playbackControllerProvider.notifier)
-                        .addAndPlay(song);
+                        .playSongs(songs, startWith: song);
                   },
                   trailing: IconButton(
                     icon: const Icon(FluentIcons.more_vertical_24_regular),
@@ -131,7 +131,8 @@ class SmartSongsPage extends ConsumerWidget {
                             top: Radius.circular(20.0),
                           ),
                         ),
-                        builder: (context) => SongTileOptions(song: song),
+                        builder: (context) =>
+                            SongTileOptions(song: song, songs: songs),
                       );
                     },
                   ),
