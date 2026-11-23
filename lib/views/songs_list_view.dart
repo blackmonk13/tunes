@@ -343,8 +343,13 @@ class SongTileOptions extends ConsumerWidget {
     this.searchQuery,
     this.queue = true,
     this.indices = const [],
+    this.songs,
   });
   final Song song;
+
+  /// The songs "Queue All" and "Shuffle All" act on. When null they are
+  /// queried from [queryType], [query] and [searchQuery] instead.
+  final List<Song>? songs;
   final SongQueryType queryType;
   final String? query;
   final String? searchQuery;
@@ -426,12 +431,13 @@ class SongTileOptions extends ConsumerWidget {
             OptionsTile(
               trailing: false,
               onTap: () async {
-                final songs = await ref.read(songsQueryProvider(
-                  query: query,
-                  queryType: queryType,
-                  searchQuery: searchQuery,
-                  indices: indices,
-                ).future);
+                final List<Song> songs = this.songs ??
+                    await ref.read(songsQueryProvider(
+                      query: query,
+                      queryType: queryType,
+                      searchQuery: searchQuery,
+                      indices: indices,
+                    ).future);
 
                 final sequence = player.sequence;
 
@@ -463,12 +469,13 @@ class SongTileOptions extends ConsumerWidget {
             OptionsTile(
               trailing: false,
               onTap: () async {
-                final songs = await ref.read(songsQueryProvider(
-                  query: query,
-                  queryType: queryType,
-                  searchQuery: searchQuery,
-                  indices: indices,
-                ).future);
+                final List<Song> songs = this.songs ??
+                    await ref.read(songsQueryProvider(
+                      query: query,
+                      queryType: queryType,
+                      searchQuery: searchQuery,
+                      indices: indices,
+                    ).future);
                 await ref
                     .read(playbackControllerProvider.notifier)
                     .replaceQueue(songs, startWith: song);

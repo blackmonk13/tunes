@@ -196,6 +196,21 @@ class PlaybackController extends _$PlaybackController {
     unawaited(_player.play());
   }
 
+  /// Replaces the queue with [songs] in their given order and plays from
+  /// [startWith] (or the first song), so the rest of a list plays after it.
+  Future<void> playSongs(List<Song> songs, {Song? startWith}) async {
+    final sources = songs.map(songToAudioSource).toList();
+    final startIndex = startWith == null
+        ? 0
+        : songs
+            .indexWhere((s) => s.id == startWith.id)
+            .clamp(0, songs.length - 1);
+
+    await _player.setShuffleModeEnabled(false);
+    await _player.setAudioSources(sources, initialIndex: startIndex);
+    unawaited(_player.play());
+  }
+
   Future<void> addMultipleAndPlay(List<Song> songs, {Song? startWith}) async {
     final sources = songs.map(songToAudioSource).toList();
     final startIndex = _player.audioSources.length;
